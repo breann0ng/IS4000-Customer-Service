@@ -1,0 +1,117 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: chatbot
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mock-banking-ops:
+    build:
+      context: .
+      target: backend
+    command: ["uv", "run", "uvicorn", "mocks.banking_ops_server:app", "--host", "0.0.0.0", "--port", "9001"]
+    ports:
+      - "9001:9001"
+    volumes:
+      - ./mocks:/app/mocks
+
+  mock-knowledge:
+    build:
+      context: .
+      target: backend
+    command: ["uv", "run", "uvicorn", "mocks.knowledge_server:app", "--host", "0.0.0.0", "--port", "9002"]
+    ports:
+      - "9002:9002"
+    volumes:
+      - ./mocks:/app/mocks
+
+  mock-service-workflow:
+    build:
+      context: .
+      target: backend
+    command: ["uv", "run", "uvicorn", "mocks.service_workflow_server:app", "--host", "0.0.0.0", "--port", "9003"]
+    ports:
+      - "9003:9003"
+    volumes:
+      - ./mocks:/app/mocks
+
+  rag-server:
+    build:
+      context: .
+      target: backend
+    command: ["uv", "run", "uvicorn", "rag.server:app", "--host", "0.0.0.0", "--port", "9004"]
+    ports:
+      - "9004:9004"
+    volumes:
+      - ./rag:/app/rag
+      - ./data:/app/data
+      - ./models:/app/models
+
+  backend:
+    build:
+      context: .
+      target: backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/chatbot
+      REDIS_URL: redis://redis:6379/0
+      MCP_BANKING_OPS_URL: http://mock-banking-ops:9001/mcp
+      MCP_KNOWLEDGE_URL: http://mock-knowledge:9002/mcp
+      MCP_SERVICE_WORKFLOW_URL: http://mock-service-workflow:9003/mcp
+      MCP_RAG_SERVER_URL: http://rag-server:9004/mcp
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mock-banking-ops:
+        condition: service_started
+      mock-knowledge:
+        condition: service_started
+      mock-service-workflow:
+        condition: service_started
+      rag-server:
+        condition: service_started
+    volumes:
+      - ./apps/api:/app/apps/api
+      - ./rag:/app/rag
+      - ./data:/app/data
+      - ./docs:/app/docs
+
+  frontend:
+    build:
+      context: .
+      target: frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  redis_data:

@@ -1,0 +1,104 @@
+[project]
+name = "ubs-customer-service-chatbot"
+version = "0.1.0"
+description = "Customer Service Chatbot with LangGraph agentic workflow"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.5.0",
+    "asyncpg>=0.30.0",
+    "sqlalchemy[asyncio]>=2.0.0",
+    "langgraph>=0.2.0",
+    "langchain-core>=0.3.0",
+    "langchain-google-genai>=2.1.0",
+    "google-generativeai>=0.8.0",
+    "mem0ai>=0.1.0",
+    "redis>=5.0.0",
+    "chromadb>=0.5.0",
+    "sentence-transformers>=3.0.0",
+    "python-multipart>=0.0.9",
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+    "python-docx>=1.1.0",
+    "pymupdf>=1.24.0",
+    "httpx>=0.27.0",
+    "python-dotenv>=1.0.0",
+    "opentelemetry-api>=1.27.0",
+    "opentelemetry-sdk>=1.27.0",
+    "structlog>=24.4.0",
+    "poethepoet>=0.29.0",
+    "ruff>=0.7.0",
+    "torch>=2.10.0",
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+torchaudio = { index = "pytorch-cpu" }
+torchvision = { index = "pytorch-cpu" }
+
+[tool.poe.tasks.dev-api]
+cmd = "uv run uvicorn apps.api.main:app --reload --host 0.0.0.0 --port 8000"
+help = "Start the FastAPI backend with hot reload on port 8000"
+
+[tool.poe.tasks.dev-ui]
+shell = "cd apps/ui && pnpm run dev"
+help = "Start the React frontend dev server on port 5173"
+
+[tool.poe.tasks.generate-api-client]
+shell = "PYTHONPATH=. uv run python scripts/export_openapi.py && cd apps/ui && pnpm run generate:api"
+help = "Export OpenAPI schema from FastAPI and regenerate the TypeScript client"
+
+[tool.poe.tasks.check]
+shell = "uvx ruff format apps/ rag/ mocks/ tests/ && uvx ruff check apps/ rag/ mocks/ tests/ && uvx ty check apps/api/ rag/ mocks/ && PYTHONPATH=. uv run python scripts/check_openapi_drift.py"
+help = "Format, lint, type-check all Python code, and check for OpenAPI drift"
+
+[tool.poe.tasks.mock-mcp]
+shell = "uv run uvicorn mocks.banking_ops_server:app --host 0.0.0.0 --port 9001 & uv run uvicorn mocks.knowledge_server:app --host 0.0.0.0 --port 9002 & uv run uvicorn mocks.service_workflow_server:app --host 0.0.0.0 --port 9003 & wait"
+help = "Start all 3 mock MCP servers (banking ops :9001, knowledge :9002, service workflow :9003)"
+
+[tool.poe.tasks.rag-server]
+cmd = "uv run uvicorn rag.server:app --host 0.0.0.0 --port 9004"
+help = "Start the RAG MCP server that queries ChromaDB on port 9004"
+
+[tool.poe.tasks.docker-up]
+cmd = "docker compose up -d --build"
+help = "Build and start all services via Docker Compose"
+
+[tool.poe.tasks.docker-down]
+cmd = "docker compose down -v"
+help = "Stop and remove all Docker services and volumes"
+
+[tool.poe.tasks.rag-ingestion]
+cmd = "uv run python -m rag.ingest"
+help = "Ingest documents from docs/ into ChromaDB vector store"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "ANN", "D", "S", "B", "A", "SIM", "TCH"]
+ignore = ["D100", "D104", "S101", "B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"mocks/*" = ["S105", "S311"]
+"apps/api/config.py" = ["S105"]
+"apps/api/auth/models.py" = ["S105"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ty.rules]
+invalid-argument-type = "ignore"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

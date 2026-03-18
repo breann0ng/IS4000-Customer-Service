@@ -12,3 +12,4 @@ models/
 *.log
 .ruff_cache/
 .mypy_cache/
+.claude

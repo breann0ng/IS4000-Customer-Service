@@ -342,10 +342,7 @@ async def send_message_stream(
                 for node_name, node_output in event.items():
                     if node_name == "planner" and node_output.get("plan"):
                         plan = node_output["plan"]
-                        steps = [
-                            {"agent": step.agent, "task": step.task}
-                            for step in plan.steps
-                        ]
+                        steps = [{"agent": step.agent, "task": step.task} for step in plan.steps]
                         yield _sse(
                             "planning",
                             {
@@ -359,9 +356,7 @@ async def send_message_stream(
                         outputs = node_output["agent_outputs"]
                         if outputs:
                             latest = outputs[-1]
-                            step_index = node_output.get(
-                                "current_step_index", len(outputs)
-                            )
+                            step_index = node_output.get("current_step_index", len(outputs))
                             yield _sse(
                                 "agent_step",
                                 {

@@ -40,7 +40,7 @@ Client (React) ──> FastAPI ──> LangGraph Workflow
 
 **Planner** analyzes each client query using Gemini structured output and routes to one or more specialist agents. **Executor** dispatches steps sequentially to the selected agents, each connected to MCP servers via Streamable HTTP. **Synthesizer** combines all agent outputs into a single polished response with follow-up suggestions and escalation flags.
 
-All LLM calls use **Gemini structured outputs** (Pydantic models enforced at the API level) for reliable parsing.
+All LLM calls use **Gemini structured outputs** (Pydantic models enforced at the API level) for reliable parsing. (LLM structured outputs - let pydantic to do the checks for you)
 
 ## Specialist Agents
 
@@ -58,27 +58,27 @@ All LLM calls use **Gemini structured outputs** (Pydantic models enforced at the
 ```
 ├── apps/
 │   ├── api/                    FastAPI backend
-│   │   ├── auth/               LDAP authentication (mock) + JWT
+│   │   ├── auth/               LDAP authentication (mock) + JWT (JSON web token encr & decr)
 │   │   ├── chat/               Chat session CRUD + message handling
-│   │   ├── database/           SQLAlchemy async models (Postgres)
+│   │   ├── database/           SQLAlchemy async models (Postgres) (package to support writing into a db -- [postgres -- has an inbuilt column == JSONB -- can store JSON Data]) -- i should host & create own db instance & add alembic support
 │   │   ├── memory/             mem0 + Redis short-context memory (HuggingFace embeddings)
-│   │   ├── workflow/           LangGraph agentic workflow
-│   │   │   ├── agents/         6 specialist agents
-│   │   │   ├── tools/          MCP client + RAG retrieval tool
-│   │   │   ├── planner.py      Structured plan generation (Gemini)
-│   │   │   ├── executor.py     Agent dispatch loop
-│   │   │   ├── graph.py        StateGraph definition + synthesizer
+│   │   ├── workflow/           LangGraph agentic workflow -- good for complex workflows
+│   │   │   ├── agents/         6 specialist agents (TBD: use fastMCP lib)
+│   │   │   ├── tools/          MCP client + RAG retrieval tool (TBD: use fastMCP lib)
+│   │   │   ├── planner.py      Structured plan generation (Gemini) - Nodes
+│   │   │   ├── executor.py     Agent dispatch loop - Node(s)
+│   │   │   ├── graph.py        StateGraph definition + synthesizer (Defines your graph/flow and Node) - should separate but not needed
 │   │   │   └── state.py        Pydantic state/output models
 │   │   ├── config.py           Pydantic Settings (.env)
 │   │   ├── logging_config.py   structlog + OpenTelemetry trace context
 │   │   └── main.py             App entrypoint + Scalar API docs
 │   └── ui/                     React + TypeScript frontend (Vite)
-│       ├── openapi.json         Committed OpenAPI schema (auto-generated)
+│       ├── openapi.json         Committed OpenAPI schema (auto-generated) (will convert BE scalar api docs , generate a openapi schema to create a typechecked client for FE to refer/use to the client -- good for checks if there are changes in BE to update FE & efficiency) [drift checker]
 │       └── src/
 │           ├── api/
 │           │   ├── generated/   Auto-generated TypeScript client (@hey-api/openapi-ts)
 │           │   └── client.ts    Client configuration (base URL, auth interceptor)
-│           ├── components/      Sidebar, ChatWindow, MessageBubble, ThinkingIndicator
+│           ├── components/      Sidebar, ChatWindow, MessageBubble, ThinkingIndicator (radix ui template used- same as chatgpt)
 │           ├── hooks/           useAuth, useTheme, useMessageStream, useLlmMode
 │           └── pages/           LoginPage, ChatPage
 ├── rag/                        RAG pipeline + server
@@ -124,6 +124,24 @@ Verify with:
 
 ```bash
 uv --version
+```
+
+Create virtual environment:
+
+```bash
+uv sync
+```
+
+To activate virtual environment on new terminal:
+
+```bash
+source .venv/bin/activate
+```
+
+Install poe globally via uv to run tasks:
+
+```bash
+uv tool install poethepoet
 ```
 
 ### Node.js 22+ and pnpm

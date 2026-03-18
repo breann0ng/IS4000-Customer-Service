@@ -1,0 +1,307 @@
+{
+  "profile": {
+    "customer_id": "C-007",
+    "full_name": "Rajesh Anand Kumar",
+    "preferred_name": "Rajesh",
+    "date_of_birth": "1965-11-30",
+    "nationality": "Indian",
+    "tax_residency": "Singapore (EP holder)",
+    "segment": "HNW",
+    "tier": "UBS Wealth Management",
+    "relationship_manager": "Kevin Ng",
+    "rm_email": "kevin.ng@ubs.com",
+    "rm_phone": "+65 6495 3380",
+    "onboarded_date": "2009-04-17",
+    "kyc_status": "Verified",
+    "kyc_last_reviewed": "2025-03-01",
+    "address": "9 Cuscaden Road, #22-01, Singapore 249718",
+    "email": "rajesh.kumar@kumarventures.sg",
+    "mobile": "+65 9345 6789",
+    "preferred_contact": "Email",
+    "language": "English / Hindi",
+    "risk_profile": "Growth",
+    "net_worth_usd": 22000000,
+    "aum_with_ubs_usd": 14500000,
+    "family_office": "Kumar Ventures Pte Ltd",
+    "trust_structure": true,
+    "philanthropic_fund": false
+  },
+  "accounts": [
+    {
+      "account_id": "SGD-007-CA",
+      "account_type": "Personal Current Account",
+      "currency": "SGD",
+      "balance": 680000.0,
+      "available_balance": 675000.0,
+      "status": "Active",
+      "opened_date": "2009-04-17"
+    },
+    {
+      "account_id": "USD-007-BU",
+      "account_type": "Business Settlement Account",
+      "currency": "USD",
+      "balance": 2400000.0,
+      "available_balance": 2400000.0,
+      "status": "Active",
+      "opened_date": "2011-06-01"
+    },
+    {
+      "account_id": "INR-007-RA",
+      "account_type": "Remittance Account",
+      "currency": "INR",
+      "balance": 18500000.0,
+      "available_balance": 18500000.0,
+      "status": "Active",
+      "opened_date": "2015-01-10"
+    }
+  ],
+  "portfolio": {
+    "portfolio_id": "PORT-007",
+    "total_value_usd": 11200000,
+    "currency": "USD",
+    "last_updated": "2026-03-17",
+    "mandate_type": "Advisory",
+    "allocation": {
+      "Public Equities": {
+        "pct": 45,
+        "value_usd": 5040000
+      },
+      "Private Equity": {
+        "pct": 25,
+        "value_usd": 2800000
+      },
+      "Fixed Income": {
+        "pct": 20,
+        "value_usd": 2240000
+      },
+      "Cash": {
+        "pct": 10,
+        "value_usd": 1120000
+      }
+    },
+    "top_equity_holdings": [
+      {
+        "name": "Infosys Ltd",
+        "ticker": "INFY",
+        "sector": "Technology",
+        "value_usd": 820000,
+        "pnl_pct": 15.3
+      },
+      {
+        "name": "Reliance Industries",
+        "ticker": "RELI",
+        "sector": "Conglomerate",
+        "value_usd": 740000,
+        "pnl_pct": 22.1
+      },
+      {
+        "name": "HDFC Bank",
+        "ticker": "HDFCB",
+        "sector": "Banking",
+        "value_usd": 610000,
+        "pnl_pct": 9.8
+      },
+      {
+        "name": "Sea Limited",
+        "ticker": "SE",
+        "sector": "Technology",
+        "value_usd": 560000,
+        "pnl_pct": -5.4
+      },
+      {
+        "name": "DBS Group Holdings",
+        "ticker": "D05",
+        "sector": "Banking",
+        "value_usd": 490000,
+        "pnl_pct": 11.2
+      }
+    ],
+    "private_markets": [
+      {
+        "fund": "Southeast Asia Venture Fund III",
+        "type": "Venture Capital",
+        "commitment_usd": 1500000,
+        "nav_usd": 1820000,
+        "vintage": 2020
+      },
+      {
+        "fund": "India Growth Opportunities Fund",
+        "type": "Private Equity",
+        "commitment_usd": 1300000,
+        "nav_usd": 1480000,
+        "vintage": 2021
+      }
+    ],
+    "structured_products": [
+      {
+        "name": "India Equity Basket Note",
+        "underlying": "NIFTY 50 + Sensex",
+        "value_usd": 640000,
+        "maturity": "2027-06-30"
+      }
+    ],
+    "ytd_return_pct": 8.4,
+    "one_year_return_pct": 18.7
+  },
+  "credit": {
+    "lombard_facility": {
+      "product": "Lombard Credit Facility",
+      "limit_usd": 5000000,
+      "drawn_usd": 1800000,
+      "available_usd": 3200000,
+      "collateral": "Securities portfolio",
+      "interest_rate_pct": 4.9,
+      "status": "Active"
+    },
+    "credit_cards": [
+      {
+        "product": "UBS Visa Infinite",
+        "limit_usd": 200000,
+        "outstanding_usd": 14200,
+        "status": "Active"
+      },
+      {
+        "product": "UBS Mastercard World Elite",
+        "limit_usd": 150000,
+        "outstanding_usd": 8900,
+        "status": "Active"
+      }
+    ]
+  },
+  "real_estate": [
+    {
+      "property": "Cuscaden Road condo",
+      "location": "Singapore",
+      "value_sgd": 4500000,
+      "loan_sgd": 0
+    },
+    {
+      "property": "Office building",
+      "location": "Mumbai, India",
+      "value_inr": 350000000,
+      "loan_inr": 0
+    },
+    {
+      "property": "Holiday apartment",
+      "location": "Dubai, UAE",
+      "value_usd": 1800000,
+      "loan_usd": 0
+    }
+  ],
+  "recent_transactions": [
+    {
+      "date": "2026-03-17",
+      "description": "Kumar Ventures — business income",
+      "amount": 320000.0,
+      "currency": "USD",
+      "account": "USD-007-BU"
+    },
+    {
+      "date": "2026-03-15",
+      "description": "Lombard interest charge",
+      "amount": -7350.0,
+      "currency": "USD",
+      "account": "USD-007-BU"
+    },
+    {
+      "date": "2026-03-12",
+      "description": "Remittance — family in Mumbai",
+      "amount": -800000.0,
+      "currency": "INR",
+      "account": "INR-007-RA"
+    },
+    {
+      "date": "2026-03-10",
+      "description": "Infosys dividend",
+      "amount": 4100.0,
+      "currency": "USD",
+      "account": "USD-007-BU"
+    },
+    {
+      "date": "2026-03-08",
+      "description": "UBS Visa Infinite — Marina Bay Sands",
+      "amount": -6200.0,
+      "currency": "SGD",
+      "account": "SGD-007-CA"
+    },
+    {
+      "date": "2026-03-05",
+      "description": "Advisory fee — Q1 2026",
+      "amount": -11500.0,
+      "currency": "USD",
+      "account": "USD-007-BU"
+    },
+    {
+      "date": "2026-03-01",
+      "description": "Director salary — Kumar Ventures",
+      "amount": 65000.0,
+      "currency": "SGD",
+      "account": "SGD-007-CA"
+    },
+    {
+      "date": "2026-02-28",
+      "description": "SEA Venture Fund III — capital call",
+      "amount": -150000.0,
+      "currency": "USD",
+      "account": "USD-007-BU"
+    }
+  ],
+  "appointments": [
+    {
+      "appointment_id": "APT-007-A",
+      "type": "Portfolio & Business Review",
+      "date": "2026-03-30",
+      "time": "10:00",
+      "rm": "Kevin Ng",
+      "location": "UBS Singapore, One Raffles Quay",
+      "status": "Confirmed"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "N-007-1",
+      "type": "Action Required",
+      "message": "FATCA annual certification renewal due 2026-04-15",
+      "date": "2026-03-12",
+      "read": false
+    },
+    {
+      "id": "N-007-2",
+      "type": "Market Alert",
+      "message": "India Equity Basket Note — NIFTY up 3.1%, barrier at 110% approaching",
+      "date": "2026-03-17",
+      "read": false
+    },
+    {
+      "id": "N-007-3",
+      "type": "Statement",
+      "message": "February 2026 account statements available",
+      "date": "2026-03-02",
+      "read": true
+    }
+  ],
+  "applications": [
+    {
+      "application_id": "APP-007-A",
+      "application_type": "FATCA Annual Certification",
+      "description": "Annual FATCA W-8BEN-E recertification for Kumar Ventures Pte Ltd",
+      "status": "Pending Documents",
+      "submitted_date": "2026-03-12",
+      "expected_completion": "2026-04-15",
+      "assigned_to": "Compliance (cc: Kevin Ng)",
+      "documents_required": "Signed W-8BEN-E form, updated ownership structure chart for Kumar Ventures Pte Ltd",
+      "notes": "Annual recertification due. Failure to submit by 15 April may trigger account restrictions."
+    },
+    {
+      "application_id": "APP-007-B",
+      "application_type": "Lombard Facility Limit Increase",
+      "description": "Increase Lombard facility from USD 5M to USD 7M to fund India Growth Opportunities Fund co-investment",
+      "status": "Under Review",
+      "submitted_date": "2026-03-15",
+      "expected_completion": "2026-03-26",
+      "assigned_to": "Credit Team (cc: Kevin Ng)",
+      "documents_required": null,
+      "notes": "Portfolio valuation confirms sufficient collateral. Credit committee review in progress."
+    }
+  ]
+}

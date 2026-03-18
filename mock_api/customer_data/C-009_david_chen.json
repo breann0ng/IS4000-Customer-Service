@@ -1,0 +1,324 @@
+{
+  "profile": {
+    "customer_id": "C-009",
+    "full_name": "David Wei Chen",
+    "preferred_name": "David",
+    "date_of_birth": "1960-08-08",
+    "nationality": "Singaporean",
+    "tax_residency": "Singapore",
+    "segment": "HNW",
+    "tier": "UBS Wealth Management",
+    "relationship_manager": "Sophia Lim",
+    "rm_email": "sophia.lim@ubs.com",
+    "rm_phone": "+65 6495 2201",
+    "onboarded_date": "2003-10-22",
+    "kyc_status": "Verified",
+    "kyc_last_reviewed": "2025-05-15",
+    "address": "28 Peirce Road, Singapore 297545",
+    "email": "david.chen@chenlogistics.com.sg",
+    "mobile": "+65 9456 7890",
+    "preferred_contact": "Phone",
+    "language": "English / Mandarin",
+    "risk_profile": "Balanced Growth",
+    "net_worth_usd": 18000000,
+    "aum_with_ubs_usd": 11800000,
+    "family_office": "Chen Family Office Pte Ltd",
+    "trust_structure": true,
+    "philanthropic_fund": false
+  },
+  "accounts": [
+    {
+      "account_id": "SGD-009-CA",
+      "account_type": "Personal Current Account",
+      "currency": "SGD",
+      "balance": 520000.0,
+      "available_balance": 518000.0,
+      "status": "Active",
+      "opened_date": "2003-10-22"
+    },
+    {
+      "account_id": "USD-009-WA",
+      "account_type": "Wealth Management Account",
+      "currency": "USD",
+      "balance": 1100000.0,
+      "available_balance": 1100000.0,
+      "status": "Active",
+      "opened_date": "2003-10-22"
+    },
+    {
+      "account_id": "SGD-009-BS",
+      "account_type": "Business Settlement Account",
+      "currency": "SGD",
+      "balance": 3200000.0,
+      "available_balance": 3200000.0,
+      "status": "Active",
+      "opened_date": "2005-03-01"
+    }
+  ],
+  "portfolio": {
+    "portfolio_id": "PORT-009",
+    "total_value_usd": 9500000,
+    "currency": "USD",
+    "last_updated": "2026-03-17",
+    "mandate_type": "Discretionary — Balanced",
+    "allocation": {
+      "Public Equities": {
+        "pct": 40,
+        "value_usd": 3800000
+      },
+      "Fixed Income": {
+        "pct": 30,
+        "value_usd": 2850000
+      },
+      "Private Equity": {
+        "pct": 15,
+        "value_usd": 1425000
+      },
+      "Real Estate Funds": {
+        "pct": 10,
+        "value_usd": 950000
+      },
+      "Cash": {
+        "pct": 5,
+        "value_usd": 475000
+      }
+    },
+    "top_equity_holdings": [
+      {
+        "name": "DBS Group Holdings",
+        "ticker": "D05",
+        "sector": "Banking",
+        "value_usd": 720000,
+        "pnl_pct": 18.4
+      },
+      {
+        "name": "Oversea-Chinese Banking Corp",
+        "ticker": "O39",
+        "sector": "Banking",
+        "value_usd": 580000,
+        "pnl_pct": 12.7
+      },
+      {
+        "name": "CapitaLand Integrated",
+        "ticker": "C38U",
+        "sector": "REITs",
+        "value_usd": 490000,
+        "pnl_pct": 5.2
+      },
+      {
+        "name": "Singapore Airlines",
+        "ticker": "C6L",
+        "sector": "Aviation",
+        "value_usd": 420000,
+        "pnl_pct": 8.9
+      },
+      {
+        "name": "Keppel Corporation",
+        "ticker": "BN4",
+        "sector": "Infrastructure",
+        "value_usd": 310000,
+        "pnl_pct": 14.6
+      }
+    ],
+    "private_markets": [
+      {
+        "fund": "Pan-Asia Logistics Fund II",
+        "type": "Private Equity",
+        "commitment_usd": 900000,
+        "nav_usd": 1050000,
+        "vintage": 2019
+      },
+      {
+        "fund": "Singapore Industrial REIT Fund",
+        "type": "Real Estate",
+        "commitment_usd": 525000,
+        "nav_usd": 590000,
+        "vintage": 2020
+      }
+    ],
+    "structured_products": [
+      {
+        "name": "STI Accumulator",
+        "underlying": "Straits Times Index",
+        "value_usd": 380000,
+        "maturity": "2026-09-15"
+      }
+    ],
+    "ytd_return_pct": 5.1,
+    "one_year_return_pct": 10.8
+  },
+  "credit": {
+    "lombard_facility": {
+      "product": "Lombard Credit Facility",
+      "limit_usd": 4000000,
+      "drawn_usd": 500000,
+      "available_usd": 3500000,
+      "collateral": "Securities portfolio",
+      "interest_rate_pct": 4.85,
+      "status": "Active"
+    },
+    "mortgage": {
+      "product": "Private Bank Mortgage",
+      "property": "28 Peirce Road bungalow",
+      "outstanding_sgd": 2800000,
+      "original_amount_sgd": 4000000,
+      "interest_rate_pct": 3.6,
+      "monthly_repayment_sgd": 18200,
+      "maturity_date": "2032-10-01",
+      "status": "Active"
+    },
+    "credit_cards": [
+      {
+        "product": "UBS Visa Infinite",
+        "limit_sgd": 180000,
+        "outstanding_sgd": 9800,
+        "status": "Active"
+      }
+    ]
+  },
+  "real_estate": [
+    {
+      "property": "Peirce Road bungalow",
+      "location": "Singapore",
+      "value_sgd": 9500000,
+      "loan_sgd": 2800000
+    },
+    {
+      "property": "Warehouse complex",
+      "location": "Jurong, Singapore",
+      "value_sgd": 12000000,
+      "loan_sgd": 0
+    },
+    {
+      "property": "Shophouse",
+      "location": "Tanjong Pagar, SG",
+      "value_sgd": 4200000,
+      "loan_sgd": 0
+    }
+  ],
+  "recent_transactions": [
+    {
+      "date": "2026-03-17",
+      "description": "Chen Logistics — business rental income",
+      "amount": 145000.0,
+      "currency": "SGD",
+      "account": "SGD-009-BS"
+    },
+    {
+      "date": "2026-03-15",
+      "description": "DBS dividend",
+      "amount": 7200.0,
+      "currency": "SGD",
+      "account": "SGD-009-CA"
+    },
+    {
+      "date": "2026-03-12",
+      "description": "Mortgage repayment — Peirce Road",
+      "amount": -18200.0,
+      "currency": "SGD",
+      "account": "SGD-009-CA"
+    },
+    {
+      "date": "2026-03-10",
+      "description": "Lombard drawdown for property opportunity",
+      "amount": 500000.0,
+      "currency": "USD",
+      "account": "USD-009-WA"
+    },
+    {
+      "date": "2026-03-08",
+      "description": "UBS Visa Infinite — Waku Ghin dinner",
+      "amount": -2800.0,
+      "currency": "SGD",
+      "account": "SGD-009-CA"
+    },
+    {
+      "date": "2026-03-05",
+      "description": "Discretionary mandate quarterly fee",
+      "amount": -9500.0,
+      "currency": "USD",
+      "account": "USD-009-WA"
+    },
+    {
+      "date": "2026-03-01",
+      "description": "OCBC dividend",
+      "amount": 5800.0,
+      "currency": "SGD",
+      "account": "SGD-009-CA"
+    },
+    {
+      "date": "2026-02-28",
+      "description": "Transfer — Chen Family Office operating",
+      "amount": -80000.0,
+      "currency": "SGD",
+      "account": "SGD-009-BS"
+    }
+  ],
+  "appointments": [
+    {
+      "appointment_id": "APT-009-A",
+      "type": "Quarterly Portfolio Review",
+      "date": "2026-04-01",
+      "time": "10:30",
+      "rm": "Sophia Lim",
+      "location": "UBS Singapore, One Raffles Quay",
+      "status": "Confirmed"
+    },
+    {
+      "appointment_id": "APT-009-B",
+      "type": "Succession Planning Review",
+      "date": "2026-04-28",
+      "time": "14:00",
+      "rm": "Sophia Lim",
+      "location": "Video call",
+      "status": "Tentative"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "N-009-1",
+      "type": "Income",
+      "message": "Business rental income of SGD 145,000 received from Chen Logistics",
+      "date": "2026-03-17",
+      "read": false
+    },
+    {
+      "id": "N-009-2",
+      "type": "Action Required",
+      "message": "Lombard facility drawdown of USD 500,000 confirmed — review utilisation with RM",
+      "date": "2026-03-10",
+      "read": false
+    },
+    {
+      "id": "N-009-3",
+      "type": "Statement",
+      "message": "February 2026 statements for all accounts now available",
+      "date": "2026-03-02",
+      "read": true
+    }
+  ],
+  "applications": [
+    {
+      "application_id": "APP-009-A",
+      "application_type": "Lombard Facility Drawdown",
+      "description": "USD 500,000 Lombard drawdown to fund potential commercial property acquisition in Tanjong Pagar",
+      "status": "Completed",
+      "submitted_date": "2026-03-08",
+      "expected_completion": "2026-03-10",
+      "assigned_to": "Credit Team (cc: Sophia Lim)",
+      "documents_required": null,
+      "notes": "Drawdown of USD 500,000 processed successfully on 2026-03-10. Total drawn now USD 500,000 of USD 4M limit."
+    },
+    {
+      "application_id": "APP-009-B",
+      "application_type": "Investment Mandate Change",
+      "description": "Request to increase discretionary mandate allocation to Singapore REITs from 10% to 15%",
+      "status": "Pending Approval",
+      "submitted_date": "2026-03-14",
+      "expected_completion": "2026-03-25",
+      "assigned_to": "Investment Services (cc: Sophia Lim)",
+      "documents_required": null,
+      "notes": "Mandate change request under review. Revised IPS (Investment Policy Statement) being prepared."
+    }
+  ]
+}

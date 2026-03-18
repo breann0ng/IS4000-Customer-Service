@@ -1,0 +1,63 @@
+version: "3.9"
+
+services:
+
+  # ── ChromaDB vector store ─────────────────────────────────────────────────
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: ubs_chromadb
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - PERSIST_DIRECTORY=/chroma/chroma
+      - ANONYMIZED_TELEMETRY=FALSE
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ── Scraper pipeline ──────────────────────────────────────────────────────
+  # Run once: docker compose run --rm scraper
+  # Or for incremental refresh: docker compose run --rm scraper python refresh.py
+  scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile.scraper
+    container_name: ubs_scraper
+    depends_on:
+      chromadb:
+        condition: service_healthy
+    environment:
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
+      - EMBED_MODEL=${EMBED_MODEL:-BAAI/bge-m3}
+      - COLLECTION_NAME=${COLLECTION_NAME:-ubs_knowledge_base}
+    volumes:
+      # Persist output so re-runs skip already-scraped pages
+      - ./output:/app/output
+      # Cache HuggingFace models so they aren't re-downloaded each run
+      - hf_cache:/root/.cache/huggingface
+    command: python run_all.py --test-query
+    profiles:
+      - scrape   # opt-in: docker compose --profile scrape up
+
+  # ── Quality checker ───────────────────────────────────────────────────────
+  quality:
+    build:
+      context: .
+      dockerfile: Dockerfile.scraper
+    container_name: ubs_quality
+    volumes:
+      - ./output:/app/output
+    command: python quality_check.py --report-file /app/output/quality_report.json
+    profiles:
+      - quality
+
+volumes:
+  chroma_data:
+  hf_cache:

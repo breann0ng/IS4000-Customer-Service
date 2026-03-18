@@ -204,4 +204,10 @@ cython_debug/
 # Marimo
 marimo/_static/
 marimo/_lsp/
-__marimo__/
+# UBS Customer Service Project Specifics
+web-scraping/output/raw/
+web-scraping/output/pdfs/
+web-scraping/output/processed/
+mock_api/.DS_Store
+.gemini/
+.agent/

@@ -228,6 +228,9 @@ cp .env.example .env
 
 Edit `.env` and optionally set your `GEMINI_API_KEY`. Without it the chatbot runs in mock mode. Everything else has working defaults for local development.
 
+> [!WARNING]
+> If you are updating an existing project, ensure you remove `CHROMA_PERSIST_DIRECTORY` from your `.env` file. The backend's strict config validation will cause a crash on startup if it encounters this outdated variable.
+
 ### 3. Start infrastructure (Postgres + Redis)
 
 *If you are updating from an older architecture, ensure you run with \`--build\` so the new PostgreSQL \`pgvector\` image is pulled.*

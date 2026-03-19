@@ -1,6 +1,24 @@
 # UBS Customer Service Chatbot
 
 AI-powered customer service chatbot for UBS Wealth Management, serving High Net Worth Individual (HNWI) clients. Built with a LangGraph plan-and-execute agentic workflow, FastAPI backend, and React frontend.
+## Table of Contents
+
+- [Architecture](#architecture)
+- [Specialist Agents](#specialist-agents)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Getting Started](#getting-started)
+- [Docker (Full Stack)](#docker-full-stack)
+- [RAG Document Ingestion](#rag-document-ingestion)
+- [Development Tasks](#development-tasks)
+- [API Endpoints](#api-endpoints)
+- [API Client Generation](#api-client-generation)
+- [Environment Variables](#environment-variables)
+- [Tech Stack](#tech-stack)
+- [Streaming & Thinking Steps](#streaming--thinking-steps)
+- [Sample Queries](#sample-queries)
+- [Future Work](#future-work)
+
 
 ## Architecture
 

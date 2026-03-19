@@ -6,7 +6,7 @@ Run standalone:
     uv run uvicorn mocks.knowledge_server:app --host 0.0.0.0 --port 9002
 """
 
-from mocks.base import create_mock_mcp_app
+from mcp_servers.base import create_mock_mcp_app
 
 MOCK_ACCOUNTS = [
     {"account": "CH93 0076 2011 6238 5295 7", "currency": "CHF", "balance": "2,345,678.50"},

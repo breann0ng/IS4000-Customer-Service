@@ -6,7 +6,7 @@ Run standalone:
     uv run uvicorn mocks.banking_ops_server:app --host 0.0.0.0 --port 9001
 """
 
-from mocks.base import create_mock_mcp_app
+from mcp_servers.base import create_mock_mcp_app
 
 MOCK_PORTFOLIO: dict[str, str | dict[str, str]] = {
     "total_aum": "CHF 12,450,000",

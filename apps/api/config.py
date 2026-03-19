@@ -11,7 +11,6 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/chatbot"
     redis_url: str = "redis://localhost:6379/0"
 
-    chroma_persist_directory: str = "./data/chroma"
     embedding_model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
 
     jwt_secret_key: str = "change-me-to-a-secure-random-string"
@@ -24,6 +23,9 @@ class Settings(BaseSettings):
     mcp_knowledge_url: str = "http://localhost:9002/mcp"
     mcp_service_workflow_url: str = "http://localhost:9003/mcp"
     mcp_rag_server_url: str = "http://localhost:9004/mcp"
+
+    langsmith_api_key: str = ""
+    langsmith_project: str = "ubs-chatbot"
 
     rag_top_k: int = 5
 

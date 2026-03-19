@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -31,43 +31,31 @@ services:
     build:
       context: .
       target: backend
-    command: ["uv", "run", "uvicorn", "mocks.banking_ops_server:app", "--host", "0.0.0.0", "--port", "9001"]
+    command: ["uv", "run", "uvicorn", "mcp_servers.banking_ops_server:app", "--host", "0.0.0.0", "--port", "9001"]
     ports:
       - "9001:9001"
     volumes:
-      - ./mocks:/app/mocks
+      - ./mcp_servers:/app/mcp_servers
 
   mock-knowledge:
     build:
       context: .
       target: backend
-    command: ["uv", "run", "uvicorn", "mocks.knowledge_server:app", "--host", "0.0.0.0", "--port", "9002"]
+    command: ["uv", "run", "uvicorn", "mcp_servers.knowledge_server:app", "--host", "0.0.0.0", "--port", "9002"]
     ports:
       - "9002:9002"
     volumes:
-      - ./mocks:/app/mocks
+      - ./mcp_servers:/app/mcp_servers
 
   mock-service-workflow:
     build:
       context: .
       target: backend
-    command: ["uv", "run", "uvicorn", "mocks.service_workflow_server:app", "--host", "0.0.0.0", "--port", "9003"]
+    command: ["uv", "run", "uvicorn", "mcp_servers.service_workflow_server:app", "--host", "0.0.0.0", "--port", "9003"]
     ports:
       - "9003:9003"
     volumes:
-      - ./mocks:/app/mocks
-
-  rag-server:
-    build:
-      context: .
-      target: backend
-    command: ["uv", "run", "uvicorn", "rag.server:app", "--host", "0.0.0.0", "--port", "9004"]
-    ports:
-      - "9004:9004"
-    volumes:
-      - ./rag:/app/rag
-      - ./data:/app/data
-      - ./models:/app/models
+      - ./mcp_servers:/app/mcp_servers
 
   backend:
     build:

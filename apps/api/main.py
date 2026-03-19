@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from sqlalchemy import text
 
 from apps.api.auth.routes import router as auth_router
 from apps.api.chat.routes import router as chat_router
@@ -31,7 +32,18 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
         Control back to the application during its active lifetime.
     """
     logger.info("application_startup")
+
+    # ── LangSmith observability ─────────────────────────────────────────
+    if settings.langsmith_api_key:
+        import os
+
+        os.environ["LANGCHAIN_TRACING_V2"] = "true"
+        os.environ["LANGCHAIN_API_KEY"] = settings.langsmith_api_key
+        os.environ["LANGCHAIN_PROJECT"] = settings.langsmith_project
+        logger.info("langsmith_enabled", project=settings.langsmith_project)
+
     async with engine.begin() as connection:
+        await connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await connection.run_sync(Base.metadata.create_all)
     logger.info("database_tables_created")
     yield

@@ -1,7 +1,7 @@
-"""RAG MCP server that queries ChromaDB for relevant document chunks.
+"""RAG MCP server that queries PostgreSQL/pgvector for relevant document chunks.
 
 Exposes a retrieve_documents tool over Streamable HTTP (JSON-RPC)
-that performs cosine similarity search against the local vector store.
+that performs cosine similarity search against the pgvector store.
 
 Run standalone:
     uv run uvicorn rag.server:app --host 0.0.0.0 --port 9004
@@ -9,11 +9,10 @@ Run standalone:
 
 import os
 
-import chromadb
-from chromadb.config import Settings as ChromaSettings
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from sentence_transformers import SentenceTransformer
+from sqlalchemy import create_engine, text
 
 from rag.config import pipeline_settings
 
@@ -57,7 +56,7 @@ TOOL_DEFINITIONS = [
 ]
 
 _embedding_model: SentenceTransformer | None = None
-_chroma_collection: chromadb.Collection | None = None
+_db_engine = None
 
 
 def _get_embedding_model() -> SentenceTransformer:
@@ -84,37 +83,16 @@ def _get_embedding_model() -> SentenceTransformer:
     return _embedding_model
 
 
-def _get_chroma_collection() -> chromadb.Collection | None:
-    """Open the ChromaDB collection for querying.
-
-    Returns:
-        The ChromaDB collection, or None if the vector store does not exist.
-    """
-    global _chroma_collection
-    if _chroma_collection is not None:
-        return _chroma_collection
-
-    persist_directory = pipeline_settings.chroma_persist_directory
-    if not os.path.isdir(persist_directory):
-        return None
-
-    chroma_client = chromadb.PersistentClient(
-        path=persist_directory,
-        settings=ChromaSettings(anonymized_telemetry=False),
-    )
-
-    existing_collections = [collection.name for collection in chroma_client.list_collections()]
-    if pipeline_settings.chroma_collection_name not in existing_collections:
-        return None
-
-    _chroma_collection = chroma_client.get_collection(
-        name=pipeline_settings.chroma_collection_name,
-    )
-    return _chroma_collection
+def _get_db_engine():
+    """Return or create the sync SQLAlchemy engine for pgvector queries."""
+    global _db_engine
+    if _db_engine is None:
+        _db_engine = create_engine(pipeline_settings.database_url)
+    return _db_engine
 
 
 def retrieve_documents(query: str, top_k: int) -> dict:
-    """Query ChromaDB for the top-k most similar document chunks.
+    """Query PostgreSQL/pgvector for the top-k most similar document chunks.
 
     Args:
         query: The search query text.
@@ -123,39 +101,61 @@ def retrieve_documents(query: str, top_k: int) -> dict:
     Returns:
         A dictionary with a 'chunks' list of matching documents and metadata.
     """
-    collection = _get_chroma_collection()
-    if collection is None:
+    engine = _get_db_engine()
+
+    try:
+        # Check if documents table exists and has rows
+        with engine.connect() as connection:
+            result = connection.execute(
+                text("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'documents')")
+            )
+            if not result.scalar():
+                return {
+                    "chunks": [],
+                    "error": "Documents table not found. Run 'poe rag-ingestion' to index documents first.",
+                }
+
+            count_result = connection.execute(text("SELECT COUNT(*) FROM documents"))
+            doc_count = count_result.scalar()
+            if doc_count == 0:
+                return {
+                    "chunks": [],
+                    "error": "No documents indexed. Run 'poe rag-ingestion' first.",
+                }
+    except Exception:
         return {
             "chunks": [],
-            "error": "Vector store not found. Run 'poe ingest' to index documents first.",
+            "error": "Database connection failed.",
         }
 
     embedding_model = _get_embedding_model()
-    query_embedding = embedding_model.encode([query]).tolist()
-
-    results = collection.query(
-        query_embeddings=query_embedding,
-        n_results=min(top_k, collection.count()) if collection.count() > 0 else 0,
-        include=["documents", "metadatas", "distances"],
-    )
+    query_embedding = embedding_model.encode([query]).tolist()[0]
 
     chunks = []
-    raw_documents = results.get("documents") or [[]]
-    raw_metadatas = results.get("metadatas") or [[]]
-    raw_distances = results.get("distances") or [[]]
-    documents = raw_documents[0]
-    metadatas = raw_metadatas[0]
-    distances = raw_distances[0]
-
-    for document, metadata, distance in zip(documents, metadatas, distances, strict=True):
-        similarity_score = 1.0 - distance
-        chunks.append(
-            {
-                "text": document,
-                "metadata": metadata,
-                "score": round(similarity_score, 4),
-            }
+    with engine.connect() as connection:
+        results = connection.execute(
+            text(
+                "SELECT content, source, chunk_index, metadata, "
+                "1 - (embedding <=> :embedding) AS similarity "
+                "FROM documents "
+                "ORDER BY embedding <=> :embedding "
+                "LIMIT :top_k"
+            ),
+            {"embedding": str(query_embedding), "top_k": top_k},
         )
+
+        for row in results:
+            chunks.append(
+                {
+                    "text": row.content,
+                    "metadata": {
+                        "source": row.source,
+                        "chunk_index": row.chunk_index,
+                        **(row.metadata if row.metadata else {}),
+                    },
+                    "score": round(float(row.similarity), 4),
+                }
+            )
 
     return {"chunks": chunks}
 
@@ -206,10 +206,16 @@ async def health_check() -> dict[str, str | int]:
     Returns:
         A dictionary with server status and document count.
     """
-    collection = _get_chroma_collection()
-    document_count = collection.count() if collection else 0
+    engine = _get_db_engine()
+    try:
+        with engine.connect() as connection:
+            result = connection.execute(text("SELECT COUNT(*) FROM documents"))
+            document_count = result.scalar()
+    except Exception:
+        document_count = 0
+
     return {
         "status": "healthy",
-        "server": "rag-mcp",
+        "server": "rag-mcp-pgvector",
         "document_count": document_count,
     }

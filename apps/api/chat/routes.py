@@ -8,6 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from apps.api.security.input_guard import check_prompt_injection, sanitize_input
+
 from apps.api.auth.routes import get_current_user
 from apps.api.chat.models import (
     ChatCompletionResponse,
@@ -233,18 +235,26 @@ async def send_message(
 
     await save_message(database_session, session_id, "user", request.content)
 
+    if check_prompt_injection(request.content):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Your message was flagged by our security system. Please rephrase your query.",
+        )
+
+    sanitized_content = sanitize_input(request.content)
+
     conversation_history = [
         {"role": message.role, "content": message.content} for message in session.messages
     ]
-    conversation_history.append({"role": "user", "content": request.content})
+    conversation_history.append({"role": "user", "content": sanitized_content})
 
     memory_context = await memory_manager.retrieve_memory(
         user_id=str(current_user.user_id),
-        query=request.content,
+        query=sanitized_content,
     )
 
     workflow_result = await run_workflow(
-        user_message=request.content,
+        user_message=sanitized_content,
         conversation_history=conversation_history,
         memory_context=memory_context,
         session_id=str(session_id),
@@ -314,18 +324,26 @@ async def send_message_stream(
 
     await save_message(database_session, session_id, "user", request.content)
 
+    if check_prompt_injection(request.content):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Your message was flagged by our security system. Please rephrase your query.",
+        )
+
+    sanitized_content = sanitize_input(request.content)
+
     conversation_history = [
         {"role": message.role, "content": message.content} for message in session.messages
     ]
-    conversation_history.append({"role": "user", "content": request.content})
+    conversation_history.append({"role": "user", "content": sanitized_content})
 
     memory_context = await memory_manager.retrieve_memory(
         user_id=str(current_user.user_id),
-        query=request.content,
+        query=sanitized_content,
     )
 
     initial_state = WorkflowState(
-        user_message=request.content,
+        user_message=sanitized_content,
         conversation_history=conversation_history,
         memory_context=memory_context,
         session_id=str(session_id),
@@ -369,6 +387,16 @@ async def send_message_stream(
                     elif node_name == "synthesizer" and node_output.get("final_response"):
                         final_response = node_output["final_response"]
                         yield _sse("synthesizing", {"status": "generating final response"})
+
+                    elif node_name == "escalation" and node_output.get("final_response"):
+                        final_response = node_output["final_response"]
+                        yield _sse(
+                            "escalation",
+                            {
+                                "status": "escalated_to_rm",
+                                "response": final_response,
+                            },
+                        )
 
                     elif node_name == "direct_response" and node_output.get("final_response"):
                         final_response = node_output["final_response"]

@@ -14,6 +14,7 @@ from langgraph.graph import END, StateGraph
 
 from apps.api.config import settings
 from apps.api.logging_config import get_logger
+from apps.api.workflow.escalation import check_escalation, escalation_node
 from apps.api.workflow.executor import executor_node
 from apps.api.workflow.planner import planner_node
 from apps.api.workflow.state import SynthesizerOutput, WorkflowState
@@ -177,23 +178,62 @@ async def direct_response_node(state: WorkflowState) -> dict:
     return {"final_response": response}
 
 
+async def escalation_check_node(state: WorkflowState) -> dict:
+    """Check if the query should be escalated before planning.
+
+    This is a lightweight passthrough node that allows the conditional
+    edge to inspect the user message for escalation patterns.
+
+    Args:
+        state: The current workflow state.
+
+    Returns:
+        An empty dict (no state changes).
+    """
+    return {}
+
+
+def should_escalate(state: WorkflowState) -> str:
+    """Determine whether the query should be escalated to a human RM.
+
+    Args:
+        state: The current workflow state.
+
+    Returns:
+        The name of the next node: 'escalation' or 'planner'.
+    """
+    if check_escalation(state.user_message):
+        return "escalation"
+    return "planner"
+
+
 def build_workflow_graph():  # noqa: ANN201
     """Construct the LangGraph state graph for the customer service workflow.
 
-    The graph follows a plan-and-execute pattern:
-        planner -> [executor (loop) | direct_response] -> synthesizer -> END
+    The graph follows a plan-and-execute pattern with an escalation bypass:
+        escalation_check -> [escalation -> END | planner -> [executor (loop) | direct_response] -> synthesizer -> END]
 
     Returns:
         The compiled LangGraph StateGraph ready for invocation.
     """
     graph = StateGraph(WorkflowState)
 
+    graph.add_node("escalation_check", escalation_check_node)
+    graph.add_node("escalation", escalation_node)
     graph.add_node("planner", planner_node)
     graph.add_node("executor", executor_node)
     graph.add_node("synthesizer", synthesizer_node)
     graph.add_node("direct_response", direct_response_node)
 
-    graph.set_entry_point("planner")
+    graph.set_entry_point("escalation_check")
+
+    graph.add_conditional_edges(
+        "escalation_check",
+        should_escalate,
+        {"escalation": "escalation", "planner": "planner"},
+    )
+
+    graph.add_edge("escalation", END)
 
     graph.add_conditional_edges(
         "planner",

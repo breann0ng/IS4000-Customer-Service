@@ -8,7 +8,7 @@ Run standalone:
 
 import random
 
-from mocks.base import create_mock_mcp_app
+from mcp_servers.base import create_mock_mcp_app
 
 MOCK_FX_RATES = {
     "EUR/CHF": {"bid": "0.9412", "ask": "0.9418", "change": "-0.15%"},

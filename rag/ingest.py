@@ -1,15 +1,14 @@
-"""Document ingestion pipeline for processing and indexing documents into ChromaDB.
+"""Document ingestion pipeline for processing and indexing documents into PostgreSQL/pgvector.
 
 Supports PDF and DOCX files from the docs/ directory. Uses a local
-HuggingFace embedding model and cosine similarity search.
+HuggingFace embedding model and cosine similarity search via pgvector.
 """
 
 import os
 import uuid
 
-import chromadb
-from chromadb.config import Settings as ChromaSettings
 from sentence_transformers import SentenceTransformer
+from sqlalchemy import create_engine, text
 
 from rag.config import pipeline_settings
 
@@ -48,14 +47,14 @@ def extract_text_from_docx(file_path: str) -> str:
 
 
 def chunk_text(
-    text: str,
+    text_content: str,
     chunk_size: int = pipeline_settings.chunk_size,
     chunk_overlap: int = pipeline_settings.chunk_overlap,
 ) -> list[str]:
     """Split text into overlapping chunks of approximately equal size.
 
     Args:
-        text: The full text to split into chunks.
+        text_content: The full text to split into chunks.
         chunk_size: The target number of characters per chunk.
         chunk_overlap: The number of overlapping characters between consecutive chunks.
 
@@ -64,11 +63,11 @@ def chunk_text(
     """
     chunks = []
     start = 0
-    text_length = len(text)
+    text_length = len(text_content)
 
     while start < text_length:
         end = start + chunk_size
-        chunk = text[start:end]
+        chunk = text_content[start:end]
         if chunk.strip():
             chunks.append(chunk.strip())
         start = end - chunk_overlap
@@ -104,15 +103,15 @@ def load_documents(docs_directory: str) -> list[dict[str, str]]:
 
         try:
             if file_extension == ".pdf":
-                text = extract_text_from_pdf(file_path)
+                extracted_text = extract_text_from_pdf(file_path)
             elif file_extension == ".docx":
-                text = extract_text_from_docx(file_path)
+                extracted_text = extract_text_from_docx(file_path)
             else:
                 continue
 
-            if text.strip():
-                documents.append({"filename": filename, "text": text})
-                print(f"  Extracted {len(text)} characters")
+            if extracted_text.strip():
+                documents.append({"filename": filename, "text": extracted_text})
+                print(f"  Extracted {len(extracted_text)} characters")
             else:
                 print("  Skipped (no text content)")
         except Exception as error:
@@ -123,34 +122,29 @@ def load_documents(docs_directory: str) -> list[dict[str, str]]:
 
 def run_ingestion(
     docs_directory: str = pipeline_settings.docs_directory,
-    chroma_persist_directory: str = pipeline_settings.chroma_persist_directory,
-    collection_name: str = pipeline_settings.chroma_collection_name,
+    database_url: str = pipeline_settings.database_url,
     embedding_model_name: str = pipeline_settings.embedding_model_name,
     chunk_size: int = pipeline_settings.chunk_size,
     chunk_overlap: int = pipeline_settings.chunk_overlap,
-    top_k: int = pipeline_settings.top_k,
 ) -> None:
     """Execute the full document ingestion pipeline.
 
     Loads documents from disk, chunks them, generates embeddings using a local
-    HuggingFace model, and stores them in ChromaDB with cosine similarity.
+    HuggingFace model, and stores them in PostgreSQL via pgvector.
 
     Args:
         docs_directory: Path to the directory containing source documents.
-        chroma_persist_directory: Path where ChromaDB persists its data.
-        collection_name: The ChromaDB collection name to store embeddings in.
+        database_url: Sync PostgreSQL connection string.
         embedding_model_name: The HuggingFace model identifier for embeddings.
         chunk_size: The target character count per text chunk.
         chunk_overlap: The overlap in characters between consecutive chunks.
-        top_k: The default number of results for similarity search (stored as metadata).
     """
     print("=" * 60)
-    print("Document Ingestion Pipeline")
+    print("Document Ingestion Pipeline (pgvector)")
     print("=" * 60)
     print(f"Documents directory: {docs_directory}")
     print(f"Embedding model: {embedding_model_name}")
     print(f"Chunk size: {chunk_size}, Overlap: {chunk_overlap}")
-    print(f"Default top_k: {top_k}")
     print()
 
     documents = load_documents(docs_directory)
@@ -197,40 +191,48 @@ def run_ingestion(
     embeddings = embedding_model.encode(all_chunks, show_progress_bar=True).tolist()
     print(f"Generated {len(embeddings)} embedding(s)")
 
-    print(f"\nInitializing ChromaDB at: {chroma_persist_directory}")
-    os.makedirs(chroma_persist_directory, exist_ok=True)
-    chroma_client = chromadb.PersistentClient(
-        path=chroma_persist_directory,
-        settings=ChromaSettings(anonymized_telemetry=False),
-    )
+    print(f"\nConnecting to PostgreSQL: {database_url}")
+    db_engine = create_engine(database_url)
 
-    existing_collections = [collection.name for collection in chroma_client.list_collections()]
-    if collection_name in existing_collections:
-        chroma_client.delete_collection(collection_name)
-        print(f"Deleted existing collection: {collection_name}")
+    with db_engine.begin() as connection:
+        connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
 
-    collection = chroma_client.create_collection(
-        name=collection_name,
-        metadata={"hnsw:space": "cosine"},
-    )
+        # Clear existing documents
+        connection.execute(text("DELETE FROM documents"))
+        print("Cleared existing documents")
 
-    chunk_ids = [str(uuid.uuid4()) for _ in all_chunks]
+        # Insert in batches
+        batch_size = 100
+        for batch_start in range(0, len(all_chunks), batch_size):
+            batch_end = min(batch_start + batch_size, len(all_chunks))
+            for i in range(batch_start, batch_end):
+                connection.execute(
+                    text(
+                        "INSERT INTO documents "
+                        "(document_id, content, source, chunk_index, total_chunks, metadata, embedding) "
+                        "VALUES (:id, :content, :source, :chunk_index, :total_chunks, :metadata, :embedding)"
+                    ),
+                    {
+                        "id": str(uuid.uuid4()),
+                        "content": all_chunks[i],
+                        "source": all_metadata[i]["filename"],
+                        "chunk_index": all_metadata[i]["chunk_index"],
+                        "total_chunks": all_metadata[i]["total_chunks"],
+                        "metadata": "{}",
+                        "embedding": str(embeddings[i]),
+                    },
+                )
+            print(f"  Indexed batch {batch_start}-{batch_end}")
 
-    batch_size = 100
-    for batch_start in range(0, len(all_chunks), batch_size):
-        batch_end = min(batch_start + batch_size, len(all_chunks))
-        collection.add(
-            ids=chunk_ids[batch_start:batch_end],
-            documents=all_chunks[batch_start:batch_end],
-            embeddings=embeddings[batch_start:batch_end],
-            metadatas=all_metadata[batch_start:batch_end],
-        )
-        print(f"  Indexed batch {batch_start}-{batch_end}")
+    # Verify count
+    with db_engine.connect() as connection:
+        result = connection.execute(text("SELECT COUNT(*) FROM documents"))
+        count = result.scalar()
 
-    print(
-        f"\nIngestion complete. Collection '{collection_name}' has {collection.count()} documents."
-    )
+    print(f"\nIngestion complete. {count} document chunks stored in PostgreSQL.")
     print("=" * 60)
+
+    db_engine.dispose()
 
 
 if __name__ == "__main__":

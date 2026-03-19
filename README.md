@@ -28,19 +28,22 @@ Client (React) ──> FastAPI ──> LangGraph Workflow
                      │    └──────────────┬──────────────────┘
                      │                   │
                      │         MCP Servers (Streamable HTTP)
-                     │         ├── Banking Ops    :9001 (mock)
-                     │         ├── Knowledge      :9002 (mock)
-                     │         ├── Service Wkflow :9003 (mock)
-                     │         └── RAG Server     :9004 (real ChromaDB)
+                     │         ├── Banking Ops    :9001
+                     │         ├── Knowledge      :9002
+                     │         ├── Service Wkflow :9003
+                     │         └── RAG Server     :9004
                      │
-              ┌──────┼──────────┐
-           Postgres  Redis    ChromaDB
-           (sessions)(mem0)   (RAG vectors)
+              ┌──────┼──────────────────┐
+           Postgres  Redis           LangSmith
+        (sessions,   (mem0)           (tracing)
+        pgvector RAG)
 ```
 
-**Planner** analyzes each client query using Gemini structured output and routes to one or more specialist agents. **Executor** dispatches steps sequentially to the selected agents, each connected to MCP servers via Streamable HTTP. **Synthesizer** combines all agent outputs into a single polished response with follow-up suggestions and escalation flags.
+**Escalation Check** inspects queries for high-distress or advisory intents (e.g., "What should I invest in?"), immediately bypassing the LLM workflow to return a static Relationship Manager response. All inputs are sanitized by the **Security Middleware**, which masks PII (NRIC, account numbers) and detects prompt injection attempts before they reach the LLM.
 
-All LLM calls use **Gemini structured outputs** (Pydantic models enforced at the API level) for reliable parsing. (LLM structured outputs - let pydantic to do the checks for you)
+**Planner** analyzes the remaining client queries using Gemini structured output and routes to one or more specialist agents. **Executor** dispatches steps sequentially to the selected agents, each connected to MCP servers via Streamable HTTP. **Synthesizer** combines all agent outputs into a single polished response with follow-up suggestions and escalation flags.
+
+All LLM calls use **Gemini structured outputs** (Pydantic models enforced at the API level) for reliable parsing.
 
 ## Specialist Agents
 
@@ -69,6 +72,7 @@ All LLM calls use **Gemini structured outputs** (Pydantic models enforced at the
 │   │   │   ├── executor.py     Agent dispatch loop - Node(s)
 │   │   │   ├── graph.py        StateGraph definition + synthesizer (Defines your graph/flow and Node) - should separate but not needed
 │   │   │   └── state.py        Pydantic state/output models
+│   │   ├── security/           Input guards (PII masking, prompt injection)
 │   │   ├── config.py           Pydantic Settings (.env)
 │   │   ├── logging_config.py   structlog + OpenTelemetry trace context
 │   │   └── main.py             App entrypoint + Scalar API docs
@@ -83,13 +87,13 @@ All LLM calls use **Gemini structured outputs** (Pydantic models enforced at the
 │           └── pages/           LoginPage, ChatPage
 ├── rag/                        RAG pipeline + server
 │   ├── config.py               Pipeline settings
-│   ├── ingest.py               PDF/DOCX → ChromaDB (cosine similarity)
-│   └── server.py               MCP server that queries ChromaDB for top-k chunks
-├── mocks/                      Mock MCP servers for local development
+│   ├── ingest.py               PDF/DOCX → PostgreSQL pgvector (cosine similarity)
+│   └── server.py               MCP server that queries pgvector for top-k chunks
+├── mcp_servers/                MCP servers for local development (currently mocks)
 │   ├── base.py                 Shared JSON-RPC handler factory
-│   ├── banking_ops_server.py   Mock banking ops + wealth advisory + lending (:9001)
-│   ├── knowledge_server.py     Mock private banking + compliance + knowledge (:9002)
-│   └── service_workflow_server.py  Mock client services + FX treasury (:9003)
+│   ├── banking_ops_server.py   Banking ops + wealth advisory + lending (:9001)
+│   ├── knowledge_server.py     Private banking + compliance + knowledge (:9002)
+│   └── service_workflow_server.py  Client services + FX treasury (:9003)
 ├── docs/                       Source documents for RAG (place PDFs/DOCX here)
 ├── models/                     Auto-downloaded embedding models (gitignored)
 ├── tests/
@@ -271,9 +275,9 @@ poe docker-up
 | Frontend | http://localhost:3000 |
 | Backend API | http://localhost:8000 |
 | Scalar API Reference | http://localhost:8000/docs |
-| Mock Banking Ops MCP | http://localhost:9001 |
-| Mock Knowledge MCP | http://localhost:9002 |
-| Mock Service Workflow MCP | http://localhost:9003 |
+| Banking Ops MCP | http://localhost:9001 |
+| Knowledge MCP | http://localhost:9002 |
+| Service Workflow MCP | http://localhost:9003 |
 | RAG MCP Server | http://localhost:9004 |
 
 Tear down (including volumes):
@@ -295,7 +299,7 @@ This will:
 2. Chunk the text (configurable `chunk_size` and `chunk_overlap`)
 3. Download the embedding model on first run (saved to `models/`, no HuggingFace token required)
 4. Generate embeddings using `sentence-transformers/all-MiniLM-L6-v2`
-5. Store vectors in ChromaDB with cosine similarity search
+5. Store vectors in PostgreSQL using the `pgvector` extension with cosine similarity search
 
 > PyTorch is configured to install from the CPU-only index via `pyproject.toml` (`[tool.uv.sources]`), avoiding the ~5GB CUDA download.
 
@@ -306,7 +310,7 @@ Configure via environment variables or `.env`:
 | Variable | Default | Description |
 |---|---|---|
 | `EMBEDDING_MODEL_NAME` | `sentence-transformers/all-MiniLM-L6-v2` | HuggingFace embedding model |
-| `CHROMA_PERSIST_DIRECTORY` | `./data/chroma` | ChromaDB storage path |
+| `DATABASE_URL` | `postgresql+psycopg2://...` | PostgreSQL connection string |
 | `RAG_TOP_K` | `5` | Number of chunks to retrieve per query |
 
 ## Development Tasks
@@ -373,6 +377,8 @@ The `poe check` task includes an OpenAPI drift check that fails if the committed
 | `MCP_SERVICE_WORKFLOW_URL` | No | `http://localhost:9003/mcp` | Service workflow MCP server |
 | `MCP_RAG_SERVER_URL` | No | `http://localhost:9004/mcp` | RAG retrieval MCP server |
 | `RAG_TOP_K` | No | `5` | Number of RAG chunks to retrieve |
+| `LANGSMITH_API_KEY` | No | — | LangSmith API key for observability |
+| `LANGSMITH_PROJECT` | No | `ubs-chatbot` | LangSmith project name |
 
 ## Tech Stack
 

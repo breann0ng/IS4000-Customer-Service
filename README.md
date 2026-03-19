@@ -212,8 +212,10 @@ Edit `.env` and optionally set your `GEMINI_API_KEY`. Without it the chatbot run
 
 ### 3. Start infrastructure (Postgres + Redis)
 
+*If you are updating from an older architecture, ensure you run with \`--build\` so the new PostgreSQL \`pgvector\` image is pulled.*
+
 ```bash
-docker compose up -d postgres redis
+docker compose up -d --build postgres redis
 ```
 
 ### 4. Install frontend dependencies
@@ -224,17 +226,25 @@ pnpm install
 cd ../..
 ```
 
-### 5. Start mock MCP servers + RAG server
+### 5. Ingest RAG Documents
+
+You must ingest the sample documents into the new PostgreSQL vector store before querying them:
 
 ```bash
-# terminal 1: mock MCP servers (banking ops, knowledge, service workflow)
+poe rag-ingestion
+```
+
+### 6. Start MCP servers + RAG server
+
+```bash
+# terminal 1: MCP servers (banking ops, knowledge, service workflow)
 poe mock-mcp
 
-# terminal 2: RAG server (queries ChromaDB)
+# terminal 2: RAG server (queries PostgreSQL pgvector)
 poe rag-server
 ```
 
-### 6. Run the backend
+### 7. Run the backend
 
 ```bash
 # terminal 3
@@ -243,7 +253,7 @@ poe dev-api
 
 The API is available at `http://localhost:8000`. Scalar API reference at `http://localhost:8000/docs`.
 
-### 7. Run the frontend
+### 8. Run the frontend
 
 ```bash
 # terminal 4
@@ -252,7 +262,7 @@ poe dev-ui
 
 The UI is available at `http://localhost:5173`. The Vite dev server proxies `/api` requests to the backend.
 
-### 8. Login
+### 9. Login
 
 Use one of the mock LDAP credentials:
 

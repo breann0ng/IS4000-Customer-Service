@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     """Central configuration for the customer service chatbot backend."""
 
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.0-flash-lite"
+    gemini_model: str = "gemini-3.0-flash"
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/chatbot"
     redis_url: str = "redis://localhost:6379/0"
 

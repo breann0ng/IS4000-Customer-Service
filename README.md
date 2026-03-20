@@ -20,7 +20,6 @@ AI-powered customer service chatbot for UBS Wealth Management, serving High Net 
 - [Sample Queries](#sample-queries)
 - [Future Work](#future-work)
 
-
 ## Architecture
 
 ```
@@ -66,14 +65,14 @@ All LLM calls use **Gemini structured outputs** (Pydantic models) for reliable p
 
 ## Specialist Agents
 
-| Agent | MCP Server | Responsibilities |
-|---|---|---|
-| **Wealth Advisory** | Banking Ops (:9001) | Portfolio performance, investment strategy, market insights, asset allocation, estate planning |
-| **Private Banking** | Knowledge (:9002) | Account operations, fund transfers, card services, statements, multi-currency management |
-| **Client Services** | Service Workflow (:9003) | Onboarding, KYC/AML, document requests, appointments, escalations (uses RAG) |
-| **Lending & Credit** | Banking Ops (:9001) | Lombard lending, mortgages, credit lines, structured lending, margin facilities |
-| **Compliance & Tax** | Knowledge (:9002) | CRS/FATCA reporting, cross-border tax, regulatory updates, documentation (uses RAG) |
-| **FX & Treasury** | Service Workflow (:9003) | Foreign exchange, currency hedging, FX derivatives, treasury management |
+| Agent                | MCP Server               | Responsibilities                                                                               |
+| -------------------- | ------------------------ | ---------------------------------------------------------------------------------------------- |
+| **Wealth Advisory**  | Banking Ops (:9001)      | Portfolio performance, investment strategy, market insights, asset allocation, estate planning |
+| **Private Banking**  | Knowledge (:9002)        | Account operations, fund transfers, card services, statements, multi-currency management       |
+| **Client Services**  | Service Workflow (:9003) | Onboarding, KYC/AML, document requests, appointments, escalations (uses RAG)                   |
+| **Lending & Credit** | Banking Ops (:9001)      | Lombard lending, mortgages, credit lines, structured lending, margin facilities                |
+| **Compliance & Tax** | Knowledge (:9002)        | CRS/FATCA reporting, cross-border tax, regulatory updates, documentation (uses RAG)            |
+| **FX & Treasury**    | Service Workflow (:9003) | Foreign exchange, currency hedging, FX derivatives, treasury management                        |
 
 ## Project Structure
 
@@ -156,42 +155,43 @@ poe docker-up
 
 ## Development Tasks
 
-| Task | Description |
-|---|---|
-| `poe dev-api` | Start the FastAPI backend with hot reload |
-| `poe dev-ui` | Start the React frontend dev server |
-| `poe generate-api-client` | Export OpenAPI schema and regenerate TypeScript client |
-| `poe check` | Format, lint, type-check Python code, and check for OpenAPI drift |
-| `poe mock-mcp` | Start all 3 mock MCP servers (:9001, :9002, :9003) |
-| `poe rag-server` | Start the RAG MCP server querying pgvector on port 9004 |
-| `poe rag-ingestion` | Ingest documents from docs/ into pgvector |
+| Task                      | Description                                                       |
+| ------------------------- | ----------------------------------------------------------------- |
+| `poe dev-api`             | Start the FastAPI backend with hot reload                         |
+| `poe dev-ui`              | Start the React frontend dev server                               |
+| `poe generate-api-client` | Export OpenAPI schema and regenerate TypeScript client            |
+| `poe check`               | Format, lint, type-check Python code, and check for OpenAPI drift |
+| `poe mock-mcp`            | Start all 3 mock MCP servers (:9001, :9002, :9003)                |
+| `poe rag-server`          | Start the RAG MCP server querying pgvector on port 9004           |
+| `poe rag-ingestion`       | Ingest documents from docs/ into pgvector                         |
 
 ## Environment Variables
 
-| Variable | Default | Description |
-|---|---|---|
-| `GEMINI_API_KEY` | — | Google Gemini API key |
-| `GEMINI_MODEL` | `gemini-3.1-pro-preview` | Gemini model identifier |
-| `DATABASE_URL` | `postgresql+asyncpg://...` | Postgres connection string |
-| `REDIS_URL` | `redis://localhost:6379/0` | Redis connection string |
-| `MCP_RAG_SERVER_URL` | `http://localhost:9004/mcp` | RAG retrieval MCP server |
+| Variable             | Default                         | Description                |
+| -------------------- | ------------------------------- | -------------------------- |
+| `GEMINI_API_KEY`     | —                               | Google Gemini API key      |
+| `GEMINI_MODEL`       | `gemini-3.1-flash-lite-preview` | Gemini model identifier    |
+| `DATABASE_URL`       | `postgresql+asyncpg://...`      | Postgres connection string |
+| `REDIS_URL`          | `redis://localhost:6379/0`      | Redis connection string    |
+| `MCP_RAG_SERVER_URL` | `http://localhost:9004/mcp`     | RAG retrieval MCP server   |
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| LLM | Google Gemini 3.1 (structured outputs) |
-| Orchestration | LangGraph (plan-and-execute) |
-| Backend | FastAPI, SQLAlchemy (async) |
-| Frontend | React 19, TypeScript, Vite, Radix UI |
-| Database | PostgreSQL 16 + **pgvector** |
-| Memory | mem0 + Redis |
-| Embeddings | sentence-transformers (local) |
-| Integration | MCP (Streamable HTTP) |
+| Layer         | Technology                             |
+| ------------- | -------------------------------------- |
+| LLM           | Google Gemini 3.1 (structured outputs) |
+| Orchestration | LangGraph (plan-and-execute)           |
+| Backend       | FastAPI, SQLAlchemy (async)            |
+| Frontend      | React 19, TypeScript, Vite, Radix UI   |
+| Database      | PostgreSQL 16 + **pgvector**           |
+| Memory        | mem0 + Redis                           |
+| Embeddings    | sentence-transformers (local)          |
+| Integration   | MCP (Streamable HTTP)                  |
 
 ## Streaming & Thinking Steps
 
 The UI streams responses via SSE, showing intermediate thinking steps:
+
 1. **`planning`** — Planner's reasoning and step list.
 2. **`agent_step`** — Specialist agent results as they complete.
 3. **`synthesizing`** — Synthesizer composing the final response.

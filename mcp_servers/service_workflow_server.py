@@ -70,6 +70,25 @@ def handle_client_services(params: dict) -> dict:
         A dictionary with the mock response.
     """
     task = params.get("task", "")
+
+    # Check if this is a greeting task
+    if any(greet in task.lower() for greet in ["greeting", "welcome", "hello", "hi"]):
+        return {
+            "response": (
+                "Good day. It is a pleasure to assist you. As your premium wealth management "
+                "assistant, I am dedicated to providing you with seamless access to our global "
+                "capabilities.\n\n"
+                "I can assist you with a wide range of services today, including:\n\n"
+                "1. **Portfolio Performance & Insights**: A comprehensive review of your current "
+                "asset allocation and YTD performance.\n"
+                "2. **Account Balances & Transactions**: Securely check your multi-currency "
+                "positions or manage global transfers.\n"
+                "3. **Lending & Credit Options**: Explore bespoke Lombard lending solutions "
+                "designed to optimize your liquidity.\n\n"
+                "How may I be of service to you today?"
+            )
+        }
+
     reference_number = f"CS-{random.randint(100000, 999999)}"
     retrieved = params.get("retrieved_documents", "")
     policy_note = ""

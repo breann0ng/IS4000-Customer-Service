@@ -191,8 +191,9 @@ def run_ingestion(
     embeddings = embedding_model.encode(all_chunks, show_progress_bar=True).tolist()
     print(f"Generated {len(embeddings)} embedding(s)")
 
-    print(f"\nConnecting to PostgreSQL: {database_url}")
-    db_engine = create_engine(database_url)
+    sync_database_url = database_url.replace("+asyncpg", "+psycopg2")
+    print(f"\nConnecting to PostgreSQL: {sync_database_url}")
+    db_engine = create_engine(sync_database_url)
 
     with db_engine.begin() as connection:
         connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
@@ -209,8 +210,10 @@ def run_ingestion(
                 connection.execute(
                     text(
                         "INSERT INTO documents "
-                        "(document_id, content, source, chunk_index, total_chunks, metadata, embedding) "
-                        "VALUES (:id, :content, :source, :chunk_index, :total_chunks, :metadata, :embedding)"
+                        "(document_id, content, source, chunk_index, "
+                        "total_chunks, metadata, embedding) "
+                        "VALUES (:id, :content, :source, :chunk_index, "
+                        ":total_chunks, :metadata, :embedding)"
                     ),
                     {
                         "id": str(uuid.uuid4()),

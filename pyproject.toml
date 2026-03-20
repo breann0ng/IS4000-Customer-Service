@@ -33,6 +33,8 @@ dependencies = [
     "poethepoet>=0.29.0",
     "ruff>=0.7.0",
     "torch>=2.10.0",
+    "psycopg2-binary>=2.9.11",
+    "redisvl>=0.16.0",
 ]
 
 [[tool.uv.index]]

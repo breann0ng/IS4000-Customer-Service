@@ -16,7 +16,7 @@ services:
       retries: 5
 
   redis:
-    image: redis:7-alpine
+    image: redis/redis-stack-server:latest
     ports:
       - "6379:6379"
     volumes:
@@ -31,7 +31,7 @@ services:
     build:
       context: .
       target: backend
-    command: ["uv", "run", "uvicorn", "mcp_servers.banking_ops_server:app", "--host", "0.0.0.0", "--port", "9001"]
+    command: ["uv", "run", "uvicorn", "mcp_servers.banking_ops_server:app", "--host", "0.0.0.0", "--port", "9001", "--reload"]
     ports:
       - "9001:9001"
     volumes:
@@ -41,7 +41,7 @@ services:
     build:
       context: .
       target: backend
-    command: ["uv", "run", "uvicorn", "mcp_servers.knowledge_server:app", "--host", "0.0.0.0", "--port", "9002"]
+    command: ["uv", "run", "uvicorn", "mcp_servers.knowledge_server:app", "--host", "0.0.0.0", "--port", "9002", "--reload"]
     ports:
       - "9002:9002"
     volumes:
@@ -51,16 +51,34 @@ services:
     build:
       context: .
       target: backend
-    command: ["uv", "run", "uvicorn", "mcp_servers.service_workflow_server:app", "--host", "0.0.0.0", "--port", "9003"]
+    command: ["uv", "run", "uvicorn", "mcp_servers.service_workflow_server:app", "--host", "0.0.0.0", "--port", "9003", "--reload"]
     ports:
       - "9003:9003"
     volumes:
       - ./mcp_servers:/app/mcp_servers
 
+  rag-server:
+    build:
+      context: .
+      target: backend
+    command: ["uv", "run", "uvicorn", "rag.server:app", "--host", "0.0.0.0", "--port", "9004", "--reload"]
+    ports:
+      - "9004:9004"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@postgres:5432/chatbot
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./rag:/app/rag
+
   backend:
     build:
       context: .
       target: backend
+    command: ["uv", "run", "uvicorn", "apps.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     ports:
       - "8000:8000"
     env_file:

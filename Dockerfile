@@ -15,7 +15,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 COPY apps/ apps/
 COPY rag/ rag/
-COPY mocks/ mocks/
+COPY mcp_servers/ mcp_servers/
 COPY .env* ./
 
 EXPOSE 8000

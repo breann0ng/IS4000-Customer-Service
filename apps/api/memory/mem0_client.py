@@ -94,7 +94,15 @@ class MemoryManager:
         """
         try:
             client = self._get_client()
-            results = client.search(query=query, user_id=user_id, limit=10)
+            search_response = client.search(query=query, user_id=user_id, limit=10)
+
+            # Handle potential dict wrapper from mem0
+            results = (
+                search_response.get("results", [])
+                if isinstance(search_response, dict)
+                else search_response
+            )
+
             logger.info("memory_retrieved", user_id=user_id, result_count=len(results))
             return results
         except Exception:

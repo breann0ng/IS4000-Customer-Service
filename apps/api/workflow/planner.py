@@ -51,9 +51,17 @@ Available agents:
   and cross-currency payment flow optimization
 
 For each query, determine:
-1. Whether it can be answered directly (simple greetings, clarifications) or requires agents
+1. Whether it requires specialized agent routing.
 2. Which agents are needed and in what order (use multiple when the query spans domains)
 3. What specific task each agent should perform
+
+For greetings (e.g., "Hello", "Hi"):
+- Set `requires_agent` to `false`.
+- Provide a warm, premium welcome in `direct_response` and introduce our services.
+- Explicitly mention the 3 most common use cases:
+  1. Portfolio Performance & Insights (Wealth Advisory)
+  2. Account Balances & Transactions (Private Banking)
+  3. Lombard Lending & Credit Options (Lending & Credit)
 """
 
 
@@ -88,6 +96,10 @@ async def planner_node(state: WorkflowState) -> dict:
     """
     logger.info("planner_node_start", user_message=state.user_message[:100])
 
+    # Simple heuristic for very short greetings to save LLM tokens if possible
+    # but the prompt already handles it, so we let the structured LLM handle it
+    # to ensure the direct_response matches the UBS tone.
+
     structured_llm = _build_planner_llm()
 
     memory_summary = ""
@@ -115,15 +127,6 @@ async def planner_node(state: WorkflowState) -> dict:
         f"{memory_summary}"
         f"\n\nProduce a plan to handle this query."
     )
-
-    if settings.is_llm_mock_mode:
-        logger.info("planner_mock_mode", reason="no gemini api key configured")
-        plan = PlannerOutput(
-            reasoning="[MOCK] Routing to client_services as demonstration.",
-            steps=[AgentStep(agent="client_services", task=state.user_message)],
-            requires_agent=True,
-        )
-        return {"plan": plan, "current_step_index": 0}
 
     try:
         plan = await structured_llm.ainvoke(

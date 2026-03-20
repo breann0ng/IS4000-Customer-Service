@@ -8,8 +8,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from apps.api.security.input_guard import check_prompt_injection, sanitize_input
-
 from apps.api.auth.routes import get_current_user
 from apps.api.chat.models import (
     ChatCompletionResponse,
@@ -32,6 +30,7 @@ from apps.api.database.connection import get_database_session
 from apps.api.database.models import User
 from apps.api.logging_config import get_logger
 from apps.api.memory.mem0_client import memory_manager
+from apps.api.security.input_guard import check_prompt_injection, sanitize_input
 from apps.api.workflow.graph import run_workflow, workflow_graph
 from apps.api.workflow.state import WorkflowState
 
@@ -400,15 +399,17 @@ async def send_message_stream(
 
                     elif node_name == "direct_response" and node_output.get("final_response"):
                         final_response = node_output["final_response"]
+                        yield _sse("synthesizing", {"status": "generating final response"})
 
                     # Build trace from latest state
-                    if node_output.get("plan"):
-                        plan_obj = node_output["plan"]
-                        trace_data = trace_data or {}
-                        trace_data["plan"] = plan_obj.model_dump()
-                    if node_output.get("agent_outputs"):
-                        trace_data = trace_data or {}
-                        trace_data["agent_outputs"] = node_output["agent_outputs"]
+                    if isinstance(node_output, dict):
+                        if node_output.get("plan"):
+                            plan_obj = node_output["plan"]
+                            trace_data = trace_data or {}
+                            trace_data["plan"] = plan_obj.model_dump()
+                        if node_output.get("agent_outputs"):
+                            trace_data = trace_data or {}
+                            trace_data["agent_outputs"] = node_output["agent_outputs"]
 
         except Exception:
             logger.exception("stream_workflow_failed", session_id=str(session_id))

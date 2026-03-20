@@ -70,5 +70,7 @@ class WorkflowState(BaseModel):
         description="Collected outputs from each agent execution",
     )
     final_response: str = Field(default="", description="The synthesized final response")
-    is_escalated: bool = Field(default=False, description="Whether the query was escalated to a human RM")
+    is_escalated: bool = Field(
+        default=False, description="Whether the query was escalated to a human RM"
+    )
     error: str | None = Field(default=None, description="Error message if workflow fails")

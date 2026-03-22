@@ -524,6 +524,19 @@
             "type": "string",
             "title": "Content"
           },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata",
+            "description": "Structured metadata for rich UI rendering"
+          },
           "context": {
             "anyOf": [
               {

@@ -100,6 +100,15 @@ async def planner_node(state: WorkflowState) -> dict:
     # but the prompt already handles it, so we let the structured LLM handle it
     # to ensure the direct_response matches the UBS tone.
 
+    if settings.is_llm_mock_mode:
+        logger.info("planner_mock_mode")
+        plan = PlannerOutput(
+            reasoning="Query requires client services support.",
+            steps=[AgentStep(agent="client_services", task=state.user_message)],
+            requires_agent=True,
+        )
+        return {"plan": plan, "current_step_index": 0}
+
     structured_llm = _build_planner_llm()
 
     memory_summary = ""

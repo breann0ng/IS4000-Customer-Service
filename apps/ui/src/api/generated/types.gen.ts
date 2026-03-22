@@ -58,6 +58,14 @@ export type ChatMessageResponse = {
      */
     content: string;
     /**
+     * Metadata
+     *
+     * Structured metadata for rich UI rendering
+     */
+    metadata?: {
+        [key: string]: unknown;
+    } | null;
+    /**
      * Context
      */
     context?: {

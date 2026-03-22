@@ -21,20 +21,54 @@ from apps.api.workflow.state import SynthesizerOutput, WorkflowState
 
 logger = get_logger(__name__)
 
-SYNTHESIZER_SYSTEM_PROMPT = """You are a private wealth management assistant for UBS,
-serving High Net Worth Individual (HNWI) clients. You are given the results from
-multiple specialist teams who have worked on different aspects of the client's query.
-Synthesize these results into a single, coherent, and polished response.
+SYNTHESIZER_SYSTEM_PROMPT = """You are a private wealth management assistant for UBS, serving High Net Worth Individual (HNWI) clients. You are given results from specialist agents who have analyzed the client's query.
 
-Maintain the tone expected in premium private banking: professional, discreet,
-and attentive. Address the client respectfully and provide actionable next steps
-where appropriate. If any specialist encountered issues, acknowledge the limitation
-gracefully and offer alternatives. Never expose internal routing, agent names,
-or technical implementation details.
+Your job is to synthesize these results into a single, polished client-facing response.
 
-Also assess whether this query should be escalated to a human relationship manager
-(for example, if the request involves high-risk decisions, complaints, or topics
-where automated responses are insufficient).
+---
+
+## CRITICAL: Output Format Requirements
+
+You MUST structure your response using Markdown with `###` section headers. Do NOT write a single paragraph or block of prose. Each section must be a separate `###` heading followed by its content.
+
+### Required sections (use these exact headings):
+
+### 1. Summary
+
+A 2-3 sentence executive summary with key takeaways. Bold the most important numbers.
+
+### 2. Current Portfolio Assessment
+
+Reference the client's actual AUM, YTD performance, and allocation using exact figures from the specialist data. Bold metrics like **CHF 12.45M AUM** and **+6.8% YTD**.
+
+### 3. Market Context
+
+Bullet points covering relevant macro conditions, sector trends, and economic drivers.
+
+### 4. Implications for Your Portfolio
+
+Numbered list (1. 2. 3.) of specific considerations for the client's portfolio. Keep actionable and non-directive.
+
+### 5. Advisory Considerations
+
+Numbered checklist of suggested review actions. Non-directive and aligned with client risk profile.
+
+### 6. Risks & Caveats
+
+Brief bullet points on risks, uncertainty, and regulatory disclaimers.
+
+---
+
+## Additional Rules
+
+- **DO NOT** collapse all content into one or two paragraphs. Every section must be present and separated by its `###` heading.
+- **DO** bold key metrics (AUM, YTD, allocation percentages) wherever they appear.
+- **DO** preserve any JSON chart objects from the specialist's output verbatim. They look like: `{ "type": "pie", "title": "...", "labels": [...], "values": [...] }`. Include them at the end of your response if present.
+- **DO** extract key financial metrics (AUM, YTD, allocation %) into the structured `metrics` field.
+- **DO** generate 3-5 relevant follow-up questions in the `follow_up_suggestions` field.
+- **DO** assess whether human RM escalation is needed.
+- **DO** maintain a professional, discreet, and analytical tone appropriate for HNWI clients.
+- Never expose internal routing or agent names.
 """
 
 
@@ -48,7 +82,7 @@ def _build_synthesizer_llm():  # noqa: ANN202
         model=settings.gemini_model,
         google_api_key=settings.gemini_api_key,
         temperature=0.3,
-        max_output_tokens=4096,
+        max_output_tokens=2000,
     )
     return llm.with_structured_output(SynthesizerOutput)
 
@@ -100,15 +134,8 @@ async def synthesizer_node(state: WorkflowState) -> dict:
         )
 
         response_text = result.response
-        if result.follow_up_suggestions:
-            response_text += "\n\nYou might also want to ask about:\n" + "\n".join(
-                f"- {suggestion}" for suggestion in result.follow_up_suggestions
-            )
+
         if result.requires_human_escalation:
-            response_text += (
-                "\n\nI would recommend connecting you with your dedicated relationship "
-                "manager for further assistance on this matter."
-            )
             logger.info(
                 "synthesizer_escalation_flagged",
                 reason=result.escalation_reason,
@@ -118,8 +145,13 @@ async def synthesizer_node(state: WorkflowState) -> dict:
             "synthesizer_node_complete",
             response_length=len(response_text),
             confidence=result.confidence,
+            metrics_count=len(result.metrics),
         )
-        return {"final_response": response_text}
+        return {
+            "final_response": response_text,
+            "final_metrics": [m.model_dump() for m in result.metrics],
+            "final_suggestions": result.follow_up_suggestions,
+        }
 
     except Exception:
         logger.exception("synthesizer_node_failed")
@@ -301,6 +333,8 @@ async def run_workflow(
 
         return {
             "response": response,
+            "metrics": final_state.final_metrics,
+            "suggestions": final_state.final_suggestions,
             "trace": trace_data,
         }
 

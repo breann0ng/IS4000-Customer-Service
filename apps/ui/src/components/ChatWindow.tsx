@@ -126,7 +126,11 @@ export function ChatWindow({
             </div>
           )}
           {messages.map((message) => (
-            <MessageBubble key={message.message_id} message={message} />
+            <MessageBubble 
+              key={message.message_id} 
+              message={message} 
+              onSuggestionClick={onSendMessage}
+            />
           ))}
           {isSending && <ThinkingIndicator thinking={thinking} />}
           <div ref={messagesEndRef} />

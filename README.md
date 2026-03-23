@@ -67,7 +67,7 @@ All LLM calls use **Gemini structured outputs** (Pydantic models) for reliable p
 
 | Agent                | MCP Server               | Responsibilities                                                                               |
 | -------------------- | ------------------------ | ---------------------------------------------------------------------------------------------- |
-| **Wealth Advisory**  | Banking Ops (:9001)      | Portfolio performance, investment strategy, market insights, asset allocation, estate planning |
+| **Wealth Advisory**  | Banking Ops (:9001)      | Portfolio performance, investment strategy, market insights (Tavily live search), asset allocation, estate planning |
 | **Private Banking**  | Knowledge (:9002)        | Account operations, fund transfers, card services, statements, multi-currency management       |
 | **Client Services**  | Service Workflow (:9003) | Onboarding, KYC/AML, document requests, appointments, escalations (uses RAG)                   |
 | **Lending & Credit** | Banking Ops (:9001)      | Lombard lending, mortgages, credit lines, structured lending, margin facilities                |
@@ -96,7 +96,8 @@ All LLM calls use **Gemini structured outputs** (Pydantic models) for reliable p
 │   └── ui/                     React + TypeScript frontend (Vite)
 │       ├── src/
 │       │   ├── api/generated/  Auto-generated TypeScript client
-│       │   ├── components/     Sidebar, ChatWindow, MessageBubble, ThinkingIndicator
+│       │   ├── components/     Sidebar, ChatWindow, MessageBubble, ThinkingIndicator,
+│       │   │                   StructuredMessage (dashboard renderer), ChartCard (SVG charts)
 │       │   └── pages/          LoginPage, ChatPage
 ├── rag/                        RAG pipeline + server
 │   ├── ingest.py               PDF/DOCX → PostgreSQL pgvector (cosine similarity)
@@ -149,7 +150,7 @@ poe rag-ingestion
 poe docker-up
 ```
 
-- Frontend: http://localhost:3000
+- Frontend: http://localhost:3000 (Docker) / http://localhost:5173 (dev)
 - Backend API: http://localhost:8000
 - Scalar API Docs: http://localhost:8000/docs
 
@@ -167,13 +168,25 @@ poe docker-up
 
 ## Environment Variables
 
-| Variable             | Default                         | Description                |
-| -------------------- | ------------------------------- | -------------------------- |
-| `GEMINI_API_KEY`     | —                               | Google Gemini API key      |
-| `GEMINI_MODEL`       | `gemini-3.1-flash-lite-preview` | Gemini model identifier    |
-| `DATABASE_URL`       | `postgresql+asyncpg://...`      | Postgres connection string |
-| `REDIS_URL`          | `redis://localhost:6379/0`      | Redis connection string    |
-| `MCP_RAG_SERVER_URL` | `http://localhost:9004/mcp`     | RAG retrieval MCP server   |
+| Variable                  | Default                         | Description                                           |
+| ------------------------- | ------------------------------- | ----------------------------------------------------- |
+| `GEMINI_API_KEY`          | —                               | Google Gemini API key                                 |
+| `GEMINI_MODEL`            | `gemini-3.1-flash-lite-preview` | Gemini model identifier                               |
+| `DATABASE_URL`            | `postgresql+asyncpg://...`      | Postgres connection string                            |
+| `REDIS_URL`               | `redis://localhost:6379/0`      | Redis connection string                               |
+| `EMBEDDING_MODEL_NAME`    | `sentence-transformers/all-MiniLM-L6-v2` | HuggingFace embedding model (auto-downloaded) |
+| `RAG_TOP_K`               | `5`                             | Number of RAG chunks returned per query               |
+| `JWT_SECRET_KEY`          | —                               | Secret for signing JWT tokens (change in production)  |
+| `JWT_ALGORITHM`           | `HS256`                         | JWT signing algorithm                                 |
+| `JWT_EXPIRATION_MINUTES`  | `60`                            | Token validity duration (minutes)                     |
+| `LANGSMITH_API_KEY`       | —                               | Optional: LangSmith API key for LLM tracing           |
+| `LANGSMITH_PROJECT`       | `ubs-chatbot`                   | LangSmith project name                                |
+| `MCP_BANKING_OPS_URL`     | `http://localhost:9001/mcp`     | Wealth advisory & banking ops MCP server              |
+| `MCP_KNOWLEDGE_URL`       | `http://localhost:9002/mcp`     | Private banking & compliance MCP server               |
+| `MCP_SERVICE_WORKFLOW_URL`| `http://localhost:9003/mcp`     | Client services & FX treasury MCP server              |
+| `MCP_RAG_SERVER_URL`      | `http://localhost:9004/mcp`     | RAG retrieval MCP server                              |
+| `TAVILY_API_KEY`          | —                               | Tavily API key for live market data (Wealth Advisory) |
+| `LOG_LEVEL`               | `INFO`                          | Log verbosity (DEBUG, INFO, WARNING, ERROR)           |
 
 ## Tech Stack
 
@@ -187,6 +200,7 @@ poe docker-up
 | Memory        | mem0 + Redis                           |
 | Embeddings    | sentence-transformers (local)          |
 | Integration   | MCP (Streamable HTTP)                  |
+| Live Search   | Tavily (market data for Wealth Advisory)|
 
 ## Streaming & Thinking Steps
 
@@ -197,9 +211,30 @@ The UI streams responses via SSE, showing intermediate thinking steps:
 3. **`synthesizing`** — Synthesizer composing the final response.
 4. **`done`** — Final persisted message.
 
+## Dashboard UI
+
+Wealth Advisory responses are rendered as an interactive dashboard:
+
+- **Metric Cards** — Key figures (AUM, YTD return, allocation) with trend indicators (▲/▼).
+- **SVG Charts** — Pie, bar, and line charts parsed from JSON embedded in the LLM response. Rendered natively with no external chart library.
+- **Colored Section Cards** — `###` headings map to themed cards (green, blue, teal, indigo, amber, violet) cycling automatically.
+- **Suggested Questions** — Clickable follow-up buttons injected by the Synthesizer.
+- **GFM Tables** — Portfolio overview tables rendered with styled headers and rows.
+
+The `StructuredMessage` component handles all parsing (heading normalisation, JSON chart extraction) and the `ChartCard` component renders pie/bar/line SVG charts via the `ChartData` interface.
+
 ## Sample Queries
 
 - **Greeting**: "Hello" (Direct response path)
-- **Portfolio**: "How is my portfolio performing?" (Wealth Advisory)
+- **Portfolio**: "How is my portfolio performing?" (Wealth Advisory → dashboard with charts)
+- **Market Outlook**: "What is the current macroeconomic outlook?" (Wealth Advisory → Tavily live search)
 - **Multi-step**: "What's my balance and what are the current FX rates?" (Private Banking + FX Treasury)
 - **RAG**: "What are the onboarding requirements for HNW clients?" (Client Services + RAG)
+- **Lending**: "What Lombard lending options are available?" (Lending & Credit)
+
+## Future Work
+
+- Streaming chart rendering as agent steps arrive
+- Multi-currency portfolio view with live FX overlay
+- PDF export of dashboard responses
+- Persistent notification centre for RM escalations

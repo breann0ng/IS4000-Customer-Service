@@ -83,7 +83,7 @@ def _get_embedding_model() -> SentenceTransformer:
     return _embedding_model
 
 
-def _get_db_engine():
+def _get_db_engine():  # noqa: ANN202
     """Return or create the sync SQLAlchemy engine for pgvector queries."""
     global _db_engine
     if _db_engine is None:
@@ -107,12 +107,18 @@ def retrieve_documents(query: str, top_k: int) -> dict:
         # Check if documents table exists and has rows
         with engine.connect() as connection:
             result = connection.execute(
-                text("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'documents')")
+                text(
+                    "SELECT EXISTS (SELECT 1 FROM information_schema.tables "
+                    "WHERE table_name = 'documents')"
+                )
             )
             if not result.scalar():
                 return {
                     "chunks": [],
-                    "error": "Documents table not found. Run 'poe rag-ingestion' to index documents first.",
+                    "error": (
+                        "Documents table not found. "
+                        "Run 'poe rag-ingestion' to index documents first."
+                    ),
                 }
 
             count_result = connection.execute(text("SELECT COUNT(*) FROM documents"))

@@ -157,6 +157,7 @@ export function ChatPage({ user, onLogout, theme, llmMode }: ChatPageProps) {
           session_id: message.session_id,
           role: message.role,
           content: message.content,
+          metadata: message.metadata,
           context: message.context,
           created_at: message.created_at,
         }]);

@@ -198,6 +198,22 @@ def run_ingestion(
     with db_engine.begin() as connection:
         connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
 
+        # Ensure documents table exists
+        connection.execute(
+            text(
+                "CREATE TABLE IF NOT EXISTS documents ("
+                "document_id UUID PRIMARY KEY, "
+                "content TEXT NOT NULL, "
+                "source VARCHAR(500) NOT NULL, "
+                "chunk_index INTEGER NOT NULL, "
+                "total_chunks INTEGER NOT NULL, "
+                "metadata JSONB, "
+                "embedding VECTOR(384) NOT NULL, "
+                "created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP"
+                ")"
+            )
+        )
+
         # Clear existing documents
         connection.execute(text("DELETE FROM documents"))
         print("Cleared existing documents")

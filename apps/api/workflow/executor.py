@@ -4,6 +4,8 @@ Dispatches planned steps to the appropriate specialist agents and
 collects their results for UBS Wealth Management HNWI support.
 """
 
+import asyncio
+
 from apps.api.logging_config import get_logger
 from apps.api.workflow.agents.client_services import execute_client_services_task
 from apps.api.workflow.agents.compliance_tax import execute_compliance_tax_task
@@ -25,64 +27,78 @@ AGENT_DISPATCH_TABLE = {
 }
 
 
-async def executor_node(state: WorkflowState) -> dict:
-    """Execute the current step in the plan by dispatching to the appropriate agent.
+async def _run_step(agent_name: str, task: str, conversation_context: str) -> dict:
+    """Run a single agent step, returning a result dict."""
+    agent_function = AGENT_DISPATCH_TABLE.get(agent_name)
+    if agent_function is None:
+        logger.error("executor_unknown_agent", agent=agent_name)
+        return {"agent": agent_name, "result": f"Unknown agent: {agent_name}"}
+    try:
+        result = await agent_function(task=task, conversation_context=conversation_context)
+        return {"agent": agent_name, "result": result}
+    except Exception as error:
+        logger.exception("executor_agent_failed", agent=agent_name)
+        return {"agent": agent_name, "result": f"Agent {agent_name} failed: {error}"}
 
-    Looks up the agent function from the dispatch table, calls it with the
-    step's task and conversation context, and records the result.
+
+async def executor_node(state: WorkflowState) -> dict:
+    """Execute ALL remaining planned steps in parallel using asyncio.gather().
+
+    Runs every not-yet-completed step concurrently so multi-agent plans
+    complete in the time of the slowest agent rather than their sum.
 
     Args:
         state: The current workflow state containing the plan and step index.
 
     Returns:
-        A dictionary with updated agent outputs and step index.
+        A dictionary with all agent outputs and the step index advanced past all steps.
     """
     if state.plan is None or state.current_step_index >= len(state.plan.steps):
         logger.warning("executor_no_steps_remaining")
         return {"error": "No steps remaining to execute."}
 
-    current_step = state.plan.steps[state.current_step_index]
-    agent_name = current_step.agent
-    task = current_step.task
+    # Collect all remaining (not yet completed) steps
+    remaining_steps = [
+        (step, idx)
+        for idx, step in enumerate(state.plan.steps)
+        if not step.completed and idx >= state.current_step_index
+    ]
 
-    logger.info(
-        "executor_node_start",
-        agent=agent_name,
-        step_index=state.current_step_index,
-        task=task[:100],
-    )
+    if not remaining_steps:
+        return {"current_step_index": len(state.plan.steps)}
 
     conversation_context = "\n".join(
-        f"{message['role']}: {message['content']}" for message in state.conversation_history[-5:]
+        f"{message['role']}: {message['content']}"
+        for message in state.conversation_history[-5:]
     )
-
-    agent_function = AGENT_DISPATCH_TABLE.get(agent_name)
-    if agent_function is None:
-        error_message = f"Unknown agent: {agent_name}"
-        logger.error("executor_unknown_agent", agent=agent_name)
-        new_outputs = list(state.agent_outputs)
-        new_outputs.append({"agent": agent_name, "result": error_message})
-        return {
-            "agent_outputs": new_outputs,
-            "current_step_index": state.current_step_index + 1,
-        }
-
-    try:
-        result = await agent_function(task=task, conversation_context=conversation_context)
-    except Exception as error:
-        logger.exception("executor_agent_failed", agent=agent_name)
-        result = f"Agent {agent_name} failed: {error}"
-
-    new_outputs = list(state.agent_outputs)
-    new_outputs.append({"agent": agent_name, "result": result})
 
     logger.info(
-        "executor_node_complete",
-        agent=agent_name,
-        step_index=state.current_step_index,
+        "executor_node_parallel_start",
+        step_count=len(remaining_steps),
+        agents=[step.agent for step, _ in remaining_steps],
     )
+
+    # Run all steps concurrently
+    tasks = [
+        _run_step(step.agent, step.task, conversation_context)
+        for step, _ in remaining_steps
+    ]
+    results = await asyncio.gather(*tasks)
+
+    new_outputs = list(state.agent_outputs) + list(results)
+
+    # Mark all steps complete in the plan copy
+    new_plan = state.plan.model_copy(deep=True)
+    for (step, idx), result in zip(remaining_steps, results):
+        new_plan.steps[idx].completed = True
+        new_plan.steps[idx].result = result["result"]
+
+    logger.info("executor_node_parallel_complete", step_count=len(results))
 
     return {
         "agent_outputs": new_outputs,
-        "current_step_index": state.current_step_index + 1,
+        "current_step_index": len(state.plan.steps),  # Skip straight to synthesizer
+        "plan": new_plan,
     }
+
+

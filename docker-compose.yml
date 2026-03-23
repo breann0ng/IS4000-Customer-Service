@@ -34,8 +34,14 @@ services:
     command: ["uv", "run", "uvicorn", "mcp_servers.banking_ops_server:app", "--host", "0.0.0.0", "--port", "9001", "--reload"]
     ports:
       - "9001:9001"
+    env_file:
+      - .env
+    environment:
+      MCP_RAG_SERVER_URL: http://rag-server:9004/mcp
+      TAVILY_API_KEY: ${TAVILY_API_KEY}
     volumes:
       - ./mcp_servers:/app/mcp_servers
+      - ./apps/api:/app/apps/api
 
   mock-knowledge:
     build:
@@ -44,8 +50,14 @@ services:
     command: ["uv", "run", "uvicorn", "mcp_servers.knowledge_server:app", "--host", "0.0.0.0", "--port", "9002", "--reload"]
     ports:
       - "9002:9002"
+    env_file:
+      - .env
+    environment:
+      MCP_RAG_SERVER_URL: http://rag-server:9004/mcp
+      TAVILY_API_KEY: ${TAVILY_API_KEY}
     volumes:
       - ./mcp_servers:/app/mcp_servers
+      - ./apps/api:/app/apps/api
 
   mock-service-workflow:
     build:
@@ -54,8 +66,14 @@ services:
     command: ["uv", "run", "uvicorn", "mcp_servers.service_workflow_server:app", "--host", "0.0.0.0", "--port", "9003", "--reload"]
     ports:
       - "9003:9003"
+    env_file:
+      - .env
+    environment:
+      MCP_RAG_SERVER_URL: http://rag-server:9004/mcp
+      TAVILY_API_KEY: ${TAVILY_API_KEY}
     volumes:
       - ./mcp_servers:/app/mcp_servers
+      - ./apps/api:/app/apps/api
 
   rag-server:
     build:

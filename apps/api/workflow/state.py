@@ -1,6 +1,6 @@
 """Shared state definitions for the LangGraph agentic workflow."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
@@ -14,6 +14,16 @@ class AgentStep(BaseModel):
     task: str = Field(description="The specific task for the agent to perform")
     completed: bool = Field(default=False, description="Whether this step has been executed")
     result: str | None = Field(default=None, description="The result after execution")
+
+
+class MetricItem(BaseModel):
+    """A key-value pair representing a financial metric."""
+
+    label: str = Field(description="The display label for the metric (e.g. AUM)")
+    value: str = Field(description="The numeric or text value of the metric")
+    trend: str | None = Field(
+        default=None, description="Optional trend indicator: up, down, or neutral"
+    )
 
 
 class PlannerOutput(BaseModel):
@@ -34,8 +44,19 @@ class PlannerOutput(BaseModel):
 class SynthesizerOutput(BaseModel):
     """The structured output from the synthesizer node."""
 
-    response: str = Field(description="The synthesized client-facing response")
+    response: str = Field(
+        description=(
+            "The synthesized client-facing response in Markdown format. "
+            "MUST use ### section headers (e.g. '### 1. Summary', '### 2. Current Portfolio Assessment', etc.). "
+            "Do NOT write a single prose paragraph — every section must be separated by its ### heading. "
+            "Bold key metrics like AUM, YTD return, and allocation percentages."
+        )
+    )
     confidence: str = Field(description="Confidence level in the response: high, medium, or low")
+    metrics: list[MetricItem] = Field(
+        default_factory=list,
+        description="Key metrics extracted from specialist analysis",
+    )
     follow_up_suggestions: list[str] = Field(
         default_factory=list,
         description="Suggested follow-up questions the client might ask",
@@ -65,11 +86,17 @@ class WorkflowState(BaseModel):
     user_id: str = Field(default="")
     plan: PlannerOutput | None = Field(default=None, description="The execution plan")
     current_step_index: int = Field(default=0, description="Index of the step being executed")
-    agent_outputs: list[dict[str, str]] = Field(
+    agent_outputs: list[dict[str, Any]] = Field(
         default_factory=list,
         description="Collected outputs from each agent execution",
     )
     final_response: str = Field(default="", description="The synthesized final response")
+    final_metrics: list[MetricItem] = Field(
+        default_factory=list, description="Structured metrics for dashboard rendering"
+    )
+    final_suggestions: list[str] = Field(
+        default_factory=list, description="Suggested follow-up questions"
+    )
     is_escalated: bool = Field(
         default=False, description="Whether the query was escalated to a human RM"
     )

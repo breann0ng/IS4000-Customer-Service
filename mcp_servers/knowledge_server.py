@@ -6,6 +6,11 @@ Run standalone:
     uv run uvicorn mocks.knowledge_server:app --host 0.0.0.0 --port 9002
 """
 
+import httpx
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+from apps.api.config import settings
 from mcp_servers.base import create_mock_mcp_app
 
 MOCK_ACCOUNTS = [
@@ -57,96 +62,202 @@ TOOL_DEFINITIONS = [
 ]
 
 
-def handle_private_banking(params: dict) -> dict:
-    """Generate a mock private banking response.
+async def handle_private_banking(params: dict) -> dict:
+    """Generate a high-quality private banking response using LLM.
 
     Args:
         params: Tool invocation arguments.
 
     Returns:
-        A dictionary with the mock response.
+        A dictionary with the generated response.
     """
     task = params.get("task", "")
-    account_lines = "\n".join(
-        f"  - {account['account']} ({account['currency']}): {account['balance']}"
-        for account in MOCK_ACCOUNTS
+    context = params.get("context", "")
+    system_prompt = params.get("system_prompt", "")
+
+    if settings.is_llm_mock_mode:
+        account_lines = "\n".join(
+            f"  - {account['account']} ({account['currency']}): {account['balance']}"
+            for account in MOCK_ACCOUNTS
+        )
+        total_chf = "7,493,814.50"
+        return {
+            "response": (
+                f"[SMART MOCK PRIVATE BANKING]\n\n"
+                f"Account Summary:\n{account_lines}\n"
+                f"Total (CHF equivalent): {total_chf}\n\n"
+                f"Regarding: {task[:120]}\n\n"
+                f"The requested operation has been noted for {MOCK_ACCOUNTS[0]['account']}."
+            )
+        }
+
+    llm = ChatGoogleGenerativeAI(
+        model=settings.gemini_model,
+        google_api_key=settings.gemini_api_key,
     )
-    total_chf = "7,493,814.50"
-    return {
-        "response": (
-            f"Account Summary:\n\n{account_lines}\n"
-            f"  Total (CHF equivalent): {total_chf}\n\n"
-            f"Regarding: {task[:120]}\n\n"
-            f"The requested transaction has been noted and will be processed within "
-            f"the standard settlement window. For domestic CHF transfers, settlement "
-            f"is same-day if submitted before 15:00 CET. Cross-border transfers "
-            f"require 1-2 business days depending on the destination corridor.\n\n"
-            f"A confirmation will be sent to your registered secure channel upon settlement. "
-            f"For urgent transfers exceeding CHF 1,000,000, your relationship manager "
-            f"can authorize priority processing."
+
+    prompt = (
+        f"Client Account Data:\n{MOCK_ACCOUNTS}\n\n"
+        f"Task: {task}\n\n"
+        f"Context: {context}\n\n"
+        f"Provide a professional private banking summary or action confirmation."
+    )
+
+    try:
+        response = await llm.ainvoke(
+            [
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=prompt),
+            ]
         )
-    }
+        content = response.content
+        if isinstance(content, list):
+            content = " ".join(part.get("text", "") if isinstance(part, dict) else str(part) for part in content)
+        return {"response": str(content)}
+    except Exception as e:
+        return {"response": f"Private banking failed: {str(e)}", "error": str(e)}
 
 
-def handle_compliance_tax(params: dict) -> dict:
-    """Generate a mock compliance and tax response.
+async def handle_compliance_tax(params: dict) -> dict:
+    """Generate a high-quality compliance and tax response using LLM and RAG.
 
     Args:
         params: Tool invocation arguments.
 
     Returns:
-        A dictionary with the mock response.
+        A dictionary with the generated response.
     """
     task = params.get("task", "")
-    retrieved = params.get("retrieved_documents", "")
-    context_note = ""
-    if retrieved and retrieved != "No relevant regulatory documents found.":
-        context_note = (
-            "\n\nRelevant policy references have been consulted in preparing this response."
-        )
-    return {
-        "response": (
-            f"Compliance & Tax Assessment: {task[:120]}\n\n"
-            f"Current compliance status: FULLY COMPLIANT\n"
-            f"Last KYC review: 15 September 2025 (valid until September 2028)\n"
-            f"CRS reporting status: Up to date\n"
-            f"FATCA classification: Certified, W-8BEN on file\n\n"
-            f"Key upcoming dates:\n"
-            f"  - CRS reporting deadline: 30 June 2026\n"
-            f"  - Annual tax certificate: Available January 2027\n"
-            f"  - WHT reclaim window: January - June 2026\n"
-            f"  - Next periodic KYC review: September 2028\n\n"
-            f"For jurisdiction-specific tax advice, we recommend consulting with "
-            f"your personal tax advisor. We can facilitate a joint meeting with "
-            f"our in-house tax specialists if required."
-            f"{context_note}"
-        )
-    }
+    context = params.get("context", "")
+    system_prompt = params.get("system_prompt", "")
+
+    # Retrieve context
+    retrieved_docs = "No relevant regulatory context found."
+    try:
+        async with httpx.AsyncClient() as client:
+            rag_response = await client.post(
+                settings.mcp_rag_server_url,
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "params": {
+                        "name": "retrieve_documents",
+                        "arguments": {"query": task, "top_k": 3},
+                    },
+                    "id": 1,
+                },
+                timeout=10.0,
+            )
+            if rag_response.status_code == 200:
+                result = rag_response.json().get("result", {})
+                chunks = result.get("chunks", [])
+                if chunks:
+                    retrieved_docs = "\n\n".join(
+                        f"[Regulatory Info]: {c['text']}" for c in chunks
+                    )
+    except Exception:
+        pass
+
+    if settings.is_llm_mock_mode:
+        return {
+            "response": (
+                f"[SMART MOCK COMPLIANCE]\n\n"
+                f"Regarding: {task[:120]}\n\n"
+                f"Regulatory context: {retrieved_docs[:200]}...\n\n"
+                f"You appear to be compliant. Contact tax specialists for details."
+            )
+        }
+
+    llm = ChatGoogleGenerativeAI(
+        model=settings.gemini_model,
+        google_api_key=settings.gemini_api_key,
+    )
+
+    prompt = (
+        f"Task: {task}\n\n"
+        f"Regulatory Context from RAG:\n{retrieved_docs}\n\n"
+        f"Provide a professional compliance and tax advisory response."
+    )
+
+    try:
+        response = await llm.ainvoke([SystemMessage(content=system_prompt), HumanMessage(content=prompt)])
+        content = response.content
+        if isinstance(content, list):
+            content = " ".join(part.get("text", "") if isinstance(part, dict) else str(part) for part in content)
+        return {"response": str(content)}
+    except Exception as e:
+        return {"response": f"Compliance check failed: {str(e)}"}
 
 
-def handle_knowledge_query(params: dict) -> dict:
-    """Generate a mock knowledge query response.
+async def handle_knowledge_query(params: dict) -> dict:
+    """Generate a high-quality knowledge query response using LLM and RAG.
 
     Args:
         params: Tool invocation arguments.
 
     Returns:
-        A dictionary with the mock response.
+        A dictionary with the generated response.
     """
     task = params.get("task", "")
-    return {
-        "response": (
-            f"Knowledge Base Result: {task[:120]}\n\n"
-            f"Based on our current policies and product documentation:\n\n"
-            f"UBS Wealth Management provides comprehensive services tailored to "
-            f"HNWI clients, including discretionary and advisory mandates, "
-            f"structured products, and access to exclusive investment opportunities. "
-            f"All services are subject to suitability assessment and regulatory "
-            f"compliance requirements.\n\n"
-            f"For the most current terms and conditions, please consult with your "
-            f"relationship manager who can provide the latest documentation."
-        )
-    }
+    context = params.get("context", "")
+    system_prompt = params.get("system_prompt", "")
+
+    # Retrieve context
+    retrieved_docs = "No relevant knowledge base entries found."
+    try:
+        async with httpx.AsyncClient() as client:
+            rag_response = await client.post(
+                settings.mcp_rag_server_url,
+                json={
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "params": {
+                        "name": "retrieve_documents",
+                        "arguments": {"query": task, "top_k": 3},
+                    },
+                    "id": 1,
+                },
+                timeout=10.0,
+            )
+            if rag_response.status_code == 200:
+                result = rag_response.json().get("result", {})
+                chunks = result.get("chunks", [])
+                if chunks:
+                    retrieved_docs = "\n\n".join(
+                        f"[Knowledge Base]: {c['text']}" for c in chunks
+                    )
+    except Exception:
+        pass
+
+    if settings.is_llm_mock_mode:
+        return {
+            "response": (
+                f"[SMART MOCK KNOWLEDGE]\n\n"
+                f"Result for: {task[:120]}\n\n"
+                f"Policy context: {retrieved_docs[:200]}...\n\n"
+                f"Refer to RM for the latest T&Cs."
+            )
+        }
+
+    llm = ChatGoogleGenerativeAI(
+        model=settings.gemini_model,
+        google_api_key=settings.gemini_api_key,
+    )
+
+    prompt = (
+        f"Query: {task}\n\n"
+        f"Knowledge Base Context:\n{retrieved_docs}\n\n"
+        f"Provide a professional response based on our available documents."
+    )
+
+    try:
+        response = await llm.ainvoke([SystemMessage(content=system_prompt), HumanMessage(content=prompt)])
+        content = response.content
+        if isinstance(content, list):
+            content = " ".join(part.get("text", "") if isinstance(part, dict) else str(part) for part in content)
+        return {"response": str(content)}
+    except Exception as e:
+        return {"response": f"Knowledge query failed: {str(e)}"}
 
 
 TOOL_HANDLERS = {

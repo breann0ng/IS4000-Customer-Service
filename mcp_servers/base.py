@@ -73,7 +73,13 @@ def create_mock_mcp_app(
                     id=request.id,
                 )
 
-            result = handler(arguments)
+            import inspect
+
+            if inspect.iscoroutinefunction(handler):
+                result = await handler(arguments)
+            else:
+                result = handler(arguments)
+
             return JsonRpcResponse(result=result, id=request.id)
 
         return JsonRpcResponse(

@@ -1,6 +1,7 @@
 """Pydantic schemas for chat session and message API contracts."""
 
 import uuid
+from typing import Any
 from datetime import datetime
 
 from pydantic import BaseModel, Field
@@ -19,6 +20,9 @@ class ChatMessageResponse(BaseModel):
     session_id: uuid.UUID
     role: str
     content: str
+    metadata: dict[str, Any] | None = Field(
+        default=None, description="Structured metadata for rich UI rendering"
+    )
     context: dict | None = None
     created_at: datetime
 

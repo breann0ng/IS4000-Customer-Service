@@ -122,6 +122,7 @@ async def get_chat_session(
                 session_id=message.session_id,
                 role=message.role,
                 content=message.content,
+                metadata=message.context.get("metadata") if message.context else None,
                 context=message.context,
                 created_at=message.created_at,
             )
@@ -174,6 +175,7 @@ async def update_chat_session(
                 session_id=message.session_id,
                 role=message.role,
                 content=message.content,
+                metadata=message.context.get("metadata") if message.context else None,
                 context=message.context,
                 created_at=message.created_at,
             )
@@ -261,15 +263,21 @@ async def send_message(
     )
 
     response_text = str(workflow_result["response"])
-    trace_data = workflow_result.get("trace")
-    trace_dict = trace_data if isinstance(trace_data, dict) else None
+    # Package structured data for UI rendering
+    metadata = {
+        "metrics": workflow_result.get("metrics", []),
+        "suggestions": workflow_result.get("suggestions", []),
+    }
+    
+    full_context = trace_dict or {}
+    full_context["metadata"] = metadata
 
     assistant_message = await save_message(
         database_session,
         session_id,
         "assistant",
         response_text,
-        context=trace_dict,
+        context=full_context,
     )
 
     await memory_manager.store_memory(
@@ -286,6 +294,7 @@ async def send_message(
             session_id=assistant_message.session_id,
             role=assistant_message.role,
             content=assistant_message.content,
+            metadata=metadata,
             context=assistant_message.context,
             created_at=assistant_message.created_at,
         ),
@@ -385,6 +394,12 @@ async def send_message_stream(
 
                     elif node_name == "synthesizer" and node_output.get("final_response"):
                         final_response = node_output["final_response"]
+                        # Store structural metadata from sanitizer output
+                        trace_data = trace_data or {}
+                        trace_data["metadata"] = {
+                            "metrics": node_output.get("final_metrics", []),
+                            "suggestions": node_output.get("final_suggestions", []),
+                        }
                         yield _sse("synthesizing", {"status": "generating final response"})
 
                     elif node_name == "escalation" and node_output.get("final_response"):
@@ -446,6 +461,7 @@ async def send_message_stream(
                     "session_id": str(assistant_message.session_id),
                     "role": assistant_message.role,
                     "content": assistant_message.content,
+                    "metadata": trace_data.get("metadata") if trace_data else None,
                     "context": assistant_message.context,
                     "created_at": assistant_message.created_at.isoformat(),
                 },

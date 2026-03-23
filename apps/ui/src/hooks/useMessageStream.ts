@@ -24,6 +24,7 @@ interface StreamCallbacks {
     session_id: string;
     role: string;
     content: string;
+    metadata: Record<string, unknown> | null | undefined;
     context: Record<string, unknown> | null;
     created_at: string;
   }) => void;
@@ -146,6 +147,7 @@ function handleEvent(
           session_id: string;
           role: string;
           content: string;
+          metadata: Record<string, unknown> | null | undefined;
           context: Record<string, unknown> | null;
           created_at: string;
         },

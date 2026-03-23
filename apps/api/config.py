@@ -8,6 +8,7 @@ class Settings(BaseSettings):
 
     gemini_api_key: str = ""
     gemini_model: str = "gemini-3.1-flash-lite-preview"
+    tavily_api_key: str = ""
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/chatbot"
 
     redis_url: str = "redis://localhost:6379/0"
@@ -39,7 +40,8 @@ class Settings(BaseSettings):
     @property
     def is_llm_mock_mode(self) -> bool:
         """Check if the LLM is running in mock mode (no valid API key)."""
-        return not self.gemini_api_key or self.gemini_api_key == "your-gemini-api-key-here"
+        key = self.gemini_api_key.lower()
+        return not key or "your" in key or "gemini" in key or "api-key" in key
 
 
 settings = Settings()

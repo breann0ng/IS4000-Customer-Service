@@ -14,6 +14,7 @@ dependencies = [
     "langgraph>=0.2.0",
     "langchain-core>=0.3.0",
     "langchain-google-genai>=2.1.0",
+    "langchain-community>=0.3.0",
     "google-generativeai>=0.8.0",
     "mem0ai>=0.1.0",
     "redis>=5.0.0",
@@ -64,8 +65,8 @@ shell = "uvx ruff format apps/ rag/ mcp_servers/ tests/ && uvx ruff check apps/ 
 help = "Format, lint, type-check all Python code, and check for OpenAPI drift"
 
 [tool.poe.tasks.mock-mcp]
-shell = "uv run uvicorn mcp_servers.banking_ops_server:app --host 0.0.0.0 --port 9001 & uv run uvicorn mcp_servers.knowledge_server:app --host 0.0.0.0 --port 9002 & uv run uvicorn mcp_servers.service_workflow_server:app --host 0.0.0.0 --port 9003 & wait"
-help = "Start all 3 mock MCP servers (banking ops :9001, knowledge :9002, service workflow :9003)"
+shell = "uv run uvicorn mcp_servers.banking_ops_server:app --host 0.0.0.0 --port 9001 & uv run uvicorn mcp_servers.knowledge_server:app --host 0.0.0.0 --port 9002 & uv run uvicorn mcp_servers.service_workflow_server:app --host 0.0.0.0 --port 9003 & uv run uvicorn rag.server:app --host 0.0.0.0 --port 9004 & wait"
+help = "Start all 4 MCP servers (banking ops :9001, knowledge :9002, service workflow :9003, rag-server :9004)"
 
 
 [tool.poe.tasks.docker-up]
@@ -78,7 +79,11 @@ help = "Stop and remove all Docker services and volumes"
 
 [tool.poe.tasks.rag-ingestion]
 cmd = "uv run python -m rag.ingest"
-help = "Ingest documents from docs/ into ChromaDB vector store"
+help = "Ingest documents from docs/ into pgvector store"
+
+[tool.poe.tasks.rag-server]
+cmd = "uv run uvicorn rag.server:app --host 0.0.0.0 --port 9004"
+help = "Start the RAG MCP server on port 9004"
 
 [tool.ruff]
 target-version = "py312"

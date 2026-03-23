@@ -290,11 +290,11 @@ async def run_workflow(
         final_state = await workflow_graph.ainvoke(initial_state)
 
         # Handle either string or Pydantic model (SynthesizerOutput)
-        response = final_state.final_response
+        response = final_state["final_response"]
 
         trace_data = {
-            "plan": final_state.plan.model_dump() if final_state.plan else None,
-            "agent_outputs": final_state.agent_outputs,
+            "plan": final_state["plan"].model_dump() if final_state["plan"] else None,
+            "agent_outputs": final_state["agent_outputs"],
         }
 
         logger.info("workflow_complete", session_id=session_id)

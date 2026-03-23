@@ -30,7 +30,11 @@ class Settings(BaseSettings):
 
     rag_top_k: int = 5
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "extra": "ignore",
+    }
 
     @property
     def is_llm_mock_mode(self) -> bool:

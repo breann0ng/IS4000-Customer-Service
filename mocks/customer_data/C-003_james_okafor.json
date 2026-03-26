@@ -1,0 +1,296 @@
+{
+  "profile": {
+    "customer_id": "C-003",
+    "full_name": "James Chukwuemeka Okafor",
+    "preferred_name": "James",
+    "date_of_birth": "1971-07-04",
+    "nationality": "British-Nigerian",
+    "tax_residency": "United Kingdom",
+    "segment": "HNW",
+    "tier": "UBS Wealth Management",
+    "relationship_manager": "Charlotte Webb",
+    "rm_email": "charlotte.webb@ubs.com",
+    "rm_phone": "+44 20 7567 8833",
+    "onboarded_date": "2010-11-08",
+    "kyc_status": "Verified",
+    "kyc_last_reviewed": "2024-09-20",
+    "address": "12 Chester Square, London, SW1W 9HH, United Kingdom",
+    "email": "j.okafor@okaforgroup.co.uk",
+    "mobile": "+44 7700 900432",
+    "preferred_contact": "Email",
+    "language": "English",
+    "risk_profile": "Growth",
+    "net_worth_usd": 15000000,
+    "aum_with_ubs_usd": 9400000,
+    "family_office": "Okafor Group Holdings Ltd",
+    "trust_structure": false,
+    "philanthropic_fund": true
+  },
+  "accounts": [
+    {
+      "account_id": "GBP-003-CA",
+      "account_type": "Personal Current Account",
+      "currency": "GBP",
+      "balance": 340000.0,
+      "available_balance": 335000.0,
+      "iban": "GB29UBSN60161331926819",
+      "status": "Active",
+      "opened_date": "2010-11-08"
+    },
+    {
+      "account_id": "USD-003-BU",
+      "account_type": "Business Settlement Account",
+      "currency": "USD",
+      "balance": 1850000.0,
+      "available_balance": 1850000.0,
+      "status": "Active",
+      "opened_date": "2012-04-01"
+    }
+  ],
+  "portfolio": {
+    "portfolio_id": "PORT-003",
+    "total_value_usd": 7200000,
+    "currency": "USD",
+    "last_updated": "2026-03-17",
+    "mandate_type": "Advisory",
+    "allocation": {
+      "Public Equities": {
+        "pct": 50,
+        "value_usd": 3600000
+      },
+      "Fixed Income": {
+        "pct": 20,
+        "value_usd": 1440000
+      },
+      "Private Equity": {
+        "pct": 20,
+        "value_usd": 1440000
+      },
+      "Cash": {
+        "pct": 10,
+        "value_usd": 720000
+      }
+    },
+    "top_equity_holdings": [
+      {
+        "name": "Shell PLC",
+        "ticker": "SHEL",
+        "sector": "Energy",
+        "value_usd": 620000,
+        "pnl_pct": 11.2
+      },
+      {
+        "name": "HSBC Holdings",
+        "ticker": "HSBA",
+        "sector": "Banking",
+        "value_usd": 510000,
+        "pnl_pct": 8.4
+      },
+      {
+        "name": "Unilever PLC",
+        "ticker": "ULVR",
+        "sector": "Consumer",
+        "value_usd": 440000,
+        "pnl_pct": 4.7
+      },
+      {
+        "name": "BP PLC",
+        "ticker": "BP",
+        "sector": "Energy",
+        "value_usd": 390000,
+        "pnl_pct": 6.1
+      },
+      {
+        "name": "Diageo PLC",
+        "ticker": "DGE",
+        "sector": "Consumer",
+        "value_usd": 310000,
+        "pnl_pct": -3.8
+      }
+    ],
+    "private_markets": [
+      {
+        "fund": "Africa Growth Partners Fund III",
+        "type": "Private Equity",
+        "commitment_usd": 800000,
+        "nav_usd": 920000,
+        "vintage": 2020
+      },
+      {
+        "fund": "UK Real Estate Debt Fund",
+        "type": "Real Estate",
+        "commitment_usd": 640000,
+        "nav_usd": 670000,
+        "vintage": 2021
+      }
+    ],
+    "structured_products": [
+      {
+        "name": "FTSE 100 Autocall",
+        "underlying": "FTSE 100 Index",
+        "value_usd": 480000,
+        "maturity": "2026-12-15"
+      }
+    ],
+    "ytd_return_pct": 5.3,
+    "one_year_return_pct": 11.6
+  },
+  "credit": {
+    "lombard_facility": {
+      "product": "Lombard Credit Facility",
+      "limit_usd": 3500000,
+      "drawn_usd": 1100000,
+      "available_usd": 2400000,
+      "collateral": "Securities portfolio",
+      "interest_rate_pct": 5.1,
+      "status": "Active"
+    },
+    "credit_cards": [
+      {
+        "product": "UBS Visa Infinite",
+        "limit_gbp": 100000,
+        "outstanding_gbp": 22100,
+        "status": "Active"
+      }
+    ]
+  },
+  "real_estate": [
+    {
+      "property": "Chester Square townhouse",
+      "location": "London, UK",
+      "value_gbp": 6800000,
+      "loan_gbp": 0
+    },
+    {
+      "property": "Holiday villa",
+      "location": "Lagos, NG",
+      "value_usd": 1200000,
+      "loan_usd": 0
+    }
+  ],
+  "recent_transactions": [
+    {
+      "date": "2026-03-17",
+      "description": "Business settlement — Okafor Group receivable",
+      "amount": 480000.0,
+      "currency": "USD",
+      "account": "USD-003-BU"
+    },
+    {
+      "date": "2026-03-15",
+      "description": "Advisory fee — Q1 2026",
+      "amount": -9200.0,
+      "currency": "USD",
+      "account": "USD-003-BU"
+    },
+    {
+      "date": "2026-03-12",
+      "description": "Lombard drawdown",
+      "amount": 250000.0,
+      "currency": "USD",
+      "account": "USD-003-BU"
+    },
+    {
+      "date": "2026-03-10",
+      "description": "UBS Visa Infinite — Claridges hotel",
+      "amount": -8400.0,
+      "currency": "GBP",
+      "account": "GBP-003-CA"
+    },
+    {
+      "date": "2026-03-08",
+      "description": "Dividend — SHEL",
+      "amount": 4100.0,
+      "currency": "GBP",
+      "account": "GBP-003-CA"
+    },
+    {
+      "date": "2026-03-05",
+      "description": "Lombard interest — monthly",
+      "amount": -4690.0,
+      "currency": "USD",
+      "account": "USD-003-BU"
+    },
+    {
+      "date": "2026-03-01",
+      "description": "Philanthropic fund transfer — Okafor Foundation",
+      "amount": -50000.0,
+      "currency": "GBP",
+      "account": "GBP-003-CA"
+    },
+    {
+      "date": "2026-02-28",
+      "description": "Dividend — HSBA",
+      "amount": 3200.0,
+      "currency": "GBP",
+      "account": "GBP-003-CA"
+    }
+  ],
+  "appointments": [
+    {
+      "appointment_id": "APT-003-A",
+      "type": "Business Banking Review",
+      "date": "2026-03-28",
+      "time": "09:30",
+      "rm": "Charlotte Webb",
+      "location": "UBS London, 1 Finsbury Avenue",
+      "status": "Confirmed"
+    },
+    {
+      "appointment_id": "APT-003-B",
+      "type": "Private Equity Deal Review",
+      "date": "2026-04-15",
+      "time": "15:00",
+      "rm": "Charlotte Webb",
+      "location": "Video call",
+      "status": "Tentative"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "N-003-1",
+      "type": "Action Required",
+      "message": "Lombard facility annual review — documents due 2026-04-01",
+      "date": "2026-03-15",
+      "read": false
+    },
+    {
+      "id": "N-003-2",
+      "type": "Market Alert",
+      "message": "FTSE 100 Autocall — barrier observation date approaching 2026-03-31",
+      "date": "2026-03-17",
+      "read": false
+    },
+    {
+      "id": "N-003-3",
+      "type": "Statement",
+      "message": "February 2026 business account statement available",
+      "date": "2026-03-02",
+      "read": true
+    }
+  ],
+  "applications": [
+    {
+      "application_id": "APP-003-A",
+      "application_type": "Lombard Facility Annual Review",
+      "description": "Annual review of USD 3.5M Lombard credit facility — standard renewal",
+      "status": "Pending Documents",
+      "submitted_date": "2026-03-08",
+      "expected_completion": "2026-04-01",
+      "assigned_to": "Credit Team (cc: Charlotte Webb)",
+      "documents_required": "Latest audited accounts for Okafor Group Holdings Ltd, updated asset schedule",
+      "notes": "Facility in good standing. Renewal subject to submission of updated financial statements."
+    },
+    {
+      "application_id": "APP-003-B",
+      "application_type": "Credit Card Limit Increase",
+      "description": "Request to increase UBS Visa Infinite limit from GBP 100,000 to GBP 150,000",
+      "status": "Approved",
+      "submitted_date": "2026-03-01",
+      "expected_completion": "2026-03-20",
+      "assigned_to": "Card Services (cc: Charlotte Webb)",
+      "documents_required": null,
+      "notes": "Approved by Card Services on 2026-03-15. New limit effective from next statement cycle."
+    }
+  ]
+}

@@ -1,0 +1,278 @@
+{
+  "profile": {
+    "customer_id": "C-005",
+    "full_name": "Henrik Anders Larsen",
+    "preferred_name": "Henrik",
+    "date_of_birth": "1968-04-19",
+    "nationality": "Danish",
+    "tax_residency": "Singapore (EP holder)",
+    "segment": "HNW",
+    "tier": "UBS Wealth Management",
+    "relationship_manager": "Sophia Lim",
+    "rm_email": "sophia.lim@ubs.com",
+    "rm_phone": "+65 6495 2201",
+    "onboarded_date": "2018-07-12",
+    "kyc_status": "Verified",
+    "kyc_last_reviewed": "2025-04-30",
+    "address": "8 Nassim Hill, #05-03, Singapore 258455",
+    "email": "henrik.larsen@norden-capital.com",
+    "mobile": "+65 9876 5432",
+    "preferred_contact": "Email",
+    "language": "English / Danish",
+    "risk_profile": "Balanced Growth",
+    "net_worth_usd": 6800000,
+    "aum_with_ubs_usd": 5200000,
+    "family_office": null,
+    "trust_structure": true,
+    "philanthropic_fund": false
+  },
+  "accounts": [
+    {
+      "account_id": "SGD-005-CA",
+      "account_type": "Personal Current Account",
+      "currency": "SGD",
+      "balance": 180000.0,
+      "available_balance": 178000.0,
+      "status": "Active",
+      "opened_date": "2018-07-12"
+    },
+    {
+      "account_id": "MCW-005-WA",
+      "account_type": "Multi-Currency Wealth Account",
+      "currency": "USD/EUR/DKK",
+      "balances": {
+        "USD": 410000.0,
+        "EUR": 290000.0,
+        "DKK": 1800000.0
+      },
+      "total_usd_equivalent": 970000.0,
+      "status": "Active",
+      "opened_date": "2018-07-12"
+    }
+  ],
+  "portfolio": {
+    "portfolio_id": "PORT-005",
+    "total_value_usd": 4050000,
+    "currency": "USD",
+    "last_updated": "2026-03-17",
+    "mandate_type": "Discretionary — Balanced",
+    "allocation": {
+      "Public Equities": {
+        "pct": 45,
+        "value_usd": 1822500
+      },
+      "Fixed Income": {
+        "pct": 30,
+        "value_usd": 1215000
+      },
+      "Hedge Funds": {
+        "pct": 15,
+        "value_usd": 607500
+      },
+      "Cash": {
+        "pct": 10,
+        "value_usd": 405000
+      }
+    },
+    "top_equity_holdings": [
+      {
+        "name": "Novo Nordisk A/S",
+        "ticker": "NOVO-B",
+        "sector": "Healthcare",
+        "value_usd": 520000,
+        "pnl_pct": 28.4
+      },
+      {
+        "name": "A.P. Møller-Mærsk",
+        "ticker": "MAERSK-B",
+        "sector": "Shipping",
+        "value_usd": 380000,
+        "pnl_pct": -4.2
+      },
+      {
+        "name": "UBS Global Equity ETF",
+        "ticker": "UBS-ETF",
+        "sector": "Broad Market",
+        "value_usd": 620000,
+        "pnl_pct": 10.1
+      },
+      {
+        "name": "Ørsted A/S",
+        "ticker": "ORSTED",
+        "sector": "Renewables",
+        "value_usd": 302500,
+        "pnl_pct": -12.3
+      }
+    ],
+    "private_markets": [],
+    "structured_products": [
+      {
+        "name": "EUR/SGD FX Accumulator",
+        "underlying": "EUR/SGD FX",
+        "value_usd": 280000,
+        "maturity": "2026-08-31"
+      }
+    ],
+    "ytd_return_pct": 4.4,
+    "one_year_return_pct": 9.7
+  },
+  "credit": {
+    "mortgage": {
+      "product": "Private Bank Mortgage",
+      "property": "Nassim Hill condo",
+      "outstanding_sgd": 1200000,
+      "original_amount_sgd": 2000000,
+      "interest_rate_pct": 4.1,
+      "monthly_repayment_sgd": 6800,
+      "maturity_date": "2034-07-01",
+      "status": "Active"
+    },
+    "credit_cards": [
+      {
+        "product": "UBS Visa Infinite",
+        "limit_usd": 120000,
+        "outstanding_usd": 9800,
+        "status": "Active"
+      }
+    ]
+  },
+  "real_estate": [
+    {
+      "property": "Nassim Hill condo",
+      "location": "Singapore",
+      "value_sgd": 3800000,
+      "loan_sgd": 1200000
+    },
+    {
+      "property": "Family home",
+      "location": "Copenhagen, DK",
+      "value_dkk": 12000000,
+      "loan_dkk": 0
+    }
+  ],
+  "recent_transactions": [
+    {
+      "date": "2026-03-17",
+      "description": "FX conversion — EUR 200k to SGD",
+      "amount": -290000.0,
+      "currency": "EUR",
+      "account": "MCW-005-WA"
+    },
+    {
+      "date": "2026-03-15",
+      "description": "Expat salary — Norden Capital SG",
+      "amount": 42000.0,
+      "currency": "SGD",
+      "account": "SGD-005-CA"
+    },
+    {
+      "date": "2026-03-12",
+      "description": "Discretionary mandate rebalancing fee",
+      "amount": -3100.0,
+      "currency": "USD",
+      "account": "MCW-005-WA"
+    },
+    {
+      "date": "2026-03-10",
+      "description": "Condo mortgage payment",
+      "amount": -6800.0,
+      "currency": "SGD",
+      "account": "SGD-005-CA"
+    },
+    {
+      "date": "2026-03-08",
+      "description": "Novo Nordisk dividend",
+      "amount": 2840.0,
+      "currency": "DKK",
+      "account": "MCW-005-WA"
+    },
+    {
+      "date": "2026-03-05",
+      "description": "UBS Visa Infinite — Raffles Hotel dinner",
+      "amount": -1240.0,
+      "currency": "SGD",
+      "account": "SGD-005-CA"
+    },
+    {
+      "date": "2026-03-03",
+      "description": "FX accumulator settlement — EUR/SGD",
+      "amount": 8400.0,
+      "currency": "SGD",
+      "account": "SGD-005-CA"
+    },
+    {
+      "date": "2026-03-01",
+      "description": "Transfer to Copenhagen family account",
+      "amount": -15000.0,
+      "currency": "EUR",
+      "account": "MCW-005-WA"
+    }
+  ],
+  "appointments": [
+    {
+      "appointment_id": "APT-005-A",
+      "type": "FX Strategy Review",
+      "date": "2026-03-26",
+      "time": "16:00",
+      "rm": "Sophia Lim",
+      "location": "UBS Singapore, One Raffles Quay",
+      "status": "Confirmed"
+    },
+    {
+      "appointment_id": "APT-005-B",
+      "type": "Estate & Tax Planning",
+      "date": "2026-04-22",
+      "time": "10:30",
+      "rm": "Sophia Lim",
+      "location": "Video call",
+      "status": "Tentative"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "N-005-1",
+      "type": "Alert",
+      "message": "Employment Pass renewal due — ensure tax residency docs are updated with IRAS",
+      "date": "2026-03-10",
+      "read": false
+    },
+    {
+      "id": "N-005-2",
+      "type": "FX",
+      "message": "EUR/SGD rate reached your alert level of 1.44",
+      "date": "2026-03-17",
+      "read": false
+    },
+    {
+      "id": "N-005-3",
+      "type": "Reminder",
+      "message": "FX Accumulator — next fixing date 2026-03-31, estimated delivery SGD 42,000",
+      "date": "2026-03-20",
+      "read": false
+    }
+  ],
+  "applications": [
+    {
+      "application_id": "APP-005-A",
+      "application_type": "FX Forward Booking",
+      "description": "Book EUR/SGD 6-month forward to hedge salary and family transfer exposure",
+      "status": "Under Review",
+      "submitted_date": "2026-03-16",
+      "expected_completion": "2026-03-19",
+      "assigned_to": "FX Desk (cc: Sophia Lim)",
+      "documents_required": null,
+      "notes": "Indicative rate EUR/SGD 1.4650 for Sep 2026 delivery. Awaiting client confirmation."
+    },
+    {
+      "application_id": "APP-005-B",
+      "application_type": "Mortgage Rate Review",
+      "description": "Review of Nassim Hill condo mortgage rate — current rate 4.10%, requesting repricing",
+      "status": "Submitted",
+      "submitted_date": "2026-03-17",
+      "expected_completion": "2026-03-24",
+      "assigned_to": "Mortgage Team (cc: Sophia Lim)",
+      "documents_required": null,
+      "notes": "Repricing request submitted. Mortgage team will review current SORA spread vs market."
+    }
+  ]
+}

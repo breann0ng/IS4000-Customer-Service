@@ -1,0 +1,233 @@
+{
+  "profile": {
+    "customer_id": "C-004",
+    "full_name": "Priya Suresh Menon",
+    "preferred_name": "Priya",
+    "date_of_birth": "1991-12-03",
+    "nationality": "Singaporean",
+    "tax_residency": "Singapore",
+    "segment": "HNW",
+    "tier": "UBS Wealth Management",
+    "relationship_manager": "Kevin Ng",
+    "rm_email": "kevin.ng@ubs.com",
+    "rm_phone": "+65 6495 3380",
+    "onboarded_date": "2021-02-20",
+    "kyc_status": "Verified",
+    "kyc_last_reviewed": "2025-01-10",
+    "address": "10 Ardmore Park, #14-02, Singapore 259956",
+    "email": "priya.menon@gmail.com",
+    "mobile": "+65 9234 5678",
+    "preferred_contact": "Mobile app / Secure chat",
+    "language": "English",
+    "risk_profile": "Growth",
+    "net_worth_usd": 3000000,
+    "aum_with_ubs_usd": 2400000,
+    "family_office": null,
+    "trust_structure": false,
+    "philanthropic_fund": false
+  },
+  "accounts": [
+    {
+      "account_id": "SGD-004-CA",
+      "account_type": "Personal Current Account",
+      "currency": "SGD",
+      "balance": 145000.0,
+      "available_balance": 140000.0,
+      "iban": "SG12UBS00004412309876",
+      "status": "Active",
+      "opened_date": "2021-02-20"
+    },
+    {
+      "account_id": "USD-004-WA",
+      "account_type": "Wealth Accumulation Account",
+      "currency": "USD",
+      "balance": 210000.0,
+      "available_balance": 210000.0,
+      "status": "Active",
+      "opened_date": "2021-02-20"
+    }
+  ],
+  "portfolio": {
+    "portfolio_id": "PORT-004",
+    "total_value_usd": 2050000,
+    "currency": "USD",
+    "last_updated": "2026-03-17",
+    "mandate_type": "Advisory",
+    "allocation": {
+      "Public Equities": {
+        "pct": 65,
+        "value_usd": 1332500
+      },
+      "Fixed Income": {
+        "pct": 15,
+        "value_usd": 307500
+      },
+      "Private Equity": {
+        "pct": 10,
+        "value_usd": 205000
+      },
+      "Cash": {
+        "pct": 10,
+        "value_usd": 205000
+      }
+    },
+    "top_equity_holdings": [
+      {
+        "name": "S&P 500 ETF (SPY)",
+        "ticker": "SPY",
+        "sector": "Broad Market",
+        "value_usd": 480000,
+        "pnl_pct": 12.1
+      },
+      {
+        "name": "Alphabet Inc",
+        "ticker": "GOOGL",
+        "sector": "Technology",
+        "value_usd": 310000,
+        "pnl_pct": 9.8
+      },
+      {
+        "name": "iShares MSCI Asia ex-Japan",
+        "ticker": "AAXJ",
+        "sector": "EM Asia",
+        "value_usd": 290000,
+        "pnl_pct": 6.3
+      },
+      {
+        "name": "Amazon.com Inc",
+        "ticker": "AMZN",
+        "sector": "Technology",
+        "value_usd": 252500,
+        "pnl_pct": 14.2
+      }
+    ],
+    "private_markets": [
+      {
+        "fund": "Asia Digital Fund V",
+        "type": "Venture Capital",
+        "commitment_usd": 205000,
+        "nav_usd": 198000,
+        "vintage": 2024
+      }
+    ],
+    "structured_products": [],
+    "ytd_return_pct": 7.9,
+    "one_year_return_pct": 16.1
+  },
+  "credit": {
+    "credit_cards": [
+      {
+        "product": "UBS Visa Infinite",
+        "limit_sgd": 80000,
+        "outstanding_sgd": 4320,
+        "status": "Active"
+      }
+    ]
+  },
+  "real_estate": [],
+  "recent_transactions": [
+    {
+      "date": "2026-03-16",
+      "description": "Monthly salary credit — TechCorp Asia",
+      "amount": 28000.0,
+      "currency": "SGD",
+      "account": "SGD-004-CA"
+    },
+    {
+      "date": "2026-03-14",
+      "description": "Regular investment plan — SPY ETF",
+      "amount": -5000.0,
+      "currency": "USD",
+      "account": "USD-004-WA"
+    },
+    {
+      "date": "2026-03-12",
+      "description": "UBS Visa Infinite — Shopee / online",
+      "amount": -1890.0,
+      "currency": "SGD",
+      "account": "SGD-004-CA"
+    },
+    {
+      "date": "2026-03-10",
+      "description": "Housing loan repayment (external bank)",
+      "amount": -4200.0,
+      "currency": "SGD",
+      "account": "SGD-004-CA"
+    },
+    {
+      "date": "2026-03-05",
+      "description": "GOOGL dividend reinvested",
+      "amount": 420.0,
+      "currency": "USD",
+      "account": "USD-004-WA"
+    },
+    {
+      "date": "2026-03-03",
+      "description": "Transfer to CPF Investment Account",
+      "amount": -3000.0,
+      "currency": "SGD",
+      "account": "SGD-004-CA"
+    },
+    {
+      "date": "2026-03-01",
+      "description": "UBS Visa Infinite — Lavo restaurant SG",
+      "amount": -680.0,
+      "currency": "SGD",
+      "account": "SGD-004-CA"
+    },
+    {
+      "date": "2026-02-28",
+      "description": "Asia Digital Fund V — capital call",
+      "amount": -25000.0,
+      "currency": "USD",
+      "account": "USD-004-WA"
+    }
+  ],
+  "appointments": [
+    {
+      "appointment_id": "APT-004-A",
+      "type": "Investment Planning Review",
+      "date": "2026-04-10",
+      "time": "18:00",
+      "rm": "Kevin Ng",
+      "location": "Video call",
+      "status": "Confirmed"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "N-004-1",
+      "type": "Milestone",
+      "message": "Portfolio crossed USD 2M — congratulations!",
+      "date": "2026-03-01",
+      "read": true
+    },
+    {
+      "id": "N-004-2",
+      "type": "Opportunity",
+      "message": "New private equity fund available for your risk profile — Asia Digital Fund V",
+      "date": "2026-03-15",
+      "read": false
+    },
+    {
+      "id": "N-004-3",
+      "type": "Reminder",
+      "message": "SRS top-up deadline: contribute up to SGD 15,300 before 31 Dec 2026 for tax relief",
+      "date": "2026-03-10",
+      "read": false
+    }
+  ],
+  "applications": [
+    {
+      "application_id": "APP-004-A",
+      "application_type": "New Account Opening",
+      "description": "Opening SRS (Supplementary Retirement Scheme) investment account for tax-optimised contributions",
+      "status": "In Progress",
+      "submitted_date": "2026-03-14",
+      "expected_completion": "2026-03-21",
+      "assigned_to": "Account Services (cc: Kevin Ng)",
+      "documents_required": null,
+      "notes": "SRS account setup underway. Contribution limit SGD 15,300 for 2026 as EP holder."
+    }
+  ]
+}

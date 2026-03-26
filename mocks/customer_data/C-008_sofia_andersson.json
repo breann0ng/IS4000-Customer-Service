@@ -1,0 +1,236 @@
+{
+  "profile": {
+    "customer_id": "C-008",
+    "full_name": "Sofia Kristina Andersson",
+    "preferred_name": "Sofia",
+    "date_of_birth": "1988-06-25",
+    "nationality": "Swedish",
+    "tax_residency": "Singapore (EP holder)",
+    "segment": "Affluent",
+    "tier": "UBS Wealth Management",
+    "relationship_manager": "Kevin Ng",
+    "rm_email": "kevin.ng@ubs.com",
+    "rm_phone": "+65 6495 3380",
+    "onboarded_date": "2023-01-09",
+    "kyc_status": "Verified",
+    "kyc_last_reviewed": "2025-01-09",
+    "address": "15 Orchard Boulevard, #08-04, Singapore 248964",
+    "email": "sofia.andersson@outlook.com",
+    "mobile": "+65 9112 3344",
+    "preferred_contact": "Mobile app",
+    "language": "English / Swedish",
+    "risk_profile": "Growth",
+    "net_worth_usd": 1800000,
+    "aum_with_ubs_usd": 1200000,
+    "family_office": null,
+    "trust_structure": false,
+    "philanthropic_fund": false
+  },
+  "accounts": [
+    {
+      "account_id": "SGD-008-CA",
+      "account_type": "Personal Current Account",
+      "currency": "SGD",
+      "balance": 88000.0,
+      "available_balance": 86000.0,
+      "status": "Active",
+      "opened_date": "2023-01-09"
+    },
+    {
+      "account_id": "SEK-008-WA",
+      "account_type": "Multi-Currency Wealth Account",
+      "currency": "SEK/USD/EUR",
+      "balances": {
+        "SEK": 2200000.0,
+        "USD": 95000.0,
+        "EUR": 42000.0
+      },
+      "total_usd_equivalent": 380000.0,
+      "status": "Active",
+      "opened_date": "2023-01-09"
+    }
+  ],
+  "portfolio": {
+    "portfolio_id": "PORT-008",
+    "total_value_usd": 730000,
+    "currency": "USD",
+    "last_updated": "2026-03-17",
+    "mandate_type": "Advisory",
+    "allocation": {
+      "Public Equities": {
+        "pct": 70,
+        "value_usd": 511000
+      },
+      "Fixed Income": {
+        "pct": 15,
+        "value_usd": 109500
+      },
+      "Cash": {
+        "pct": 15,
+        "value_usd": 109500
+      }
+    },
+    "top_equity_holdings": [
+      {
+        "name": "Spotify Technology SA",
+        "ticker": "SPOT",
+        "sector": "Technology",
+        "value_usd": 145000,
+        "pnl_pct": 34.2
+      },
+      {
+        "name": "Volvo Cars AB",
+        "ticker": "VOLCAR-B",
+        "sector": "Automotive",
+        "value_usd": 98000,
+        "pnl_pct": -8.1
+      },
+      {
+        "name": "Ericsson",
+        "ticker": "ERIC-B",
+        "sector": "Telecom",
+        "value_usd": 82000,
+        "pnl_pct": 5.3
+      },
+      {
+        "name": "iShares MSCI World ETF",
+        "ticker": "IWDA",
+        "sector": "Broad Market",
+        "value_usd": 186000,
+        "pnl_pct": 11.8
+      }
+    ],
+    "private_markets": [],
+    "structured_products": [],
+    "ytd_return_pct": 9.2,
+    "one_year_return_pct": 19.4
+  },
+  "credit": {
+    "credit_cards": [
+      {
+        "product": "UBS Visa Platinum",
+        "limit_sgd": 30000,
+        "outstanding_sgd": 2100,
+        "status": "Active"
+      }
+    ]
+  },
+  "real_estate": [],
+  "recent_transactions": [
+    {
+      "date": "2026-03-16",
+      "description": "Salary — Nordea Bank Singapore",
+      "amount": 18500.0,
+      "currency": "SGD",
+      "account": "SGD-008-CA"
+    },
+    {
+      "date": "2026-03-14",
+      "description": "Monthly investment plan — IWDA ETF",
+      "amount": -3000.0,
+      "currency": "USD",
+      "account": "SEK-008-WA"
+    },
+    {
+      "date": "2026-03-12",
+      "description": "UBS Visa Platinum — Cold Storage / NTUC",
+      "amount": -420.0,
+      "currency": "SGD",
+      "account": "SGD-008-CA"
+    },
+    {
+      "date": "2026-03-10",
+      "description": "Rent payment — Orchard Boulevard",
+      "amount": -5800.0,
+      "currency": "SGD",
+      "account": "SGD-008-CA"
+    },
+    {
+      "date": "2026-03-08",
+      "description": "FX transfer — USD to SEK for family",
+      "amount": -5000.0,
+      "currency": "USD",
+      "account": "SEK-008-WA"
+    },
+    {
+      "date": "2026-03-05",
+      "description": "Spotify dividend",
+      "amount": 0.0,
+      "currency": "USD",
+      "account": "SEK-008-WA",
+      "note": "Spotify pays no dividend — reinvested via plan"
+    },
+    {
+      "date": "2026-03-01",
+      "description": "UBS Visa Platinum — Spotify subscription",
+      "amount": -19.99,
+      "currency": "USD",
+      "account": "SEK-008-WA"
+    },
+    {
+      "date": "2026-02-28",
+      "description": "Bonus credit — Nordea Bank",
+      "amount": 12000.0,
+      "currency": "SGD",
+      "account": "SGD-008-CA"
+    }
+  ],
+  "appointments": [
+    {
+      "appointment_id": "APT-008-A",
+      "type": "First Year Portfolio Review",
+      "date": "2026-04-05",
+      "time": "17:30",
+      "rm": "Kevin Ng",
+      "location": "Video call",
+      "status": "Confirmed"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "N-008-1",
+      "type": "Opportunity",
+      "message": "UBS key4 digital savings account now available — earn 2.1% p.a. on idle SGD cash",
+      "date": "2026-03-15",
+      "read": false
+    },
+    {
+      "id": "N-008-2",
+      "type": "Reminder",
+      "message": "SRS account not yet opened — contribute up to SGD 35,700 for tax relief as EP holder",
+      "date": "2026-03-10",
+      "read": false
+    },
+    {
+      "id": "N-008-3",
+      "type": "Market Alert",
+      "message": "Spotify (SPOT) up 6.8% after earnings beat — above your price alert of USD 420",
+      "date": "2026-03-17",
+      "read": false
+    }
+  ],
+  "applications": [
+    {
+      "application_id": "APP-008-A",
+      "application_type": "New Account Opening",
+      "description": "Opening SRS investment account — first-time SRS contribution for EP holder",
+      "status": "Completed",
+      "submitted_date": "2026-03-03",
+      "expected_completion": "2026-03-10",
+      "assigned_to": "Account Services (cc: Kevin Ng)",
+      "documents_required": null,
+      "notes": "SRS account SGD-008-SRS opened successfully on 2026-03-09. Contribution limit SGD 35,700 for EP holders."
+    },
+    {
+      "application_id": "APP-008-B",
+      "application_type": "Credit Card Limit Increase",
+      "description": "Request to increase UBS Visa Platinum limit from SGD 30,000 to SGD 50,000",
+      "status": "Under Review",
+      "submitted_date": "2026-03-16",
+      "expected_completion": "2026-03-20",
+      "assigned_to": "Card Services (cc: Kevin Ng)",
+      "documents_required": null,
+      "notes": "Standard income verification in progress."
+    }
+  ]
+}

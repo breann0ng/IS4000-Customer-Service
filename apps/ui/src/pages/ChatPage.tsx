@@ -10,7 +10,6 @@ import {
 import { useMessageStream } from "@/hooks/useMessageStream";
 import { Sidebar } from "@/components/Sidebar";
 import { ChatWindow } from "@/components/ChatWindow";
-import { PerformancePage } from "@/pages/PerformancePage";
 import styles from "./ChatPage.module.css";
 
 interface ChatPageProps {
@@ -27,9 +26,6 @@ export function ChatPage({ user, onLogout, theme, llmMode }: ChatPageProps) {
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [currentView, setCurrentView] = useState<"chat" | "performance">("chat");
-  const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
-  const performanceSessionIdRef = useRef<string | null>(null);
   const { thinking, sendStreaming, resetThinking } = useMessageStream();
   const [showArchived, setShowArchived] = useState(false);
   const showArchivedRef = useRef(showArchived);
@@ -139,45 +135,6 @@ export function ChatPage({ user, onLogout, theme, llmMode }: ChatPageProps) {
     }
   }, [loadSessions]);
 
-  const handleAskFromPerformance = useCallback(async (question: string) => {
-    setCurrentView("chat");
-
-    // Reuse existing performance session if we have one
-    if (performanceSessionIdRef.current) {
-      // Switch to the performance session if not already active
-      if (activeSessionId !== performanceSessionIdRef.current) {
-        await handleSelectSession(performanceSessionIdRef.current);
-      }
-      setPendingQuestion(question);
-      return;
-    }
-
-    // Create a dedicated session for performance questions
-    try {
-      const { data: session } = await createChatSessionApiChatSessionsPost({
-        throwOnError: true,
-        body: { title: "Account Performance Q&A" },
-      });
-      performanceSessionIdRef.current = session.session_id;
-      setActiveSessionId(session.session_id);
-      setMessages([]);
-      await loadSessions();
-      setPendingQuestion(question);
-    } catch {
-      /* session creation failed silently */
-    }
-  }, [activeSessionId, loadSessions, handleSelectSession]);
-
-  // Send pending question once we have an active session
-  useEffect(() => {
-    if (pendingQuestion && activeSessionId && !isSending) {
-      const question = pendingQuestion;
-      setPendingQuestion(null);
-      void handleSendMessage(question);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingQuestion, activeSessionId, isSending]);
-
   const handleSendMessage = useCallback(async (content: string) => {
     if (!activeSessionId || isSending) return;
 
@@ -234,9 +191,8 @@ export function ChatPage({ user, onLogout, theme, llmMode }: ChatPageProps) {
         showArchived={showArchived}
         user={user}
         theme={theme}
-        currentView={currentView}
-        onSelectSession={(id) => { setCurrentView("chat"); handleSelectSession(id); }}
-        onNewSession={() => { setCurrentView("chat"); handleNewSession(); }}
+        onSelectSession={handleSelectSession}
+        onNewSession={handleNewSession}
         onDeleteSession={handleDeleteSession}
         onRenameSession={handleRenameSession}
         onArchiveSession={handleArchiveSession}
@@ -244,27 +200,18 @@ export function ChatPage({ user, onLogout, theme, llmMode }: ChatPageProps) {
         onToggleArchived={() => setShowArchived((prev) => !prev)}
         onLogout={onLogout}
         onToggle={() => setSidebarOpen((prev) => !prev)}
-        onNavigatePerformance={() => setCurrentView("performance")}
-        onNavigateChat={() => setCurrentView("chat")}
       />
-      {currentView === "chat" ? (
-        <ChatWindow
-          messages={messages}
-          isSending={isSending}
-          thinking={thinking}
-          hasActiveSession={activeSessionId !== null}
-          sidebarOpen={sidebarOpen}
-          llmMode={llmMode}
-          onSendMessage={handleSendMessage}
-          onNewSession={handleNewSession}
-          onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
-        />
-      ) : (
-        <PerformancePage
-          onAskQuestion={handleAskFromPerformance}
-          onBack={() => setCurrentView("chat")}
-        />
-      )}
+      <ChatWindow
+        messages={messages}
+        isSending={isSending}
+        thinking={thinking}
+        hasActiveSession={activeSessionId !== null}
+        sidebarOpen={sidebarOpen}
+        llmMode={llmMode}
+        onSendMessage={handleSendMessage}
+        onNewSession={handleNewSession}
+        onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
+      />
     </div>
   );
 }

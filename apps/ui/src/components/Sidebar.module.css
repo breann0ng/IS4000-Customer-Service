@@ -202,11 +202,6 @@
   color: var(--color-text-primary);
 }
 
-.footerButtonActive {
-  background-color: var(--color-sidebar-active);
-  color: var(--color-accent);
-}
-
 .separator {
   height: 1px;
   background-color: var(--color-border);

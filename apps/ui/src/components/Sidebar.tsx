@@ -13,7 +13,6 @@ import {
   ExitIcon,
   ChatBubbleIcon,
   ChevronLeftIcon,
-  BarChartIcon,
 } from "@radix-ui/react-icons";
 import type { ChatSessionSummary, UserProfile } from "@/api/generated";
 import styles from "./Sidebar.module.css";
@@ -26,7 +25,6 @@ interface SidebarProps {
   showArchived: boolean;
   user: UserProfile;
   theme: { theme: "light" | "dark"; toggleTheme: () => void };
-  currentView: "chat" | "performance";
   onSelectSession: (sessionId: string) => void;
   onNewSession: () => void;
   onDeleteSession: (sessionId: string) => void;
@@ -36,8 +34,6 @@ interface SidebarProps {
   onToggleArchived: () => void;
   onLogout: () => void;
   onToggle: () => void;
-  onNavigatePerformance: () => void;
-  onNavigateChat: () => void;
 }
 
 export function Sidebar({
@@ -48,7 +44,6 @@ export function Sidebar({
   showArchived,
   user,
   theme,
-  currentView,
   onSelectSession,
   onNewSession,
   onDeleteSession,
@@ -58,8 +53,6 @@ export function Sidebar({
   onToggleArchived,
   onLogout,
   onToggle,
-  onNavigatePerformance,
-  onNavigateChat,
 }: SidebarProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -231,13 +224,6 @@ export function Sidebar({
         </nav>
 
         <div className={styles.footer}>
-          <button
-            className={`${styles.footerButton} ${currentView === "performance" ? styles.footerButtonActive : ""}`}
-            onClick={currentView === "performance" ? onNavigateChat : onNavigatePerformance}
-          >
-            <BarChartIcon width={15} height={15} />
-            <span>{currentView === "performance" ? "Back to Chat" : "Account Performance"}</span>
-          </button>
           <button className={styles.footerButton} onClick={onToggleArchived}>
             <ArchiveIcon width={15} height={15} />
             <span>{showArchived ? "Hide archived" : "Show archived"}</span>

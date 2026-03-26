@@ -14,3 +14,4 @@ models/
 .mypy_cache/
 .claude
 working_document/
+GEMINI.md

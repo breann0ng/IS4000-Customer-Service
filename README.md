@@ -98,7 +98,7 @@ All LLM calls use **Gemini structured outputs** (Pydantic models) for reliable p
 │       │   ├── api/generated/  Auto-generated TypeScript client
 │       │   ├── components/     Sidebar, ChatWindow, MessageBubble, ThinkingIndicator,
 │       │   │                   StructuredMessage (dashboard renderer), ChartCard (SVG charts)
-│       │   └── pages/          LoginPage, ChatPage
+│       │   └── pages/          LoginPage, ChatPage, PerformancePage
 ├── rag/                        RAG pipeline + server
 │   ├── ingest.py               PDF/DOCX → PostgreSQL pgvector (cosine similarity)
 │   └── server.py               MCP server that queries pgvector for top-k chunks
@@ -223,6 +223,27 @@ Wealth Advisory responses are rendered as an interactive dashboard:
 
 The `StructuredMessage` component handles all parsing (heading normalisation, JSON chart extraction) and the `ChartCard` component renders pie/bar/line SVG charts via the `ChartData` interface.
 
+## Account Performance Page
+
+A dedicated performance dashboard accessible via the **Account Performance** button in the sidebar. It provides an at-a-glance view of the client's portfolio with interactive charts.
+
+### Features
+
+- **Summary Cards** — Portfolio value, 6-month return, YTD return, and risk level displayed as key metric cards.
+- **Portfolio Value Over Time** — Line chart tracking portfolio value across months with clickable data points.
+- **Asset Allocation** — Interactive donut chart showing allocation across asset classes (Equities, Fixed Income, Real Estate, Alternatives, Cash).
+- **Monthly Returns** — Bar chart displaying monthly gains/losses with positive (green) and negative (red) bars.
+- **Portfolio vs Benchmark** — Dual-line chart comparing portfolio performance against the S&P 500 benchmark.
+
+### Interactive Q&A
+
+Clicking any data point on the charts opens an inline **question panel** with:
+- A context label showing what was clicked (e.g., "Oct return: +2.1%")
+- A pre-filled suggested question that users can edit or replace entirely
+- A send button (or press Enter) to submit the question to the chatbot
+
+All questions asked from the performance page are routed to a single **"Account Performance Q&A"** chat session, keeping the conversation thread consistent. A new session is only created if the user explicitly clicks "New Session" in the sidebar.
+
 ## Sample Queries
 
 - **Greeting**: "Hello" (Direct response path)
@@ -231,9 +252,11 @@ The `StructuredMessage` component handles all parsing (heading normalisation, JS
 - **Multi-step**: "What's my balance and what are the current FX rates?" (Private Banking + FX Treasury)
 - **RAG**: "What are the onboarding requirements for HNW clients?" (Client Services + RAG)
 - **Lending**: "What Lombard lending options are available?" (Lending & Credit)
+- **Performance Q&A**: Click a data point on the Account Performance page → "Why did my portfolio return -1.9% in Dec?" (routed to Wealth Advisory)
 
 ## Future Work
 
+- Live portfolio data integration (replace mock data on Performance page)
 - Streaming chart rendering as agent steps arrive
 - Multi-currency portfolio view with live FX overlay
 - PDF export of dashboard responses

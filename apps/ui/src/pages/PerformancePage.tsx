@@ -18,11 +18,11 @@ const PORTFOLIO_VALUE = [
 ];
 
 const ASSET_ALLOCATION = [
-  { label: "Equities", value: 45, color: "#10a37f" },
-  { label: "Fixed Income", value: 25, color: "#1d4ed8" },
-  { label: "Real Estate", value: 15, color: "#7c3aed" },
-  { label: "Alternatives", value: 10, color: "#b45309" },
-  { label: "Cash", value: 5, color: "#0f766e" },
+  { label: "Equities", value: 45, color: "#da291c" },
+  { label: "Fixed Income", value: 25, color: "#1e1e1e" },
+  { label: "Real Estate", value: 15, color: "#ffd100" },
+  { label: "Alternatives", value: 10, color: "#9b1318" },
+  { label: "Cash", value: 5, color: "#b6b6b6" },
 ];
 
 const MONTHLY_RETURNS = [
@@ -138,9 +138,9 @@ function SummaryCards() {
   const ytdReturn = ((PORTFOLIO_VALUE[PORTFOLIO_VALUE.length - 1]!.value - PORTFOLIO_VALUE[2]!.value) / PORTFOLIO_VALUE[2]!.value * 100).toFixed(1);
 
   const cards = [
-    { label: "Portfolio Value", value: formatCurrency(currentValue), sub: "As of Mar 2025" },
+    { label: "Portfolio Value", value: formatCurrency(currentValue), sub: "As of Mar 2026" },
     { label: "6M Return", value: `+${totalReturn}%`, sub: `+${formatCurrency(currentValue - previousValue)}` },
-    { label: "YTD Return", value: `+${ytdReturn}%`, sub: "Jan - Mar 2025" },
+    { label: "YTD Return", value: `+${ytdReturn}%`, sub: "Jan - Mar 2026" },
     { label: "Risk Level", value: "Moderate", sub: "Sharpe Ratio: 1.42" },
   ];
 
@@ -200,16 +200,16 @@ function PortfolioChart({ onClickPoint }: { onClickPoint: (context: string, sugg
         })}
         <polygon
           points={`${padLeft},${padTop + innerH} ${polyline} ${points[points.length - 1]!.x},${padTop + innerH}`}
-          fill="#10a37f" fillOpacity={0.08}
+          fill="#da291c" fillOpacity={0.08}
         />
-        <polyline points={polyline} fill="none" stroke="#10a37f" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
+        <polyline points={polyline} fill="none" stroke="#da291c" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
         {points.map((p, i) => {
           const d = PORTFOLIO_VALUE[i]!;
           return (
             <g key={i}>
               <circle
                 cx={p.x} cy={p.y} r={hovered === i ? 7 : 4.5}
-                fill="#10a37f" stroke="var(--color-bg)" strokeWidth={2}
+                fill="#da291c" stroke="var(--color-bg)" strokeWidth={2}
                 className={styles.clickableDot}
                 onMouseEnter={() => setHovered(i)}
                 onMouseLeave={() => setHovered(null)}
@@ -335,7 +335,7 @@ function ReturnsChart({ onClickBar }: { onClickBar: (context: string, suggestion
           const barH = (Math.abs(d.value) / maxVal) * (innerH / 2);
           const x = padLeft + gap * i + (gap - barW) / 2;
           const y = d.value >= 0 ? zeroY - barH : zeroY;
-          const color = d.value >= 0 ? "#10a37f" : "#ef4444";
+          const color = d.value >= 0 ? "#1e1e1e" : "#da291c";
           return (
             <g key={i}>
               <rect
@@ -398,8 +398,8 @@ function BenchmarkChart({ onClickPoint }: { onClickPoint: (context: string, sugg
       <h3 className={styles.chartTitle}>Portfolio vs Benchmark</h3>
       <p className={styles.chartSubtitle}>Click a point to compare your performance against the benchmark</p>
       <div className={styles.benchmarkLegend}>
-        <span className={styles.benchmarkKey}><span className={styles.legendDot} style={{ background: "#10a37f" }} /> Your Portfolio</span>
-        <span className={styles.benchmarkKey}><span className={styles.legendDot} style={{ background: "#1d4ed8" }} /> Benchmark (S&P 500)</span>
+        <span className={styles.benchmarkKey}><span className={styles.legendDot} style={{ background: "#da291c" }} /> Your Portfolio</span>
+        <span className={styles.benchmarkKey}><span className={styles.legendDot} style={{ background: "#1e1e1e" }} /> Benchmark (S&P 500)</span>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className={styles.chartSvg}>
         {[0, 0.5, 1].map((frac) => {
@@ -416,11 +416,11 @@ function BenchmarkChart({ onClickPoint }: { onClickPoint: (context: string, sugg
         })}
         <polyline
           points={benchmarkPoints.map((p) => `${p.x},${p.y}`).join(" ")}
-          fill="none" stroke="#1d4ed8" strokeWidth={2} strokeLinejoin="round" strokeDasharray="6 3"
+          fill="none" stroke="#1e1e1e" strokeWidth={2} strokeLinejoin="round" strokeDasharray="6 3"
         />
         <polyline
           points={portfolioPoints.map((p) => `${p.x},${p.y}`).join(" ")}
-          fill="none" stroke="#10a37f" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round"
+          fill="none" stroke="#da291c" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round"
         />
         {portfolioPoints.map((p, i) => {
           const d = BENCHMARK_COMPARISON[i]!;
@@ -429,7 +429,7 @@ function BenchmarkChart({ onClickPoint }: { onClickPoint: (context: string, sugg
             <g key={i}>
               <circle
                 cx={p.x} cy={p.y} r={hovered === i ? 7 : 4.5}
-                fill="#10a37f" stroke="var(--color-bg)" strokeWidth={2}
+                fill="#da291c" stroke="var(--color-bg)" strokeWidth={2}
                 className={styles.clickableDot}
                 onMouseEnter={() => setHovered(i)}
                 onMouseLeave={() => setHovered(null)}
@@ -450,7 +450,7 @@ function BenchmarkChart({ onClickPoint }: { onClickPoint: (context: string, sugg
           );
         })}
         {benchmarkPoints.map((p, i) => (
-          <circle key={`b${i}`} cx={p.x} cy={p.y} r={3} fill="#1d4ed8" stroke="var(--color-bg)" strokeWidth={1.5} />
+          <circle key={`b${i}`} cx={p.x} cy={p.y} r={3} fill="#1e1e1e" stroke="var(--color-bg)" strokeWidth={1.5} />
         ))}
       </svg>
     </div>

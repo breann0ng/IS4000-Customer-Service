@@ -8,14 +8,13 @@ import {
   ArchiveIcon,
   ResetIcon,
   TrashIcon,
-  SunIcon,
-  MoonIcon,
-  ExitIcon,
   ChatBubbleIcon,
-  ChevronLeftIcon,
-  BarChartIcon,
+  HamburgerMenuIcon,
+  StarIcon,
+  MoonIcon,
+  SunIcon,
 } from "@radix-ui/react-icons";
-import type { ChatSessionSummary, UserProfile } from "@/api/generated";
+import type { ChatSessionSummary } from "@/api/generated";
 import styles from "./Sidebar.module.css";
 
 interface SidebarProps {
@@ -24,7 +23,6 @@ interface SidebarProps {
   isLoading: boolean;
   isOpen: boolean;
   showArchived: boolean;
-  user: UserProfile;
   theme: { theme: "light" | "dark"; toggleTheme: () => void };
   currentView: "chat" | "performance";
   onSelectSession: (sessionId: string) => void;
@@ -34,7 +32,6 @@ interface SidebarProps {
   onArchiveSession: (sessionId: string) => void;
   onUnarchiveSession: (sessionId: string) => void;
   onToggleArchived: () => void;
-  onLogout: () => void;
   onToggle: () => void;
   onNavigatePerformance: () => void;
   onNavigateChat: () => void;
@@ -46,7 +43,6 @@ export function Sidebar({
   isLoading,
   isOpen,
   showArchived,
-  user,
   theme,
   currentView,
   onSelectSession,
@@ -56,7 +52,6 @@ export function Sidebar({
   onArchiveSession,
   onUnarchiveSession,
   onToggleArchived,
-  onLogout,
   onToggle,
   onNavigatePerformance,
   onNavigateChat,
@@ -82,23 +77,23 @@ export function Sidebar({
         <div className={styles.header}>
           <Tooltip.Root>
             <Tooltip.Trigger asChild>
+              <button className={styles.iconButton} onClick={onToggle} aria-label="Toggle sidebar">
+                <HamburgerMenuIcon width={18} height={18} />
+              </button>
+            </Tooltip.Trigger>
+            <Tooltip.Content className={styles.tooltip} side="right" sideOffset={8}>
+              Toggle sidebar
+            </Tooltip.Content>
+          </Tooltip.Root>
+
+          <Tooltip.Root>
+            <Tooltip.Trigger asChild>
               <button className={styles.iconButton} onClick={onNewSession} aria-label="New chat">
                 <PlusIcon width={18} height={18} />
               </button>
             </Tooltip.Trigger>
             <Tooltip.Content className={styles.tooltip} side="right" sideOffset={8}>
               New chat
-            </Tooltip.Content>
-          </Tooltip.Root>
-
-          <Tooltip.Root>
-            <Tooltip.Trigger asChild>
-              <button className={styles.iconButton} onClick={onToggle} aria-label="Close sidebar">
-                <ChevronLeftIcon width={18} height={18} />
-              </button>
-            </Tooltip.Trigger>
-            <Tooltip.Content className={styles.tooltip} side="right" sideOffset={8}>
-              Close sidebar
             </Tooltip.Content>
           </Tooltip.Root>
         </div>
@@ -231,38 +226,45 @@ export function Sidebar({
         </nav>
 
         <div className={styles.footer}>
-          <button
-            className={`${styles.footerButton} ${currentView === "performance" ? styles.footerButtonActive : ""}`}
-            onClick={currentView === "performance" ? onNavigateChat : onNavigatePerformance}
-          >
-            <BarChartIcon width={15} height={15} />
-            <span>{currentView === "performance" ? "Back to Chat" : "Account Performance"}</span>
-          </button>
-          <button className={styles.footerButton} onClick={onToggleArchived}>
-            <ArchiveIcon width={15} height={15} />
-            <span>{showArchived ? "Hide archived" : "Show archived"}</span>
-          </button>
-          <button className={styles.footerButton} onClick={theme.toggleTheme}>
-            {theme.theme === "dark" ? <SunIcon width={15} height={15} /> : <MoonIcon width={15} height={15} />}
-            <span>{theme.theme === "dark" ? "Light mode" : "Dark mode"}</span>
-          </button>
-          <div className={styles.separator} />
-          <div className={styles.userRow}>
-            <div className={styles.avatar}>
-              {user.display_name.charAt(0).toUpperCase()}
-            </div>
-            <span className={styles.userName}>{user.display_name}</span>
-            <Tooltip.Root>
-              <Tooltip.Trigger asChild>
-                <button className={styles.iconButton} onClick={onLogout} aria-label="Sign out">
-                  <ExitIcon width={15} height={15} />
-                </button>
-              </Tooltip.Trigger>
-              <Tooltip.Content className={styles.tooltip} side="right" sideOffset={8}>
-                Sign out
-              </Tooltip.Content>
-            </Tooltip.Root>
-          </div>
+          <Tooltip.Root>
+            <Tooltip.Trigger asChild>
+              <button
+                className={`${styles.footerButton} ${currentView === "performance" ? styles.footerButtonActive : ""}`}
+                onClick={currentView === "performance" ? onNavigateChat : onNavigatePerformance}
+                aria-label="Account Performance"
+              >
+                <StarIcon width={18} height={18} className={styles.footerIcon} />
+                {isOpen && <span className={styles.footerLabel}>{currentView === "performance" ? "Back to Chat" : "Account Performance"}</span>}
+              </button>
+            </Tooltip.Trigger>
+            <Tooltip.Content className={styles.tooltip} side="right" sideOffset={8}>
+              {currentView === "performance" ? "Back to Chat" : "Account Performance"}
+            </Tooltip.Content>
+          </Tooltip.Root>
+
+          <Tooltip.Root>
+            <Tooltip.Trigger asChild>
+              <button className={styles.footerButton} onClick={onToggleArchived} aria-label="Archived Chats">
+                <ArchiveIcon width={18} height={18} className={styles.footerIcon} />
+                {isOpen && <span className={styles.footerLabel}>{showArchived ? "Hide archived" : "Archived Chats"}</span>}
+              </button>
+            </Tooltip.Trigger>
+            <Tooltip.Content className={styles.tooltip} side="right" sideOffset={8}>
+              {showArchived ? "Hide archived" : "Show archived"}
+            </Tooltip.Content>
+          </Tooltip.Root>
+
+          <Tooltip.Root>
+            <Tooltip.Trigger asChild>
+              <button className={styles.footerButton} onClick={theme.toggleTheme} aria-label="Toggle Theme">
+                {theme.theme === "dark" ? <SunIcon width={18} height={18} className={styles.footerIcon} /> : <MoonIcon width={18} height={18} className={styles.footerIcon} />}
+                {isOpen && <span className={styles.footerLabel}>{theme.theme === "dark" ? "Light Mode" : "Dark Mode"}</span>}
+              </button>
+            </Tooltip.Trigger>
+            <Tooltip.Content className={styles.tooltip} side="right" sideOffset={8}>
+              Help / Theme
+            </Tooltip.Content>
+          </Tooltip.Root>
         </div>
       </aside>
     </Tooltip.Provider>

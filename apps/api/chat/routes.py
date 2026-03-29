@@ -268,7 +268,7 @@ async def send_message(
         "metrics": workflow_result.get("metrics", []),
         "suggestions": workflow_result.get("suggestions", []),
     }
-    
+
     full_context = trace_dict or {}
     full_context["metadata"] = metadata
 

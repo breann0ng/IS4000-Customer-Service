@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 """
 ingest_to_chroma.py
 
@@ -50,7 +51,7 @@ def build_embedding_fn(model_name: str):
     logger.info(f"Loading embedding model: {model_name}")
     return embedding_functions.SentenceTransformerEmbeddingFunction(
         model_name=model_name,
-        device="cpu",          # change to "cuda" if GPU available
+        device="cpu",  # change to "cuda" if GPU available
         normalize_embeddings=True,
     )
 
@@ -105,9 +106,7 @@ def ingest(
         logger.info(f"Connected to ChromaDB at {chroma_host}:{chroma_port}")
     except Exception as e:
         logger.warning(f"Could not connect to remote ChromaDB ({e}), using local persistent client")
-        client = chromadb.PersistentClient(
-            path=str(Path(__file__).parent / "output" / "chroma_db")
-        )
+        client = chromadb.PersistentClient(path=str(Path(__file__).parent / "output" / "chroma_db"))
 
     embed_fn = build_embedding_fn(embed_model)
     collection = get_or_create_collection(client, collection_name, embed_fn)
@@ -125,7 +124,9 @@ def ingest(
 
     # Filter to new chunks only
     new_chunks = [c for c in chunks if c["id"] not in existing_ids]
-    logger.info(f"Ingesting {len(new_chunks)} new chunks (skipping {len(chunks) - len(new_chunks)} existing)")
+    logger.info(
+        f"Ingesting {len(new_chunks)} new chunks (skipping {len(chunks) - len(new_chunks)} existing)"
+    )
 
     if not new_chunks:
         logger.info("Nothing to ingest.")
@@ -143,7 +144,9 @@ def ingest(
         total_ingested += len(batch)
 
     final_count = collection.count()
-    logger.info(f"Ingestion complete. Collection '{collection_name}' now has {final_count} documents.")
+    logger.info(
+        f"Ingestion complete. Collection '{collection_name}' now has {final_count} documents."
+    )
     return final_count
 
 
@@ -156,9 +159,7 @@ def query_test(
         client = chromadb.HttpClient(host=CHROMA_HOST, port=CHROMA_PORT)
         client.heartbeat()
     except Exception:
-        client = chromadb.PersistentClient(
-            path=str(Path(__file__).parent / "output" / "chroma_db")
-        )
+        client = chromadb.PersistentClient(path=str(Path(__file__).parent / "output" / "chroma_db"))
 
     embed_fn = build_embedding_fn(embed_model)
     collection = client.get_collection(name=collection_name, embedding_function=embed_fn)
@@ -192,7 +193,9 @@ if __name__ == "__main__":
     parser.add_argument("--collection-name", default=COLLECTION_NAME)
     parser.add_argument("--embed-model", default=EMBED_MODEL)
     parser.add_argument("--no-skip-existing", action="store_true")
-    parser.add_argument("--test-query", action="store_true", help="Run smoke test queries after ingestion")
+    parser.add_argument(
+        "--test-query", action="store_true", help="Run smoke test queries after ingestion"
+    )
     args = parser.parse_args()
 
     ingest(

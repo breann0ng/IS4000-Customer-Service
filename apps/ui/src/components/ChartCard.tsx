@@ -5,23 +5,23 @@
 import styles from "./ChartCard.module.css";
 
 export interface ChartData {
-  type: "pie" | "bar" | "line";
+  type: "pie" | "bar" | "line" | "gauge";
   title: string;
   labels: string[];
   values: number[];
   unit?: string; // e.g. "%" or "CHF"
+  badge?: string; // e.g. "Sufficient" for gauge charts
 }
 
 // Colour palette aligned with dashboard theme
 const PALETTE = [
-  "#10a37f", // accent green
-  "#1d4ed8", // blue
-  "#7c3aed", // violet
-  "#b45309", // amber
-  "#0f766e", // teal
-  "#dc2626", // red
-  "#6d28d9", // purple
-  "#065f46", // deep green
+  "#da291c", // red (prioritised)
+  "#ffd100", // yellow
+  "#1e1e1e", // black
+  "#9b1318", // dark red
+  "#b6b6b6", // medium gray
+  "#282828", // dark gray
+  "#f2f2f2", // light gray
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -242,6 +242,71 @@ function Legend({ data }: { data: ChartData }) {
   );
 }
 
+// ─── Gauge Chart ──────────────────────────────────────────────────────────────
+
+function GaugeChart({ data }: { data: ChartData }) {
+  const cx = 140;
+  const cy = 135;
+  const r = 90;
+  
+  const value = data.values[0] || 0;
+  const max = data.values[1] || Math.max(value * 1.5, 1);
+  const ratio = Math.min(Math.max(value / max, 0), 1);
+  const angleDeg = -180 + (ratio * 180); // -180 is left, 0 is right
+  
+  const start = polarToCartesian(cx, cy, r, -180);
+  const end = polarToCartesian(cx, cy, r, angleDeg);
+  const fullEnd = polarToCartesian(cx, cy, r, 0);
+  
+  const trackPath = `M ${start.x} ${start.y} A ${r} ${r} 0 0 1 ${fullEnd.x} ${fullEnd.y}`;
+  const fillPath = ratio > 0 ? `M ${start.x} ${start.y} A ${r} ${r} 0 0 1 ${end.x} ${end.y}` : "";
+  
+  // Track starts grey, turns yellow, then red. We'll use Red for majority of good track.
+  const fillColor = ratio > 0.8 ? PALETTE[0] : (ratio > 0.5 ? PALETTE[1] : PALETTE[4]);
+  
+  return (
+    <div className={styles.chartInner} style={{ flexDirection: "column", alignItems: "center", position: "relative" }}>
+      <svg viewBox="0 0 280 150" className={styles.barSvg} aria-hidden="true">
+        {/* Background track */}
+        <path d={trackPath} fill="none" stroke="var(--color-border)" strokeWidth={16} strokeLinecap="round" />
+        
+        {/* Filled track */}
+        {ratio > 0 && (
+          <path d={fillPath} fill="none" stroke={fillColor} strokeWidth={16} strokeLinecap="round" className={styles.slice} />
+        )}
+        
+        {/* Center Value */}
+        <text x={cx} y={cy - 25} textAnchor="middle" style={{ fontSize: "28px", fontWeight: "bold", fill: "var(--color-text-primary)", fontFamily: "inherit" }}>
+          {value.toLocaleString('en-US').replace(/,/g, "'")}
+        </text>
+        
+        {/* Sub Label */}
+        {data.labels[0] && (
+          <text x={cx} y={cy + 2} textAnchor="middle" style={{ fontSize: "11px", fill: "var(--color-text-secondary)", fontFamily: "inherit" }}>
+            {data.labels[0]}
+          </text>
+        )}
+      </svg>
+      
+      {/* Badge container below svg */}
+      {data.badge && (
+        <div style={{
+          marginTop: "-15px",
+          padding: "4px 14px",
+          background: "var(--color-bg-secondary)",
+          border: "1px solid var(--color-border)",
+          borderRadius: "16px",
+          fontSize: "11px",
+          fontWeight: 600,
+          color: "var(--color-text-primary)"
+        }}>
+          {data.badge}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── ChartCard (main export) ──────────────────────────────────────────────────
 
 export function ChartCard({ data }: { data: ChartData }) {
@@ -249,13 +314,14 @@ export function ChartCard({ data }: { data: ChartData }) {
     <div className={styles.card}>
       <div className={styles.cardHeader}>
         <span className={styles.chartIcon}>
-          {data.type === "pie" ? "◉" : data.type === "bar" ? "▦" : "〜"}
+          {data.type === "pie" ? "◉" : data.type === "bar" ? "▦" : data.type === "gauge" ? "◒" : "〜"}
         </span>
         <h4 className={styles.cardTitle}>{data.title}</h4>
       </div>
       {data.type === "pie" && <PieChart data={data} />}
       {data.type === "bar" && <BarChart data={data} />}
       {data.type === "line" && <LineChart data={data} />}
+      {data.type === "gauge" && <GaugeChart data={data} />}
     </div>
   );
 }

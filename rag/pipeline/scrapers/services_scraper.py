@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 """
 scrapers/services_scraper.py
 
@@ -71,11 +72,13 @@ OUTPUT_RAW.mkdir(parents=True, exist_ok=True)
 OUTPUT_PROCESSED.mkdir(parents=True, exist_ok=True)
 
 SESSION = requests.Session()
-SESSION.headers.update({
-    "User-Agent": USER_AGENT,
-    "Accept-Language": "en-GB,en;q=0.9",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-})
+SESSION.headers.update(
+    {
+        "User-Agent": USER_AGENT,
+        "Accept-Language": "en-GB,en;q=0.9",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    }
+)
 
 
 def _url_to_filename(url: str) -> str:
@@ -174,9 +177,8 @@ def run_services_scraper(max_pages: int = 200) -> list[dict]:
             raw_path = OUTPUT_RAW / f"{_url_to_filename(url)}.html"
             if raw_path.exists():
                 new_links = [
-                    l for l in _discover_product_links(
-                        raw_path.read_text(encoding="utf-8"), url
-                    )
+                    l
+                    for l in _discover_product_links(raw_path.read_text(encoding="utf-8"), url)
                     if l not in visited
                 ]
                 logger.info(f"  Discovered {len(new_links)} new links")

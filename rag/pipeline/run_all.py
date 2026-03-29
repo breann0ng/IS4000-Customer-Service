@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 """
 run_all.py
 
@@ -20,6 +21,7 @@ Usage:
 
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import argparse
 import logging
@@ -35,20 +37,28 @@ logger = logging.getLogger("run_all")
 
 def main():
     parser = argparse.ArgumentParser(description="UBS Knowledge Base Pipeline")
-    parser.add_argument("--skip-scrape", action="store_true",
-                        help="Skip scraping, use existing output/processed/ files")
-    parser.add_argument("--scrape-only", action="store_true",
-                        help="Scrape and chunk but do not ingest into ChromaDB")
-    parser.add_argument("--help-only", action="store_true",
-                        help="Only scrape help centre pages")
-    parser.add_argument("--services-only", action="store_true",
-                        help="Only scrape product/services pages")
-    parser.add_argument("--skip-pdfs", action="store_true",
-                        help="Skip PDF discovery and extraction")
+    parser.add_argument(
+        "--skip-scrape",
+        action="store_true",
+        help="Skip scraping, use existing output/processed/ files",
+    )
+    parser.add_argument(
+        "--scrape-only",
+        action="store_true",
+        help="Scrape and chunk but do not ingest into ChromaDB",
+    )
+    parser.add_argument("--help-only", action="store_true", help="Only scrape help centre pages")
+    parser.add_argument(
+        "--services-only", action="store_true", help="Only scrape product/services pages"
+    )
+    parser.add_argument(
+        "--skip-pdfs", action="store_true", help="Skip PDF discovery and extraction"
+    )
     parser.add_argument("--max-help-pages", type=int, default=500)
     parser.add_argument("--max-service-pages", type=int, default=200)
-    parser.add_argument("--test-query", action="store_true",
-                        help="Run smoke test queries after ingest")
+    parser.add_argument(
+        "--test-query", action="store_true", help="Run smoke test queries after ingest"
+    )
     args = parser.parse_args()
 
     total_docs = 0
@@ -58,6 +68,7 @@ def main():
     logger.info("Step 1: Checking robots.txt")
     logger.info("=" * 60)
     from utils.robots_checker import get_crawl_delay, _get_robots
+
     robots = _get_robots("https://www.ubs.com")
     if robots:
         delay = get_crawl_delay("https://www.ubs.com")
@@ -72,6 +83,7 @@ def main():
             logger.info("Step 2: Scraping UBS Help Centre")
             logger.info("=" * 60)
             from scrapers.help_scraper import run_help_scraper
+
             help_docs = run_help_scraper(max_pages=args.max_help_pages)
             total_docs += len(help_docs)
             logger.info(f"Help scraper: {len(help_docs)} pages processed")
@@ -81,6 +93,7 @@ def main():
             logger.info("Step 3: Scraping UBS Product / Services Pages")
             logger.info("=" * 60)
             from scrapers.services_scraper import run_services_scraper
+
             service_docs = run_services_scraper(max_pages=args.max_service_pages)
             total_docs += len(service_docs)
             logger.info(f"Services scraper: {len(service_docs)} pages processed")
@@ -90,6 +103,7 @@ def main():
             logger.info("Step 3b: Scraping UBS PDFs (brochures, legal docs)")
             logger.info("=" * 60)
             from scrapers.pdf_scraper import run_pdf_scraper
+
             pdf_docs = run_pdf_scraper()
             total_docs += len(pdf_docs)
             logger.info(f"PDF scraper: {len(pdf_docs)} PDFs processed")
@@ -104,6 +118,7 @@ def main():
     logger.info("Step 4: Chunking all processed documents")
     logger.info("=" * 60)
     from chunk_all import run_chunker
+
     counts = run_chunker()
     total_chunks = sum(counts.values())
     logger.info(f"Chunking complete: {total_chunks} total chunks")
@@ -114,6 +129,7 @@ def main():
         logger.info("Step 5: Ingesting into ChromaDB")
         logger.info("=" * 60)
         from ingest_to_chroma import ingest, query_test
+
         final_count = ingest()
 
         if args.test_query:

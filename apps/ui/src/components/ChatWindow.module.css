@@ -7,16 +7,50 @@
   position: relative;
 }
 
-/* Top bar (visible when sidebar is closed) */
+/* Top bar */
 .topBar {
   position: absolute;
   top: 0;
   left: 0;
-  padding: 0.75rem;
+  right: 0;
+  padding: 1rem 1.5rem;
   z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.menuButton {
+.topBarLeft, .topBarRight {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.topBarTitle {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+}
+
+.userRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--color-text-secondary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.menuButton, .iconButton {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -24,10 +58,11 @@
   height: 32px;
   border-radius: 8px;
   color: var(--color-text-secondary);
+  background: transparent;
   transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
-.menuButton:hover {
+.menuButton:hover, .iconButton:hover {
   background-color: var(--color-bg-secondary);
   color: var(--color-text-primary);
 }
@@ -39,38 +74,87 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 1rem;
-  padding: 2rem;
+  gap: 2rem;
+  padding: 4rem 2rem 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
 }
 
-.emptyLogo {
-  margin-bottom: 0.5rem;
+.greetingHeader {
+  text-align: center;
+  margin-bottom: 1rem;
 }
 
 .emptyTitle {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
+  font-size: 2.25rem;
+  font-weight: 400;
+  color: var(--color-accent);
+  margin-bottom: 0.25rem;
+}
+
+.emptyTitleSecondary {
+  font-size: 2.25rem;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.75rem;
 }
 
 .emptySubtitle {
-  color: var(--color-text-secondary);
+  color: var(--color-text-tertiary);
   font-size: 0.9375rem;
 }
 
-.startButton {
-  margin-top: 0.5rem;
-  padding: 0.625rem 1.25rem;
-  background-color: var(--color-accent);
-  color: white;
-  border-radius: 20px;
+.suggestedPromptsHeader {
   font-size: 0.875rem;
   font-weight: 500;
-  transition: background-color var(--transition-fast);
+  color: var(--color-text-secondary);
+  margin-bottom: -1rem;
+  align-self: flex-start;
 }
 
-.startButton:hover {
-  background-color: var(--color-accent-hover);
+.suggestedPrompts {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  width: 100%;
+}
+
+.promptCard {
+  background-color: var(--color-bg-secondary);
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 1.25rem;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 120px;
+  transition: background-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.promptCard:hover {
+  background-color: var(--color-bg-tertiary);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.promptCard p {
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  line-height: 1.4;
+}
+
+.promptIcon {
+  align-self: flex-start;
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--color-bg);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 /* Message area */
@@ -168,7 +252,7 @@
   align-items: flex-end;
   background-color: var(--color-input-bg);
   border: 1px solid var(--color-input-border);
-  border-radius: 16px;
+  border-radius: 24px;
   padding: 0.5rem 0.75rem;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
@@ -206,10 +290,11 @@
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background-color: var(--color-send-bg);
-  color: var(--color-send-fg);
+  background-color: transparent;
+  color: var(--color-accent);
   flex-shrink: 0;
   transition: background-color var(--transition-fast), opacity var(--transition-fast);
+  border: 1px solid var(--color-accent);
 }
 
 .sendButton:hover:not(:disabled) {
@@ -217,7 +302,9 @@
 }
 
 .sendButton:disabled {
-  background-color: var(--color-send-disabled);
+  background-color: transparent;
+  color: var(--color-send-disabled);
+  border-color: var(--color-send-disabled);
   cursor: not-allowed;
 }
 

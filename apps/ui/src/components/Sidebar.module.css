@@ -207,6 +207,17 @@
   color: var(--color-accent);
 }
 
+.footerIcon {
+  flex-shrink: 0;
+}
+
+.footerLabel {
+  white-space: nowrap;
+  opacity: 1;
+  animation: fadeIn 0.2s ease;
+  font-weight: 500;
+}
+
 .separator {
   height: 1px;
   background-color: var(--color-border);

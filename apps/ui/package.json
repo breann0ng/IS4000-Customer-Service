@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "@hey-api/openapi-ts": "^0.94.2",
+    "@types/node": "^25.5.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.0",

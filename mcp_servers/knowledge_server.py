@@ -76,6 +76,26 @@ async def handle_private_banking(params: dict) -> dict:
     system_prompt = params.get("system_prompt", "")
 
     if settings.is_llm_mock_mode:
+        if "loan" in task.lower() or "lombard" in task.lower() or "credit" in task.lower():
+            return {
+                "response": (
+                    "[SMART MOCK LOAN SUMMARY]\n\n"
+                    "```json\n"
+                    "{\n"
+                    '  "type": "gauge",\n'
+                    '  "title": "Lombard loans",\n'
+                    '  "labels": ["Remaining lending value"],\n'
+                    '  "values": [61230, 80000],\n'
+                    '  "badge": "Sufficient"\n'
+                    "}\n"
+                    "```\n\n"
+                    "| | |\n"
+                    "|---|---|\n"
+                    "| Credit usage | **USD -179** |\n"
+                    "| Available credit | **USD 61'230** |\n"
+                )
+            }
+
         account_lines = "\n".join(
             f"  - {account['account']} ({account['currency']}): {account['balance']}"
             for account in MOCK_ACCOUNTS
@@ -102,6 +122,24 @@ async def handle_private_banking(params: dict) -> dict:
         f"Context: {context}\n\n"
         f"Provide a professional private banking summary or action confirmation."
     )
+    if "loan" in task.lower() or "lombard" in task.lower() or "credit" in task.lower():
+        prompt += (
+            "\n\nIMPORTANT: For this loan request, include this exact JSON chart in your response:\n"
+            "```json\n"
+            "{\n"
+            '  "type": "gauge",\n'
+            '  "title": "Lombard loans",\n'
+            '  "labels": ["Remaining lending value"],\n'
+            '  "values": [61230, 80000],\n'
+            '  "badge": "Sufficient"\n'
+            "}\n"
+            "```\n"
+            "And output this exact markdown table below it:\n"
+            "| | |\n"
+            "|---|---|\n"
+            "| Credit usage | **USD -179** |\n"
+            "| Available credit | **USD 61'230** |\n"
+        )
 
     try:
         response = await llm.ainvoke(
@@ -112,7 +150,9 @@ async def handle_private_banking(params: dict) -> dict:
         )
         content = response.content
         if isinstance(content, list):
-            content = " ".join(part.get("text", "") if isinstance(part, dict) else str(part) for part in content)
+            content = " ".join(
+                part.get("text", "") if isinstance(part, dict) else str(part) for part in content
+            )
         return {"response": str(content)}
     except Exception as e:
         return {"response": f"Private banking failed: {str(e)}", "error": str(e)}
@@ -152,9 +192,7 @@ async def handle_compliance_tax(params: dict) -> dict:
                 result = rag_response.json().get("result", {})
                 chunks = result.get("chunks", [])
                 if chunks:
-                    retrieved_docs = "\n\n".join(
-                        f"[Regulatory Info]: {c['text']}" for c in chunks
-                    )
+                    retrieved_docs = "\n\n".join(f"[Regulatory Info]: {c['text']}" for c in chunks)
     except Exception:
         pass
 
@@ -180,10 +218,14 @@ async def handle_compliance_tax(params: dict) -> dict:
     )
 
     try:
-        response = await llm.ainvoke([SystemMessage(content=system_prompt), HumanMessage(content=prompt)])
+        response = await llm.ainvoke(
+            [SystemMessage(content=system_prompt), HumanMessage(content=prompt)]
+        )
         content = response.content
         if isinstance(content, list):
-            content = " ".join(part.get("text", "") if isinstance(part, dict) else str(part) for part in content)
+            content = " ".join(
+                part.get("text", "") if isinstance(part, dict) else str(part) for part in content
+            )
         return {"response": str(content)}
     except Exception as e:
         return {"response": f"Compliance check failed: {str(e)}"}
@@ -223,13 +265,31 @@ async def handle_knowledge_query(params: dict) -> dict:
                 result = rag_response.json().get("result", {})
                 chunks = result.get("chunks", [])
                 if chunks:
-                    retrieved_docs = "\n\n".join(
-                        f"[Knowledge Base]: {c['text']}" for c in chunks
-                    )
+                    retrieved_docs = "\n\n".join(f"[Knowledge Base]: {c['text']}" for c in chunks)
     except Exception:
         pass
 
     if settings.is_llm_mock_mode:
+        if "loan" in task.lower() or "lombard" in task.lower() or "credit" in task.lower():
+            return {
+                "response": (
+                    "[SMART MOCK LOAN SUMMARY]\n\n"
+                    "```json\n"
+                    "{\n"
+                    '  "type": "gauge",\n'
+                    '  "title": "Lombard loans",\n'
+                    '  "labels": ["Remaining lending value"],\n'
+                    '  "values": [61230, 80000],\n'
+                    '  "badge": "Sufficient"\n'
+                    "}\n"
+                    "```\n\n"
+                    "| | |\n"
+                    "|---|---|\n"
+                    "| Credit usage | **USD -179** |\n"
+                    "| Available credit | **USD 61'230** |\n"
+                )
+            }
+
         return {
             "response": (
                 f"[SMART MOCK KNOWLEDGE]\n\n"
@@ -249,12 +309,34 @@ async def handle_knowledge_query(params: dict) -> dict:
         f"Knowledge Base Context:\n{retrieved_docs}\n\n"
         f"Provide a professional response based on our available documents."
     )
+    if "loan" in task.lower() or "lombard" in task.lower() or "credit" in task.lower():
+        prompt += (
+            "\n\nIMPORTANT: For this loan request, include this exact JSON chart in your response:\n"
+            "```json\n"
+            "{\n"
+            '  "type": "gauge",\n'
+            '  "title": "Lombard loans",\n'
+            '  "labels": ["Remaining lending value"],\n'
+            '  "values": [61230, 80000],\n'
+            '  "badge": "Sufficient"\n'
+            "}\n"
+            "```\n"
+            "And output this exact markdown table below it:\n"
+            "| | |\n"
+            "|---|---|\n"
+            "| Credit usage | **USD -179** |\n"
+            "| Available credit | **USD 61'230** |\n"
+        )
 
     try:
-        response = await llm.ainvoke([SystemMessage(content=system_prompt), HumanMessage(content=prompt)])
+        response = await llm.ainvoke(
+            [SystemMessage(content=system_prompt), HumanMessage(content=prompt)]
+        )
         content = response.content
         if isinstance(content, list):
-            content = " ".join(part.get("text", "") if isinstance(part, dict) else str(part) for part in content)
+            content = " ".join(
+                part.get("text", "") if isinstance(part, dict) else str(part) for part in content
+            )
         return {"response": str(content)}
     except Exception as e:
         return {"response": f"Knowledge query failed: {str(e)}"}

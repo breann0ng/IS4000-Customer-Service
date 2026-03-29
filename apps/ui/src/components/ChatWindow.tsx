@@ -1,8 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
-import { PaperPlaneIcon, HamburgerMenuIcon } from "@radix-ui/react-icons";
+import {
+  PaperPlaneIcon,
+  HamburgerMenuIcon,
+  BarChartIcon,
+  FileTextIcon,
+  CardStackIcon,
+  QuestionMarkCircledIcon,
+  ExitIcon
+} from "@radix-ui/react-icons";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import type { ChatMessageResponse } from "@/api/generated";
+import type { ChatMessageResponse, UserProfile } from "@/api/generated";
 import type { ThinkingState } from "@/hooks/useMessageStream";
 import { MessageBubble } from "@/components/MessageBubble";
 import { ThinkingIndicator } from "@/components/ThinkingIndicator";
@@ -12,11 +20,10 @@ interface ChatWindowProps {
   messages: ChatMessageResponse[];
   isSending: boolean;
   thinking: ThinkingState;
-  hasActiveSession: boolean;
   sidebarOpen: boolean;
-  llmMode: "mock" | "live" | "unknown";
+  user: UserProfile;
+  onLogout: () => void;
   onSendMessage: (content: string) => void;
-  onNewSession: () => void;
   onToggleSidebar: () => void;
 }
 
@@ -24,11 +31,10 @@ export function ChatWindow({
   messages,
   isSending,
   thinking,
-  hasActiveSession,
   sidebarOpen,
-  llmMode,
+  user,
+  onLogout,
   onSendMessage,
-  onNewSession,
   onToggleSidebar,
 }: ChatWindowProps) {
   const [inputValue, setInputValue] = useState("");
@@ -56,18 +62,23 @@ export function ChatWindow({
     }
   }
 
-  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
+  function handlePromptClick(text: string) {
+    if (isSending) return;
+    onSendMessage(text);
+  }
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
       handleSend();
     }
   }
 
-  if (!hasActiveSession) {
-    return (
-      <main className={styles.container}>
-        {!sidebarOpen && (
-          <div className={styles.topBar}>
+  return (
+    <main className={styles.container}>
+      <div className={styles.topBar}>
+        <div className={styles.topBarLeft}>
+          {!sidebarOpen && (
             <Tooltip.Provider delayDuration={300}>
               <Tooltip.Root>
                 <Tooltip.Trigger asChild>
@@ -80,51 +91,61 @@ export function ChatWindow({
                 </Tooltip.Content>
               </Tooltip.Root>
             </Tooltip.Provider>
-          </div>
-        )}
-        <div className={styles.emptyState}>
-          <div className={styles.emptyLogo}>
-            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-              <rect width="48" height="48" rx="12" fill="var(--color-accent)" />
-              <path d="M14 24h20M24 14v20" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-            </svg>
-          </div>
-          <h2 className={styles.emptyTitle}>How can I help you today?</h2>
-          <p className={styles.emptySubtitle}>Start a conversation about your banking needs</p>
-          <button className={styles.startButton} onClick={onNewSession}>
-            New conversation
-          </button>
-        </div>
-      </main>
-    );
-  }
-
-  return (
-    <main className={styles.container}>
-      {!sidebarOpen && (
-        <div className={styles.topBar}>
-          <Tooltip.Provider delayDuration={300}>
-            <Tooltip.Root>
-              <Tooltip.Trigger asChild>
-                <button className={styles.menuButton} onClick={onToggleSidebar} aria-label="Open sidebar">
-                  <HamburgerMenuIcon width={18} height={18} />
-                </button>
-              </Tooltip.Trigger>
-              <Tooltip.Content className={styles.tooltip} side="bottom" sideOffset={4}>
-                Open sidebar
-              </Tooltip.Content>
-            </Tooltip.Root>
-          </Tooltip.Provider>
-        </div>
-      )}
-
-      <div className={styles.messageArea}>
-        <div className={styles.messageScroll}>
-          {messages.length === 0 && (
-            <div className={styles.emptyChat}>
-              <p>How can I help you today?</p>
-            </div>
           )}
+          <span className={styles.topBarTitle}><strong style={{color: "var(--color-accent)", fontWeight: "bold"}}>Red.</strong> Your UBS AI Assistant</span>
+        </div>
+        <div className={styles.topBarRight}>
+          <div className={styles.userRow}>
+            <div className={styles.avatar}>
+              {user.display_name.charAt(0).toUpperCase()}
+            </div>
+            <Tooltip.Provider delayDuration={300}>
+              <Tooltip.Root>
+                <Tooltip.Trigger asChild>
+                  <button className={styles.iconButton} onClick={onLogout} aria-label="Sign out">
+                    <ExitIcon width={15} height={15} />
+                  </button>
+                </Tooltip.Trigger>
+                <Tooltip.Content className={styles.tooltip} side="right" sideOffset={8}>
+                  Sign out
+                </Tooltip.Content>
+              </Tooltip.Root>
+            </Tooltip.Provider>
+          </div>
+        </div>
+      </div>
+
+      {messages.length === 0 ? (
+        <div className={styles.emptyState}>
+          <div className={styles.greetingHeader}>
+            <h2 className={styles.emptyTitle}>Hello, {user.display_name.split(" ")[0]}</h2>
+            <h2 className={styles.emptyTitleSecondary}>How can I help you?</h2>
+            <p className={styles.emptySubtitle}>Your AI assistant for personalised insights and answers on your UBS account, instantly.</p>
+          </div>
+          
+          <div className={styles.suggestedPromptsHeader}>Suggested prompts</div>
+          <div className={styles.suggestedPrompts}>
+            <button className={styles.promptCard} onClick={() => handlePromptClick("Summarize my recent portfolio performance")}>
+              <p>Summarize my recent portfolio performance</p>
+              <div className={styles.promptIcon}><BarChartIcon width={16} height={16} style={{color: "var(--color-accent)"}}/></div>
+            </button>
+            <button className={styles.promptCard} onClick={() => handlePromptClick("What is the status of my loan application?")}>
+              <p>What is the status of my loan application?</p>
+              <div className={styles.promptIcon}><FileTextIcon width={16} height={16} style={{color: "var(--color-accent)"}}/></div>
+            </button>
+            <button className={styles.promptCard} onClick={() => handlePromptClick("Can you replace my damaged credit card?")}>
+              <p>Can you replace my damaged credit card?</p>
+              <div className={styles.promptIcon}><CardStackIcon width={16} height={16} style={{color: "var(--color-accent)"}}/></div>
+            </button>
+            <button className={styles.promptCard} onClick={() => handlePromptClick("Explain the fees on my last statement")}>
+              <p>Explain the fees on my last statement</p>
+              <div className={styles.promptIcon}><QuestionMarkCircledIcon width={16} height={16} style={{color: "var(--color-accent)"}}/></div>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className={styles.messageArea}>
+          <div className={styles.messageScroll}>
           {messages.map((message) => (
             <MessageBubble 
               key={message.message_id} 
@@ -134,15 +155,16 @@ export function ChatWindow({
           ))}
           {isSending && <ThinkingIndicator thinking={thinking} />}
           <div ref={messagesEndRef} />
+          </div>
         </div>
-      </div>
+      )}
 
       <div className={styles.inputWrapper}>
         <div className={styles.inputContainer}>
           <textarea
             ref={textareaRef}
             className={styles.textarea}
-            placeholder="Message Customer Service..."
+            placeholder="Talk with Red"
             value={inputValue}
             onChange={(event) => setInputValue(event.target.value)}
             onKeyDown={handleKeyDown}
@@ -160,10 +182,7 @@ export function ChatWindow({
           </button>
         </div>
         <p className={styles.disclaimer}>
-          {llmMode === "mock" && (
-            <span className={styles.mockBadge}>MOCK MODE</span>
-          )}
-          AI can make mistakes. Verify important banking information.
+          UBS and external data are strictly forbidden. Red uses AI. Check for mistakes. You remain responsible for your initiated prompts and shared content.
         </p>
       </div>
     </main>

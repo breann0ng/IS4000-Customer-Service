@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 """
 processors/chunker.py
 
@@ -151,20 +152,22 @@ def chunk_document(doc: dict, doc_type: str = "help_faq") -> list[dict]:
     result: list[dict] = []
 
     for i, text in enumerate(deduped):
-        result.append({
-            "id": _make_chunk_id(url, i),
-            "text": text.strip(),
-            "metadata": {
-                "source_url": url,
-                "title": doc.get("title", ""),
-                "topic": doc.get("topic", ""),
-                "subtopic": doc.get("subtopic", ""),
-                "doc_type": doc_type,
-                "scraped_at": scraped_at,
-                "chunk_index": i,
-                "total_chunks": total,
-                "token_count": _count_tokens(text),
+        result.append(
+            {
+                "id": _make_chunk_id(url, i),
+                "text": text.strip(),
+                "metadata": {
+                    "source_url": url,
+                    "title": doc.get("title", ""),
+                    "topic": doc.get("topic", ""),
+                    "subtopic": doc.get("subtopic", ""),
+                    "doc_type": doc_type,
+                    "scraped_at": scraped_at,
+                    "chunk_index": i,
+                    "total_chunks": total,
+                    "token_count": _count_tokens(text),
+                },
             }
-        })
+        )
 
     return result

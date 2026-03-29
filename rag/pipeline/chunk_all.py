@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 """
 chunk_all.py
 
@@ -51,7 +52,7 @@ def run_chunker() -> dict[str, int]:
         try:
             with open(fpath, "r", encoding="utf-8") as f:
                 doc = json.load(f)
-            
+
             # Use filename prefix or metadata to determine doc_type if possible
             # For now, we'll try to guess from the filename if metadata is missing
             doc_type = doc.get("doc_type", "unknown")
@@ -68,7 +69,7 @@ def run_chunker() -> dict[str, int]:
             chunks = chunk_document(doc, doc_type=doc_type)
             all_chunks.extend(chunks)
             counts[doc_type] += len(chunks)
-            
+
         except Exception as e:
             logger.error(f"Error processing {fpath.name}: {e}")
 

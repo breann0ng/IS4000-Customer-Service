@@ -68,8 +68,7 @@ async def executor_node(state: WorkflowState) -> dict:
         return {"current_step_index": len(state.plan.steps)}
 
     conversation_context = "\n".join(
-        f"{message['role']}: {message['content']}"
-        for message in state.conversation_history[-5:]
+        f"{message['role']}: {message['content']}" for message in state.conversation_history[-5:]
     )
 
     logger.info(
@@ -79,10 +78,7 @@ async def executor_node(state: WorkflowState) -> dict:
     )
 
     # Run all steps concurrently
-    tasks = [
-        _run_step(step.agent, step.task, conversation_context)
-        for step, _ in remaining_steps
-    ]
+    tasks = [_run_step(step.agent, step.task, conversation_context) for step, _ in remaining_steps]
     results = await asyncio.gather(*tasks)
 
     new_outputs = list(state.agent_outputs) + list(results)
@@ -100,5 +96,3 @@ async def executor_node(state: WorkflowState) -> dict:
         "current_step_index": len(state.plan.steps),  # Skip straight to synthesizer
         "plan": new_plan,
     }
-
-

@@ -37,8 +37,8 @@ function extractCharts(raw: string): { text: string; charts: ChartData[] } {
     return _match;
   });
 
-  // 2. Strip bare JSON objects { "type": "pie"|"bar"|"line", ... } in text
-  text = text.replace(/\{[\s\S]*?"type"\s*:\s*"(pie|bar|line)"[\s\S]*?\}/g, (match) => {
+  // 2. Strip bare JSON objects { "type": "pie"|"bar"|"line"|"gauge", ... } in text
+  text = text.replace(/\{[\s\S]*?"type"\s*:\s*"(pie|bar|line|gauge)"[\s\S]*?\}/g, (match) => {
     try {
       const parsed = JSON.parse(match);
       if (isChartData(parsed)) {
@@ -56,7 +56,7 @@ function isChartData(obj: unknown): obj is ChartData {
   if (typeof obj !== "object" || obj === null) return false;
   const o = obj as Record<string, unknown>;
   return (
-    ["pie", "bar", "line"].includes(o.type as string) &&
+    ["pie", "bar", "line", "gauge"].includes(o.type as string) &&
     typeof o.title === "string" &&
     Array.isArray(o.labels) &&
     Array.isArray(o.values)

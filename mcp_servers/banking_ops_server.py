@@ -168,7 +168,9 @@ async def handle_wealth_advisory(params: dict) -> dict:
         )
         content = response.content
         if isinstance(content, list):
-            content = " ".join(part.get("text", "") if isinstance(part, dict) else str(part) for part in content)
+            content = " ".join(
+                part.get("text", "") if isinstance(part, dict) else str(part) for part in content
+            )
         return {"response": str(content)}
     except Exception as e:
         return {"response": f"Wealth advisory processing failed: {str(e)}", "error": str(e)}

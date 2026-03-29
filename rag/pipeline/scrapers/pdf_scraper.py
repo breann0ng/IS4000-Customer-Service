@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 """
 scrapers/pdf_scraper.py
 
@@ -57,18 +58,42 @@ PDF_DISCOVERY_URLS = [
 
 # Keywords that suggest a PDF is a useful knowledge base document
 USEFUL_PDF_KEYWORDS = [
-    "brochure", "factsheet", "fact-sheet", "prospectus",
-    "terms", "conditions", "tariff", "fee", "schedule",
-    "guide", "overview", "product", "service", "mandate",
-    "pension", "mortgage", "investment", "custody",
-    "privacy", "regulation", "disclosure", "notice",
-    "annual", "report", "sustainability",
+    "brochure",
+    "factsheet",
+    "fact-sheet",
+    "prospectus",
+    "terms",
+    "conditions",
+    "tariff",
+    "fee",
+    "schedule",
+    "guide",
+    "overview",
+    "product",
+    "service",
+    "mandate",
+    "pension",
+    "mortgage",
+    "investment",
+    "custody",
+    "privacy",
+    "regulation",
+    "disclosure",
+    "notice",
+    "annual",
+    "report",
+    "sustainability",
 ]
 
 # PDFs to skip — typically large reports or irrelevant filings
 SKIP_PDF_KEYWORDS = [
-    "results", "quarterly", "presentation", "transcript",
-    "supplement", "base-prospectus", "registration",
+    "results",
+    "quarterly",
+    "presentation",
+    "transcript",
+    "supplement",
+    "base-prospectus",
+    "registration",
 ]
 
 OUTPUT_RAW = Path(__file__).parent.parent / "output" / "raw"
@@ -79,10 +104,12 @@ for d in [OUTPUT_RAW, OUTPUT_PDFS, OUTPUT_PROCESSED]:
     d.mkdir(parents=True, exist_ok=True)
 
 SESSION = requests.Session()
-SESSION.headers.update({
-    "User-Agent": USER_AGENT,
-    "Accept-Language": "en-GB,en;q=0.9",
-})
+SESSION.headers.update(
+    {
+        "User-Agent": USER_AGENT,
+        "Accept-Language": "en-GB,en;q=0.9",
+    }
+)
 
 
 @retry(
@@ -244,8 +271,7 @@ def download_and_process_pdf(pdf_url: str) -> dict | None:
         return None
 
     full_text = "\n\n".join(
-        f"{s['heading']}\n{s['body']}" if s["heading"] else s["body"]
-        for s in sections
+        f"{s['heading']}\n{s['body']}" if s["heading"] else s["body"] for s in sections
     )
 
     # Infer topic from filename/URL
@@ -303,18 +329,18 @@ def run_pdf_scraper() -> list[dict]:
 
     for html_path in html_files:
         try:
-            # We need a base URL to resolve relative links. 
-            # We can try to infer it from the first few lines of the HTML or just assume 
+            # We need a base URL to resolve relative links.
+            # We can try to infer it from the first few lines of the HTML or just assume
             # it's a UBS page. Actually, our discover_pdf_links expects a page_url.
-            
+
             # Let's try to find a URL comment or just use the filename to reconstruct
             # but discovery_pdf_links also fetches the page. We don't want to re-fetch.
             # So I'll refactor discovery_pdf_links or create a local version.
-            
+
             with open(html_path, "r", encoding="utf-8") as f:
                 html_content = f.read()
-            
-            # Since we don't have the original URL easily here without reading the 
+
+            # Since we don't have the original URL easily here without reading the
             # corresponding JSON, let's just use a default base or try to find it.
             # Best way: Check the corresponding JSON file for the 'url'.
             json_path = OUTPUT_PROCESSED / f"{html_path.stem}.json"

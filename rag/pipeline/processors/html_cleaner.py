@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 """
 processors/html_cleaner.py
 
@@ -26,17 +27,32 @@ from bs4 import BeautifulSoup, Tag
 
 # CSS selectors / tag names we always strip before parsing
 _NOISE_SELECTORS = [
-    "nav", "header", "footer",
-    "[class*='navigation']", "[class*='nav-']",
-    "[class*='breadcrumb']", "[class*='cookie']",
-    "[class*='banner']", "[class*='modal']",
-    "[class*='skip']", "[class*='meta']",
-    "[class*='footer']", "[class*='header']",
-    "[id*='nav']", "[id*='header']", "[id*='footer']",
-    "script", "style", "noscript", "iframe",
+    "nav",
+    "header",
+    "footer",
+    "[class*='navigation']",
+    "[class*='nav-']",
+    "[class*='breadcrumb']",
+    "[class*='cookie']",
+    "[class*='banner']",
+    "[class*='modal']",
+    "[class*='skip']",
+    "[class*='meta']",
+    "[class*='footer']",
+    "[class*='header']",
+    "[id*='nav']",
+    "[id*='header']",
+    "[id*='footer']",
+    "script",
+    "style",
+    "noscript",
+    "iframe",
     # UBS-specific boilerplate selectors
-    ".cmp-navigation", ".cmp-footer", ".cmp-header",
-    ".ubs-header", ".ubs-footer",
+    ".cmp-navigation",
+    ".cmp-footer",
+    ".cmp-header",
+    ".ubs-header",
+    ".ubs-footer",
 ]
 
 # Patterns to strip from text
@@ -144,8 +160,7 @@ def clean_html(html: str, url: str) -> dict:
             sections = [{"heading": title, "body": fallback}]
 
     full_text = "\n\n".join(
-        f"{s['heading']}\n{s['body']}" if s["heading"] else s["body"]
-        for s in sections
+        f"{s['heading']}\n{s['body']}" if s["heading"] else s["body"] for s in sections
     )
 
     topic, subtopic = _infer_topic_from_url(url)

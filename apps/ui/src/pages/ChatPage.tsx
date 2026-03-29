@@ -20,7 +20,7 @@ interface ChatPageProps {
   llmMode: "mock" | "live" | "unknown";
 }
 
-export function ChatPage({ user, onLogout, theme, llmMode }: ChatPageProps) {
+export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
   const [sessions, setSessions] = useState<ChatSessionSummary[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
@@ -232,7 +232,6 @@ export function ChatPage({ user, onLogout, theme, llmMode }: ChatPageProps) {
         isLoading={isLoadingSessions}
         isOpen={sidebarOpen}
         showArchived={showArchived}
-        user={user}
         theme={theme}
         currentView={currentView}
         onSelectSession={(id) => { setCurrentView("chat"); handleSelectSession(id); }}
@@ -242,7 +241,6 @@ export function ChatPage({ user, onLogout, theme, llmMode }: ChatPageProps) {
         onArchiveSession={handleArchiveSession}
         onUnarchiveSession={handleUnarchiveSession}
         onToggleArchived={() => setShowArchived((prev) => !prev)}
-        onLogout={onLogout}
         onToggle={() => setSidebarOpen((prev) => !prev)}
         onNavigatePerformance={() => setCurrentView("performance")}
         onNavigateChat={() => setCurrentView("chat")}
@@ -252,11 +250,10 @@ export function ChatPage({ user, onLogout, theme, llmMode }: ChatPageProps) {
           messages={messages}
           isSending={isSending}
           thinking={thinking}
-          hasActiveSession={activeSessionId !== null}
           sidebarOpen={sidebarOpen}
-          llmMode={llmMode}
+          user={user}
+          onLogout={onLogout}
           onSendMessage={handleSendMessage}
-          onNewSession={handleNewSession}
           onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
         />
       ) : (

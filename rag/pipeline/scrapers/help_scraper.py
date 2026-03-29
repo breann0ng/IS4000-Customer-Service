@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 """
 scrapers/help_scraper.py
 
@@ -71,11 +72,13 @@ OUTPUT_RAW.mkdir(parents=True, exist_ok=True)
 OUTPUT_PROCESSED.mkdir(parents=True, exist_ok=True)
 
 SESSION = requests.Session()
-SESSION.headers.update({
-    "User-Agent": USER_AGENT,
-    "Accept-Language": "en-GB,en;q=0.9",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-})
+SESSION.headers.update(
+    {
+        "User-Agent": USER_AGENT,
+        "Accept-Language": "en-GB,en;q=0.9",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    }
+)
 
 
 def _url_to_filename(url: str) -> str:

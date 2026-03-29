@@ -35,6 +35,8 @@ interface SidebarProps {
   onToggle: () => void;
   onNavigatePerformance: () => void;
   onNavigateChat: () => void;
+  width: number;
+  onWidthChange: (width: number) => void;
 }
 
 export function Sidebar({
@@ -55,9 +57,12 @@ export function Sidebar({
   onToggle,
   onNavigatePerformance,
   onNavigateChat,
+  width,
+  onWidthChange,
 }: SidebarProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
+  const [isResizing, setIsResizing] = useState(false);
 
   function handleStartRename(sessionId: string, currentTitle: string) {
     setEditingId(sessionId);
@@ -71,9 +76,41 @@ export function Sidebar({
     setEditingId(null);
   }
 
+  function handleMouseDown(e: React.MouseEvent) {
+    e.preventDefault();
+    setIsResizing(true);
+    const startX = e.clientX;
+    const startWidth = width;
+
+    function handleMouseMove(e: MouseEvent) {
+      const newWidth = Math.min(Math.max(startWidth + (e.clientX - startX), 200), 600);
+      onWidthChange(newWidth);
+    }
+
+    function handleMouseUp() {
+      setIsResizing(false);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "default";
+    }
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    document.body.style.cursor = "ew-resize";
+  }
+
   return (
     <Tooltip.Provider delayDuration={300}>
-      <aside className={`${styles.sidebar} ${isOpen ? styles.open : styles.closed}`}>
+      <aside 
+        className={`${styles.sidebar} ${isOpen ? styles.open : styles.closed}`}
+        style={{ 
+          width: isOpen ? `${width}px` : undefined, 
+          minWidth: isOpen ? `${width}px` : undefined,
+          transition: isResizing ? "none" : undefined,
+          overflow: isOpen ? "visible" : "hidden"
+        }}
+      >
+        <div className={styles.resizeHandle} onMouseDown={handleMouseDown} />
         <div className={styles.header}>
           <Tooltip.Root>
             <Tooltip.Trigger asChild>
@@ -132,6 +169,16 @@ export function Sidebar({
                     <>
                       <ChatBubbleIcon className={styles.sessionIcon} width={14} height={14} />
                       <span className={styles.sessionTitle}>{session.title}</span>
+                      <button
+                        className={styles.quickDelete}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onDeleteSession(session.session_id);
+                        }}
+                        aria-label="Delete session"
+                      >
+                        <TrashIcon width={14} height={14} />
+                      </button>
                       <DropdownMenu.Root>
                         <DropdownMenu.Trigger asChild>
                           <button
@@ -187,6 +234,16 @@ export function Sidebar({
                     >
                       <ArchiveIcon className={styles.sessionIcon} width={14} height={14} />
                       <span className={styles.sessionTitle}>{session.title}</span>
+                      <button
+                        className={styles.quickDelete}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onDeleteSession(session.session_id);
+                        }}
+                        aria-label="Delete session"
+                      >
+                        <TrashIcon width={14} height={14} />
+                      </button>
                       <DropdownMenu.Root>
                         <DropdownMenu.Trigger asChild>
                           <button

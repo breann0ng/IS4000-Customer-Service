@@ -27,6 +27,7 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarWidth, setSidebarWidth] = useState(260);
   const [currentView, setCurrentView] = useState<"chat" | "performance">("chat");
   const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
   const performanceSessionIdRef = useRef<string | null>(null);
@@ -67,13 +68,14 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
   }, []);
 
   const handleNewSession = useCallback(async () => {
+    setActiveSessionId(null);
+    setMessages([]);
     try {
       const { data: session } = await createChatSessionApiChatSessionsPost({
         throwOnError: true,
         body: { title: "New Chat" },
       });
       setActiveSessionId(session.session_id);
-      setMessages([]);
       await loadSessions();
     } catch {
       /* session creation failed silently */
@@ -179,7 +181,13 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
   }, [pendingQuestion, activeSessionId, isSending]);
 
   const handleSendMessage = useCallback(async (content: string) => {
-    if (!activeSessionId || isSending) return;
+    if (isSending) return;
+    
+    if (!activeSessionId) {
+      setPendingQuestion(content);
+      void handleNewSession();
+      return;
+    }
 
     const userMessage: ChatMessageResponse = {
       message_id: crypto.randomUUID(),
@@ -222,7 +230,7 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
         resetThinking();
       },
     });
-  }, [activeSessionId, isSending, loadSessions, sendStreaming, resetThinking]);
+  }, [activeSessionId, isSending, loadSessions, handleNewSession, sendStreaming, resetThinking]);
 
   return (
     <div className={styles.layout}>
@@ -241,6 +249,8 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
         onArchiveSession={handleArchiveSession}
         onUnarchiveSession={handleUnarchiveSession}
         onToggleArchived={() => setShowArchived((prev) => !prev)}
+        width={sidebarWidth}
+        onWidthChange={setSidebarWidth}
         onToggle={() => setSidebarOpen((prev) => !prev)}
         onNavigatePerformance={() => setCurrentView("performance")}
         onNavigateChat={() => setCurrentView("chat")}

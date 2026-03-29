@@ -130,11 +130,13 @@
   flex-direction: column;
   justify-content: space-between;
   min-height: 120px;
-  transition: background-color var(--transition-fast), box-shadow var(--transition-fast);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .promptCard:hover {
   background-color: var(--color-bg-tertiary);
+  border-color: var(--color-accent);
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 

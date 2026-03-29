@@ -3,9 +3,12 @@
 import json
 import uuid
 from collections.abc import AsyncGenerator
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
+from langchain_core.messages import HumanMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from apps.api.auth.routes import get_current_user
@@ -26,6 +29,7 @@ from apps.api.chat.service import (
     save_message,
     update_session,
 )
+from apps.api.config import settings
 from apps.api.database.connection import get_database_session
 from apps.api.database.models import User
 from apps.api.logging_config import get_logger
@@ -205,6 +209,73 @@ async def delete_chat_session(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
 
+async def _generate_and_update_title(
+    database_session: AsyncSession,
+    session_id: uuid.UUID,
+    user_id: uuid.UUID,
+    user_message: str,
+) -> None:
+    """Generate a high-quality professional title from the message and update the session."""
+    try:
+        session = await get_session_with_messages(database_session, session_id, user_id)
+        if not session:
+            logger.error("rename_session_not_found", session_id=str(session_id))
+            return
+
+        # Only rename if generic or a temporary greeting title
+        generic_markers = ["New Chat", "Account Performance Q&A", "Initial Consultation", "Greeting", "UBS Enquiry"]
+        is_generic = any(marker in session.title for marker in generic_markers)
+        
+        if not is_generic:
+            return
+
+        new_theme = "UBS Enquiry"
+        if settings.is_llm_mock_mode:
+            new_theme = "Mock Analysis"
+        else:
+            llm = ChatGoogleGenerativeAI(
+                model=settings.gemini_model,
+                google_api_key=settings.gemini_api_key,
+                temperature=0.0,
+                max_output_tokens=50,
+            )
+            prompt = (
+                "You are a professional UBS Wealth Management assistant. "
+                "Generate a highly professional, 2-4 word title for this conversation based on the user's enquiry. "
+                "Examples: 'Portfolio Risk Assessment', 'Market Insights', 'Lending Solutions', 'FX Strategy'. "
+                "If the message is just a greeting, use 'Initial Consultation'. "
+                "Produce only the title, no quotes or punctuation.\n\n"
+                f"User enquiry: {user_message}"
+            )
+            title_response = await llm.ainvoke([HumanMessage(content=prompt)])
+            
+            content_val = title_response.content
+            if isinstance(content_val, list):
+                content_val = " ".join(
+                    [part.get("text", "") if isinstance(part, dict) else str(part) for part in content_val]
+                )
+            
+            new_theme = str(content_val).strip().replace('"', '')
+
+        sg_tz = timezone(timedelta(hours=8))
+        # Format: 29 Mar 2026, 05:51 PM
+        current_time_sg = datetime.now(sg_tz).strftime('%d %b %Y, %I:%M %p')
+        full_title = f"{new_theme} - {current_time_sg}"
+
+        logger.info("updating_session_title", session_id=str(session_id), title=full_title)
+        
+        updated_session = await update_session(
+            database_session,
+            session_id,
+            user_id,
+            title=full_title,
+        )
+        if updated_session:
+            logger.info("session_title_updated_successfully", session_id=str(session_id), title=full_title)
+    except Exception as e:
+        logger.exception("failed_to_generate_title", error=str(e))
+
+
 @router.post("/sessions/{session_id}/messages", response_model=ChatCompletionResponse)
 async def send_message(
     session_id: uuid.UUID,
@@ -234,6 +305,7 @@ async def send_message(
     if session is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
+    should_attempt_rename = len(session.messages) < 5 or any(m in session.title for m in ["New Chat", "Initial Consultation", "Greeting", "UBS Enquiry"])
     await save_message(database_session, session_id, "user", request.content)
 
     if check_prompt_injection(request.content):
@@ -288,6 +360,9 @@ async def send_message(
         ],
     )
 
+    if should_attempt_rename:
+        await _generate_and_update_title(database_session, session_id, current_user.user_id, sanitized_content)
+
     return ChatCompletionResponse(
         message=ChatMessageResponse(
             message_id=assistant_message.message_id,
@@ -330,6 +405,7 @@ async def send_message_stream(
     if session is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
+    should_attempt_rename = len(session.messages) < 5 or any(m in session.title for m in ["New Chat", "Initial Consultation", "Greeting", "UBS Enquiry"])
     await save_message(database_session, session_id, "user", request.content)
 
     if check_prompt_injection(request.content):
@@ -452,6 +528,9 @@ async def send_message_stream(
                 {"role": "assistant", "content": final_response},
             ],
         )
+
+        if should_attempt_rename:
+            await _generate_and_update_title(database_session, session_id, current_user.user_id, sanitized_content)
 
         yield _sse(
             "done",

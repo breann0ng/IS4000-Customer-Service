@@ -226,9 +226,10 @@ The `StructuredMessage` component handles all parsing (heading normalisation, JS
 
 ## Application UI Features
 
-- **Collapsible Sidebar** — Sidebar can be pinned or unpinned to maximize screen real estate when viewing dense financial dashboards.
+- **Adjustable Sidebar** — Sidebar width can be dynamically adjusted by dragging its right edge, allowing for better readability of long chat titles. It can also be pinned or unpinned to maximize screen real estate.
 - **Dark Mode Support** — Toggleable Light/Dark theme for comfortable viewing in any lighting condition.
 - **Archived Chats** — Ability to hide or reveal archived chat sessions to keep the active workspace clutter-free.
+- **Intelligent Prompting** — Suggested prompts in the empty state automatically trigger session creation when clicked, ensuring a seamless start to any conversation.
 
 ## Account Performance Page
 

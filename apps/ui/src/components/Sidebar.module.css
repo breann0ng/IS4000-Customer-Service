@@ -6,6 +6,7 @@
   transition: width var(--transition-normal), min-width var(--transition-normal);
   overflow: hidden;
   flex-shrink: 0;
+  position: relative;
 }
 
 .open {
@@ -16,6 +17,26 @@
 .closed {
   width: 0;
   min-width: 0;
+}
+
+.resizeHandle {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+  z-index: 50;
+  transition: background-color var(--transition-fast);
+}
+
+.resizeHandle:hover {
+  background-color: var(--color-accent);
+}
+
+.resizeHandle:active {
+  background-color: var(--color-accent);
+  width: 10px;
 }
 
 /* Header */
@@ -137,6 +158,30 @@
   font-size: 0.8125rem;
   outline: none;
   background-color: var(--color-input-bg);
+}
+
+.quickDelete {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.sessionItem:hover .quickDelete {
+  display: flex;
+}
+
+.quickDelete:hover {
+  background-color: var(--color-sidebar-active);
+  color: var(--color-error);
 }
 
 /* Dropdown menu */

@@ -4,185 +4,185 @@
     "full_name": "John Smith",
     "preferred_name": "John",
     "date_of_birth": "1971-09-22",
-    "nationality": "British",
-    "tax_residency": "United Kingdom",
+    "nationality": "Singaporean",
+    "tax_residency": "Singapore",
     "segment": "UHNW",
     "tier": "UBS Global Family Office",
     "relationship_manager": "Emma Clarke",
     "rm_email": "emma.clarke@ubs.com",
-    "rm_phone": "+44 20 7567 0100",
+    "rm_phone": "+65 6831 0100",
     "onboarded_date": "2012-03-01",
     "kyc_status": "Verified",
     "kyc_last_reviewed": "2025-01-15",
-    "address": "One Hyde Park, Knightsbridge, London SW1X 7LJ, United Kingdom",
-    "email": "john.smith@smithcapitalgroup.com",
-    "mobile": "+44 7700 900123",
+    "address": "Ocean Drive, Sentosa Cove, Singapore 098587",
+    "email": "john.smith@smithcapital.sg",
+    "mobile": "+65 9123 4567",
     "preferred_contact": "Secure chat",
     "language": "English",
     "risk_profile": "Growth",
-    "net_worth_usd": 68000000,
-    "aum_with_ubs_usd": 42000000,
-    "family_office": "Smith Capital Group Ltd",
+    "net_worth_sgd": 125000000,
+    "aum_with_ubs_sgd": 65000000,
+    "family_office": "Smith Capital SG Pte Ltd",
     "trust_structure": true,
     "philanthropic_fund": false
   },
   "accounts": [
     {
-      "account_id": "GBP-011-CA",
+      "account_id": "SGD-011-CA",
       "account_type": "Personal Current Account",
-      "currency": "GBP",
-      "balance": 680000.0,
-      "available_balance": 676000.0,
-      "iban": "GB29UBS12345698765432",
+      "currency": "SGD",
+      "balance": 1250800.0,
+      "available_balance": 1246000.0,
+      "iban": "SG65UBS12345698765432",
       "status": "Active",
       "opened_date": "2012-03-01"
     },
     {
       "account_id": "MCW-011-WA",
       "account_type": "Multi-Currency Wealth Account",
-      "currency": "USD/EUR/GBP/CHF",
+      "currency": "SGD/USD/EUR/CHF",
       "balances": {
+        "SGD": 5280000.0,
         "USD": 1150000.0,
         "EUR": 420000.0,
-        "GBP": 380000.0,
         "CHF": 210000.0
       },
-      "total_usd_equivalent": 2280000.0,
+      "total_sgd_equivalent": 7580000.0,
       "status": "Active",
       "opened_date": "2012-03-01"
     },
     {
       "account_id": "ISA-011-SA",
       "account_type": "Investment Settlement Account",
-      "currency": "USD",
-      "balance": 1440000.0,
-      "available_balance": 1440000.0,
+      "currency": "SGD",
+      "balance": 1940000.0,
+      "available_balance": 1940000.0,
       "status": "Active",
       "opened_date": "2013-06-10"
     },
     {
       "account_id": "LMA-011-LQ",
       "account_type": "Liquidity Management Account",
-      "currency": "USD",
-      "balance": 2300000.0,
-      "available_balance": 2300000.0,
+      "currency": "SGD",
+      "balance": 3300000.0,
+      "available_balance": 3300000.0,
       "status": "Active",
       "opened_date": "2015-04-01"
     }
   ],
   "portfolio": {
     "portfolio_id": "PORT-011",
-    "total_value_usd": 42000000,
-    "currency": "USD",
+    "total_value_sgd": 65000000,
+    "currency": "SGD",
     "last_updated": "2026-03-29",
     "mandate_type": "Advisory + Discretionary Mix",
     "allocation": {
       "Public Equities": {
         "pct": 48,
-        "value_usd": 20160000
+        "value_sgd": 31200000
       },
       "Fixed Income": {
         "pct": 20,
-        "value_usd": 8400000
+        "value_sgd": 13000000
       },
       "Private Equity": {
         "pct": 14,
-        "value_usd": 5880000
+        "value_sgd": 9100000
       },
       "Hedge Funds": {
         "pct": 8,
-        "value_usd": 3360000
+        "value_sgd": 5200000
       },
       "Structured Products": {
         "pct": 6,
-        "value_usd": 2520000
+        "value_sgd": 3900000
       },
       "Real Asset Funds": {
         "pct": 2,
-        "value_usd": 840000
+        "value_sgd": 1300000
       },
       "Cash within Portfolio": {
         "pct": 2,
-        "value_usd": 840000
+        "value_sgd": 1300000
       }
     },
     "top_equity_holdings": [
       {
+        "name": "DBS Group Holdings",
+        "ticker": "DBS:SP",
+        "sector": "Financials",
+        "value_sgd": 4500000,
+        "pnl_pct": 15.4
+      },
+      {
         "name": "Apple Inc",
         "ticker": "AAPL",
         "sector": "Technology",
-        "value_usd": 2100000,
+        "value_sgd": 3200000,
         "pnl_pct": 21.3
-      },
-      {
-        "name": "Microsoft Corp",
-        "ticker": "MSFT",
-        "sector": "Technology",
-        "value_usd": 1850000,
-        "pnl_pct": 18.7
-      },
-      {
-        "name": "Alphabet Inc",
-        "ticker": "GOOGL",
-        "sector": "Technology",
-        "value_usd": 1620000,
-        "pnl_pct": 14.2
       },
       {
         "name": "NVIDIA Corp",
         "ticker": "NVDA",
         "sector": "Semiconductors",
-        "value_usd": 1480000,
+        "value_sgd": 2800000,
         "pnl_pct": 92.4
       },
       {
-        "name": "AstraZeneca PLC",
-        "ticker": "AZN",
-        "sector": "Healthcare",
-        "value_usd": 980000,
-        "pnl_pct": 12.8
+        "name": "Singtel",
+        "ticker": "STEL:SP",
+        "sector": "Communication Services",
+        "value_sgd": 1850000,
+        "pnl_pct": 8.7
+      },
+      {
+        "name": "OCBC Bank",
+        "ticker": "OCBC:SP",
+        "sector": "Financials",
+        "value_sgd": 1620000,
+        "pnl_pct": 11.2
       }
     ],
     "private_markets": [
       {
-        "fund": "European Growth Buyout Fund III",
+        "fund": "Asia Growth Buyout Fund V",
         "type": "Private Equity",
-        "commitment_usd": 2500000,
-        "nav_usd": 2780000,
-        "vintage": 2020
+        "commitment_sgd": 8500000,
+        "nav_sgd": 9100000,
+        "vintage": 2022
       },
       {
         "fund": "Global Tech Opportunities Fund",
         "type": "Venture Capital",
-        "commitment_usd": 1800000,
-        "nav_usd": 1950000,
+        "commitment_sgd": 4800000,
+        "nav_sgd": 5150000,
         "vintage": 2021
       },
       {
-        "fund": "UK Infrastructure Partners",
+        "fund": "SG Infrastructure Partners",
         "type": "Infrastructure",
-        "commitment_usd": 1200000,
-        "nav_usd": 1310000,
-        "vintage": 2019
+        "commitment_sgd": 2200000,
+        "nav_sgd": 2310000,
+        "vintage": 2023
       }
     ],
     "structured_products": [
       {
         "name": "Equity Linked Note",
-        "underlying": "FTSE 100 / S&P 500 Basket",
-        "value_usd": 1100000,
+        "underlying": "STI / S&P 500 Basket",
+        "value_sgd": 1800000,
         "maturity": "2026-11-30"
       },
       {
         "name": "Capital Protected Note",
         "underlying": "Global Equity Index",
-        "value_usd": 900000,
+        "value_sgd": 1200000,
         "maturity": "2027-03-15"
       },
       {
         "name": "Reverse Convertible",
-        "underlying": "UK Large Cap Basket",
-        "value_usd": 520000,
+        "underlying": "SG Large Cap Basket",
+        "value_sgd": 900000,
         "maturity": "2026-08-20"
       }
     ],
@@ -192,113 +192,113 @@
   "credit": {
     "lombard_facility": {
       "product": "Lombard Credit Facility",
-      "limit_usd": 10000000,
-      "drawn_usd": 3200000,
-      "available_usd": 6800000,
+      "limit_sgd": 15000000,
+      "drawn_sgd": 4200000,
+      "available_sgd": 10800000,
       "collateral": "Securities portfolio",
       "interest_rate_pct": 5.10,
       "status": "Active"
     },
     "mortgage": {
-      "product": "Private Bank Mortgage",
-      "property": "One Hyde Park penthouse, London",
-      "outstanding_gbp": 4200000,
-      "original_amount_gbp": 5500000,
-      "interest_rate_pct": 4.25,
-      "monthly_repayment_gbp": 24600,
-      "maturity_date": "2040-03-01",
+      "product": "Residential Mortgage",
+      "property": "Ocean Drive, Sentosa Cove, Singapore",
+      "outstanding_sgd": 12500000,
+      "original_amount_sgd": 18500000,
+      "interest_rate_pct": 3.85,
+      "monthly_repayment_sgd": 68400,
+      "maturity_date": "2050-03-01",
       "status": "Active"
     },
     "credit_cards": [
       {
         "product": "UBS Visa Infinite",
-        "limit_usd": 300000,
-        "outstanding_usd": 24150,
+        "limit_sgd": 500000,
+        "outstanding_sgd": 24150,
         "status": "Active"
       },
       {
         "product": "UBS Mastercard World Elite",
-        "limit_usd": 350000,
-        "outstanding_usd": 11340,
+        "limit_sgd": 500000,
+        "outstanding_sgd": 11340,
         "status": "Active"
       }
     ]
   },
   "real_estate": [
     {
-      "property": "One Hyde Park penthouse, London",
-      "location": "London, UK",
-      "value_gbp": 9800000,
-      "loan_gbp": 4200000
+      "property": "Ocean Drive Villa, Sentosa Cove",
+      "location": "Singapore",
+      "value_sgd": 35000000,
+      "loan_sgd": 12500000
     },
     {
-      "property": "Country estate",
-      "location": "Oxfordshire, UK",
-      "value_gbp": 4200000,
-      "loan_gbp": 0
+      "property": "GCB @ Nassim Road",
+      "location": "Singapore",
+      "value_sgd": 65000000,
+      "loan_sgd": 0
     },
     {
-      "property": "Holiday villa",
-      "location": "Côte d'Azur, France",
-      "value_eur": 3600000,
-      "loan_eur": 0
+      "property": "Niseko Ski Chalet",
+      "location": "Hokkaido, Japan",
+      "value_sgd": 4500000,
+      "loan_sgd": 0
     }
   ],
   "recent_transactions": [
     {
       "date": "2026-03-28",
-      "description": "UBS Visa Infinite — Claridge's Hotel London",
+      "description": "UBS Visa Infinite — Takashimaya Singapore",
       "amount": -6200.0,
-      "currency": "GBP",
-      "account": "GBP-011-CA"
+      "currency": "SGD",
+      "account": "SGD-011-CA"
     },
     {
       "date": "2026-03-26",
-      "description": "Portfolio dividend — AAPL",
+      "description": "Portfolio dividend — DBS:SP",
       "amount": 4100.0,
-      "currency": "USD",
+      "currency": "SGD",
       "account": "ISA-011-SA"
     },
     {
       "date": "2026-03-24",
-      "description": "Lombard interest charge",
-      "amount": -13600.0,
-      "currency": "USD",
+      "description": "Eurokars Group (RR) Downpayment",
+      "amount": -350000.0,
+      "currency": "SGD",
       "account": "LMA-011-LQ"
     },
     {
       "date": "2026-03-20",
-      "description": "European Growth Buyout Fund III — capital call",
+      "description": "Asia Growth Buyout Fund V — capital call",
       "amount": -280000.0,
-      "currency": "USD",
+      "currency": "SGD",
       "account": "LMA-011-LQ"
     },
     {
       "date": "2026-03-15",
-      "description": "Mortgage repayment — One Hyde Park",
-      "amount": -24600.0,
-      "currency": "GBP",
-      "account": "GBP-011-CA"
+      "description": "Mortgage repayment — Sentosa Cove",
+      "amount": -68400.0,
+      "currency": "SGD",
+      "account": "SGD-011-CA"
     },
     {
       "date": "2026-03-10",
-      "description": "GOOGL equity purchase — settlement",
+      "description": "NVIDIA equity purchase — settlement",
       "amount": -180000.0,
-      "currency": "USD",
+      "currency": "SGD",
       "account": "ISA-011-SA"
     },
     {
       "date": "2026-03-05",
-      "description": "Director fee — Smith Capital Group Ltd",
+      "description": "Director fee — Smith Capital SG Pte Ltd",
       "amount": 110000.0,
-      "currency": "GBP",
-      "account": "GBP-011-CA"
+      "currency": "SGD",
+      "account": "SGD-011-CA"
     },
     {
       "date": "2026-03-01",
       "description": "Wire transfer — Smith Capital operating acct",
       "amount": -200000.0,
-      "currency": "USD",
+      "currency": "SGD",
       "account": "LMA-011-LQ"
     }
   ],
@@ -309,12 +309,12 @@
       "date": "2026-04-10",
       "time": "10:30",
       "rm": "Emma Clarke",
-      "location": "UBS London, 1 Finsbury Avenue",
+      "location": "UBS Singapore, 9 Penang Road",
       "status": "Confirmed"
     },
     {
       "appointment_id": "APT-011-B",
-      "type": "Tax & Succession Planning",
+      "type": "Tax & Succession Planning (VCC Focus)",
       "date": "2026-04-24",
       "time": "14:00",
       "rm": "Emma Clarke",
@@ -333,7 +333,7 @@
     {
       "id": "N-011-2",
       "type": "Market Alert",
-      "message": "NVDA position up 5.1% today — above your alert threshold",
+      "message": "DBS:SP position up 5.1% today — above your alert threshold",
       "date": "2026-03-28",
       "read": false
     },
@@ -349,7 +349,7 @@
     {
       "application_id": "APP-011-A",
       "application_type": "Lombard Facility Limit Increase",
-      "description": "Requesting increase of Lombard facility from USD 10M to USD 15M to fund European Growth Buyout Fund IV capital call",
+      "description": "Requesting increase of Lombard facility from SGD 15M to SGD 20M to fund Asia Growth Buyout Fund VI commitment",
       "status": "Pending Approval",
       "submitted_date": "2026-03-18",
       "expected_completion": "2026-04-02",
@@ -360,13 +360,199 @@
     {
       "application_id": "APP-011-B",
       "application_type": "KYC Document Update",
-      "description": "Annual KYC refresh — updated Certificate of Incorporation for Smith Capital Group Ltd",
+      "description": "Annual KYC refresh — updated ACRA Business Profile for Smith Capital SG Pte Ltd",
       "status": "Pending Documents",
       "submitted_date": "2026-03-12",
       "expected_completion": "2026-05-01",
       "assigned_to": "Compliance (cc: Emma Clarke)",
-      "documents_required": "Latest Companies House filing for Smith Capital Group Ltd, updated passport copy",
+      "documents_required": "Latest ACRA filing for Smith Capital SG Pte Ltd, NRIC/Passport copies",
       "notes": "KYC review triggered by annual cycle. Please upload documents via secure portal."
+    }
+  ],
+  "lifestyle_transactions": [
+    {
+      "date": "2026-03-24",
+      "merchant": "Eurokars Group (Rolls-Royce)",
+      "description": "Rolls-Royce Ghost Black Badge (Incl. Cat B COE & ARF) — Vehicle Purchase",
+      "amount": -1450000,
+      "currency": "SGD",
+      "category": "Automotive",
+      "signals": ["insurance_review", "coe_management"]
+    },
+    {
+      "date": "2026-03-18",
+      "merchant": "Sentosa Golf Club",
+      "description": "Sentosa Golf Club — Membership Transfer & Joining Fee",
+      "amount": -650000,
+      "currency": "SGD",
+      "category": "Lifestyle & Memberships",
+      "signals": ["concierge_services", "lifestyle_partnerships"]
+    },
+    {
+      "date": "2026-03-12",
+      "merchant": "Art SG (Sotheby's)",
+      "description": "Zao Wou-Ki Painting — Fair Acquisition",
+      "amount": -2200000,
+      "currency": "SGD",
+      "category": "Art & Collectibles",
+      "signals": ["art_finance", "insurance_review"]
+    },
+    {
+      "date": "2026-03-08",
+      "merchant": "Niseko Realty",
+      "description": "Niseko Ski Chalet (Hokkaido) — Deposit payment",
+      "amount": -580000,
+      "currency": "SGD",
+      "category": "Real Estate (Japan)",
+      "signals": ["cross_border_finance", "tax_structuring"]
+    },
+    {
+      "date": "2026-02-28",
+      "merchant": "UBS Visa Infinite (SGD)",
+      "description": "Capella Singapore — Family Event Weekend Rental",
+      "amount": -15000,
+      "currency": "SGD",
+      "category": "Travel & Hospitality",
+      "signals": ["lifestyle_partnership"]
+    },
+    {
+      "date": "2026-02-20",
+      "merchant": "Patek Philippe Boutique",
+      "description": "Grand Complications 5270P-001 Collector Edition",
+      "amount": -285000,
+      "currency": "SGD",
+      "category": "Luxury Goods",
+      "signals": ["insurance_review", "asset_storage"]
+    },
+    {
+      "date": "2026-02-14",
+      "merchant": "IRAS Singapore",
+      "description": "Personal Income Tax — YA2026 Final Settlement",
+      "amount": -125000,
+      "currency": "SGD",
+      "category": "Tax & Compliance",
+      "signals": ["srs_contribution", "tax_optimisation"]
+    },
+    {
+      "date": "2026-01-30",
+      "merchant": "Smith Capital SG Pte Ltd",
+      "description": "Directors' Dividend Payment",
+      "amount": 850000,
+      "currency": "SGD",
+      "category": "Income",
+      "signals": ["tax_efficiency", "reinvestment"]
+    },
+    {
+      "date": "2026-01-15",
+      "merchant": "CHF Sub-Account",
+      "description": "Internal Transfer — Settling Swiss Watch acquisition",
+      "amount": -18500,
+      "currency": "SGD",
+      "category": "Currency Management",
+      "signals": ["fx_rebalance"]
+    }
+  ],
+  "insights_signals": [
+    {
+      "id": "INS-001",
+      "priority": "high",
+      "category": "Lifestyle & Protection",
+      "icon": "🚗",
+      "title": "New Vehicle Requires Insurance & COE Review",
+      "trigger": "Recent Rolls-Royce Ghost Black Badge purchase (SGD 1.45M on 24 Mar 2026)",
+      "summary": "Your recent luxury vehicle acquisition includes significant ARF and COE exposure. A bespoke private client motor insurance arrangement is recommended, alongside a review of your fleet's COE renewal schedule to manage future cash outflows.",
+      "suggested_actions": [
+        "Arrange agreed-value motor insurance for the Rolls-Royce Ghost (est. SGD 1.45M)",
+        "Review PARF/COE rebate status for existing vehicles in your fleet due for replacement",
+        "Explore UBS premium lifestyle partnership for bundled luxury asset cover including watch collections"
+      ],
+      "rm_context": "Client acquired a Rolls-Royce Ghost (SGD 1.45M, 24 Mar 2026). Recommend motor insurance review and COE renewal management across his fleet.",
+      "tags": ["Insurance", "COE", "Vehicle"]
+    },
+    {
+      "id": "INS-002",
+      "priority": "medium",
+      "category": "Lifestyle & Memberships",
+      "icon": "⛳",
+      "title": "Exclusive Concierge Services for Sentosa Membership",
+      "trigger": "Sentosa Golf Club membership joins (SGD 650k on 18 Mar 2026)",
+      "summary": "As a member of one of the world's premier clubs, you now have access to UBS's global lifestyle partnerships — including priority booking at Michelin-starred restaurants, private flight connections to regional courses, and custom club-fitting events.",
+      "suggested_actions": [
+        "Connect with UBS Lifestyle Services for private culinary experiences at Capella or Marina Bay Sands",
+        "Explore curated regional golf travel (Hokkaido, Danang, or Bali private courses)",
+        "Inquire about exclusive member events co-hosted by UBS at Sentosa for networking with regional C-suite peers",
+        "Explore premium equipment commissions through UBS retail partners for your new club membership"
+      ],
+      "rm_context": "Client joined Sentosa Golf Club (SGD 650k, 18 Mar 2026). Opportunity to introduce Singapore-based lifestyle concierge and networking events.",
+      "tags": ["Lifestyle", "Concierge", "Networking"]
+    },
+    {
+      "id": "INS-003",
+      "priority": "high",
+      "category": "Art & Collectibles",
+      "icon": "🎨",
+      "title": "Art Finance & Collection Management for Zao Wou-Ki Acquisition",
+      "trigger": "Zao Wou-Ki painting acquired via Art SG (SGD 2.2M on 12 Mar 2026)",
+      "summary": "Your recent acquisition of a material Zao Wou-Ki piece at Art SG represents a significant expansion of your collectible portfolio. UBS Art Advisory can assist with formal valuations, provenance management, and competitive art-backed lending facilities to release liquidity.",
+      "suggested_actions": [
+        "Arrange fine art insurance with agreed value coverage (suggest Chubb Fine Art or MSIG)",
+        "Explore art-backed lending through UBS Art Finance — unlocking liquidity at 40-60% LTV",
+        "Engage UBS Art Advisory for formal collection documentation and inventory management",
+        "Discuss provenance documentation and museum-grade storage arrangements in the Singapore FreePort"
+      ],
+      "rm_context": "Client purchased a Zao Wou-Ki (SGD 2.2M, 12 Mar 2026). Recommend art insurance, art-backed lending facility, and a conversation about collection management in the SG FreePort.",
+      "tags": ["Art Finance", "Insurance", "FreePort"]
+    },
+    {
+      "id": "INS-004",
+      "priority": "medium",
+      "category": "Currency & Liquidity",
+      "icon": "💱",
+      "title": "SGD Liquidity Rebalancing Post-Acquisitions",
+      "trigger": "Material drawdown of SGD cash balances following car and art purchases (totaling SGD 3.65M over 2 weeks).",
+      "summary": "Recent high-value acquisitions have reduced your immediate SGD liquidity. Rather than direct FX conversion from USD/CHF holdings, you may wish to review your available Lombard facility or utilize our Liquidity Management Account (LMA) for near-term cash requirements.",
+      "suggested_actions": [
+        "Review SGD and USD allocation within your Multi-Currency Account",
+        "Consider drawing on your Lombard facility (USD 6.8M available at competitive rates) for SGD cash flow smoothing",
+        "Explore SGD-denominated money market funds via UBS Treasury for excess cash between capital calls",
+        "Assess optimal currency composition for upcoming Niseko property stage payments"
+      ],
+      "rm_context": "Significant SGD drawdown due to recent lifestyle purchases. Recommend Lombard utilization or cash flow optimization discussion.",
+      "tags": ["Liquidity", "Lombard", "Cash Management"]
+    },
+    {
+      "id": "INS-005",
+      "priority": "high",
+      "category": "Real Estate (Japan)",
+      "icon": "🏔️",
+      "title": "Niseko Chalet Acquisition — Cross-Border Financing",
+      "trigger": "Niseko Realty chalet deposit paid (SGD 580k on 8 Mar 2026)",
+      "summary": "The commencement of a Niseko property acquisition suggests a need for bespoke cross-border financing. UBS can provide JPY-denominated lending secured against your SG-based portfolio, as well as tax structuring advice for Japanese real estate holdings.",
+      "suggested_actions": [
+        "Initiate a UBS cross-border mortgage pre-assessment for the Niseko acquisition (JPY financing)",
+        "Discuss holding structure options (direct ownership vs. Japanese Goudou Kaisha - GK - structure)",
+        "Review Japanese withholding tax and Singapore tax reporting requirements with UBS Tax team",
+        "Assess hedging JPY stage payments against SGD/USD volatility"
+      ],
+      "rm_context": "Client engaged for Niseko chalet acquisition (SGD 580k deposit, 8 Mar 2026). Recommend JPY-based cross-border lending and tax structuring discussion.",
+      "tags": ["Real Estate", "JPY Financing", "Tax", "Structuring"]
+    },
+    {
+      "id": "INS-006",
+      "priority": "medium",
+      "category": "Income & Tax",
+      "icon": "🇸🇬",
+      "title": "SRS & CPF Top-Up Opportunity for YA2027",
+      "trigger": "Recent SGD 850k dividend payment from Smith Capital SG Pte Ltd.",
+      "summary": "Following your dividend receipt, we recommend reviewing your tax relief strategies before the 31 December deadline. Maximizing your SRS (Supplementary Retirement Scheme) and CPF Cash Top-ups can provide immediate tax relief while enhancing your long-term retirement planning.",
+      "suggested_actions": [
+        "Consider maximum SRS contribution (SGD 15,300 for residents) before 31 Dec to reduce taxable income",
+        "Assess CPF Cash Top-up for you or your spouse for additional tax relief",
+        "Explore SRS-approved investment strategies to optimize returns on idle SRS balances",
+        "Review whether dividend funds should be deployed via the UBS Variable Capital Company (VCC) structure if established"
+      ],
+      "rm_context": "Client received SGD 850k dividend (30 Jan 2026). Recommend SRS/CPF top-up discussion and VCC utilization before year-end tax planning cycle.",
+      "tags": ["Tax", "SRS", "CPF", "Retirement"]
     }
   ]
 }

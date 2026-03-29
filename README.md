@@ -244,27 +244,35 @@ A dedicated performance dashboard accessible via the **Account Performance** but
 - **Monthly Returns** — Bar chart displaying monthly gains/losses with positive (green/grey) and negative (red) bars.
 - **Portfolio vs Benchmark** — Dual-line chart comparing portfolio performance against the S&P 500 benchmark.
 
-### Data Coherence
+### Insights & Opportunities
 
-The application utilizes a coherent Ultra High Net Worth (UHNW) profile for **John Smith (C-011)** across both the Account Performance dashboard and the backend MCP mock servers. All financial figures are standardized to USD (e.g., $42M AUM, $66.3M Net Worth), ensuring the LLM synthesizes advice based on the exact same data shown visually to the user.
+A proactive advisory section that analyzes the client's recent transaction history and account state to surface personalized financial suggestions.
+
+- **Lifestyle-Based Signals** — Automatically detects significant events (e.g., luxury vehicle purchases, club memberships) and suggests relevant advisory actions (e.g., agreed-value insurance, lifestyle concierge).
+- **Singapore Contextualization** — Signals are localized for the Singapore market, including **SRS/CPF** top-up reminders, **COE/ARF** management for vehicles, and tax-efficient reinvestment of dividends via **VCC** structures.
+- **Cross-Border Advisory** — Provides guidance on complex regional investments, such as **Niseko property acquisition** with JPY-denominated financing.
+- **Notify RM Flow** — A non-directive interaction model allowing users to send a pre-drafted, contextualized message to their Relationship Manager (Emma Clarke) for further discussion.
+
+### Data Coherence (Singapore HNW Profile)
+
+The application utilizes a coherent Singapore-based High Net Worth (HNW) profile for **John Smith (C-011)**. All financial data is standardized to **SGD** (e.g., **SGD 125M Net Worth**, **SGD 65M AUM**), featuring iconic Singaporean properties such as a **Sentosa Cove Villa** and a **Nassim Road GCB**. This ensures that both the visual dashboard and the agentic AI workflow operate on a consistent, localized factual foundation.
 
 ### Interactive Q&A
 
-Clicking any data point on the charts opens an inline **question panel** with:
-- A context label showing what was clicked (e.g., "Oct return: +2.1%")
-- A pre-filled suggested question that users can edit or replace entirely
-- A send button (or press Enter) to submit the question to the chatbot
-
-All questions asked from the performance page are routed to a single **"Account Performance Q&A"** chat session, keeping the conversation thread consistent. A new session is only created if the user explicitly clicks "New Session" in the sidebar.
+Clicking any data point on the charts (or an Insight signal) opens an inline **question panel**:
+- **Chart Context** — Captures specific data points (e.g., "Oct return: +2.1%") for precise querying.
+- **Insight Follow-up** — Allows direct notification of the Relationship Manager with one click via pre-drafted SGD-contextualized messages.
+- **Unified Chat Session** — All performance-related questions are routed to a persistent "Account Performance Q&A" thread.
 
 ## Sample Queries
 
 - **Greeting**: "Hello" (Direct response path)
 - **Portfolio**: "How is my portfolio performing?" (Wealth Advisory → dashboard with charts)
+- **Insights**: "What are my current wealth opportunities?" (Specialist agents assess Singapore-specific signals like SRS/CPF and VCC structures)
 - **Market Outlook**: "What is the current macroeconomic outlook?" (Wealth Advisory → Tavily live search)
 - **Multi-step**: "What's my balance and what are the current FX rates?" (Private Banking + FX Treasury)
-- **RAG**: "What are the onboarding requirements for HNW clients?" (Client Services + RAG)
-- **Lending**: "What Lombard lending options are available?" (Lending & Credit)
+- **RAG**: "What are the onboarding requirements for HNW clients in Singapore?" (Client Services + RAG)
+- **Lending**: "What Lombard lending options are available for my SGD portfolio?" (Lending & Credit)
 - **Performance Q&A**: Click a data point on the Account Performance page → "Why did my portfolio return -1.9% in Dec?" (routed to Wealth Advisory)
 
 ## Future Work

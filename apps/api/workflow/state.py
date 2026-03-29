@@ -47,9 +47,12 @@ class SynthesizerOutput(BaseModel):
     response: str = Field(
         description=(
             "The synthesized client-facing response in Markdown format. "
-            "MUST use ### section headers (e.g. '### 1. Summary', '### 2. Current Portfolio Assessment', etc.). "
+            "MUST use ### section headers. Always include '### Summary', '### Next Steps', and '### Important Notes'. "
+            "Add '### Portfolio Overview', '### Market Context', '### Considerations' ONLY if the agent data contains "
+            "portfolio or financial metrics (AUM, YTD, allocation). "
+            "Add specialist sections (### Service Status, ### Credit & Lending Summary, etc.) only when relevant. "
             "Do NOT write a single prose paragraph — every section must be separated by its ### heading. "
-            "Bold key metrics like AUM, YTD return, and allocation percentages."
+            "Bold key figures (AUM, YTD, amounts, dates) wherever they appear."
         )
     )
     confidence: str = Field(description="Confidence level in the response: high, medium, or low")

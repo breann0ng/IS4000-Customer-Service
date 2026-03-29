@@ -9,12 +9,12 @@ interface PerformancePageProps {
 // ─── Mock Data ───────────────────────────────────────────────────────────────
 
 const PORTFOLIO_VALUE = [
-  { month: "Oct", value: 37_200_000 },
-  { month: "Nov", value: 38_500_000 },
-  { month: "Dec", value: 38_745_000 },
-  { month: "Jan", value: 39_900_000 },
-  { month: "Feb", value: 41_100_000 },
-  { month: "Mar", value: 42_000_000 },
+  { month: "Oct", value: 54_200_000 },
+  { month: "Nov", value: 56_500_000 },
+  { month: "Dec", value: 55_745_000 },
+  { month: "Jan", value: 58_900_000 },
+  { month: "Feb", value: 62_100_000 },
+  { month: "Mar", value: 65_000_000 },
 ];
 
 const ASSET_ALLOCATION = [
@@ -52,36 +52,167 @@ const NET_WORTH_DATA = {
   customerId: "C-011",
   assets: {
     liquidAssets: [
-      { label: "Personal Current Account (GBP)", value: 856_800, note: "GBP 680,000 @ 1.26" },
-      { label: "Multi-Currency Wealth Account", value: 2_280_000, note: "USD + EUR + GBP + CHF" },
-      { label: "Investment Settlement Account", value: 1_440_000, note: "USD" },
-      { label: "Liquidity Management Account", value: 2_300_000, note: "USD" },
+      { label: "Personal Current Account (SGD)", value: 1_250_800, note: "SGD Main Account" },
+      { label: "Multi-Currency Wealth Account", value: 5_280_000, note: "SGD + USD + EUR + CHF" },
+      { label: "Investment Settlement Account", value: 1_940_000, note: "SGD Equivalent" },
+      { label: "Liquidity Management Account", value: 3_300_000, note: "SGD Based" },
     ],
     investmentPortfolio: [
-      { label: "Public Equities (48%)", value: 20_160_000, note: "Advisory + Discretionary" },
-      { label: "Fixed Income (20%)", value: 8_400_000, note: "Advisory + Discretionary" },
-      { label: "Private Equity / VC (14%)", value: 5_880_000, note: "European Growth, etc." },
-      { label: "Hedge Funds (8%)", value: 3_360_000, note: "Multi-strategy" },
-      { label: "Structured Products (6%)", value: 2_520_000, note: "ELN, CPN, Rev. Conv." },
-      { label: "Real Asset Funds (2%)", value: 840_000, note: "Infrastructure" },
-      { label: "Cash within Portfolio (2%)", value: 840_000, note: "Settlement buffer" },
+      { label: "Public Equities (48%)", value: 31_200_000, note: "Advisory + Discretionary" },
+      { label: "Fixed Income (20%)", value: 13_000_000, note: "SGD + USD Bonds" },
+      { label: "Private Equity / VC (14%)", value: 9_100_000, note: "Asia Growth Fund V" },
+      { label: "Hedge Funds (8%)", value: 5_200_000, note: "Multi-strategy" },
+      { label: "Structured Products (6%)", value: 3_900_000, note: "Yield Enhancement" },
+      { label: "Real Asset Funds (2%)", value: 1_300_000, note: "Infrastructure" },
+      { label: "Cash within Portfolio (2%)", value: 1_300_000, note: "Settlement buffer" },
     ],
     realEstate: [
-      { label: "One Hyde Park penthouse, London", value: 12_348_000, note: "GBP 9.8M @ 1.26" },
-      { label: "Country estate, Oxfordshire", value: 5_292_000, note: "GBP 4.2M @ 1.26" },
-      { label: "Holiday villa, Côte d'Azur", value: 3_816_000, note: "EUR 3.6M @ 1.06" },
+      { label: "Sentosa Cove Villa, Singapore", value: 35_000_000, note: "SGD 35M" },
+      { label: "GCB @ Nassim Road, Singapore", value: 65_000_000, note: "SGD 65M" },
+      { label: "Niseko Ski Chalet, Japan", value: 4_500_000, note: "JPY 500M @ 0.009" },
     ],
     otherAssets: [
-      { label: "Smith Capital Group Ltd", value: 4_500_000, note: "Business equity" },
+      { label: "Smith Capital SG Pte Ltd", value: 12_500_000, note: "Business equity" },
     ],
   },
   liabilities: [
-    { label: "Lombard Credit Facility (drawn)", value: -3_200_000, rate: "5.10%" },
-    { label: "Private Bank Mortgage, London", value: -5_292_000, note: "GBP 4.2M @ 1.26", rate: "4.25%" },
+    { label: "Residential Mortgage, Singapore", value: -12_500_000, note: "SGD 12.5M", rate: "3.85%" },
+    { label: "Lombard Credit Facility (drawn)", value: -4_200_000, rate: "5.10%" },
     { label: "UBS Visa Infinite (outstanding)", value: -24_150, rate: "" },
     { label: "UBS Mastercard World Elite", value: -11_340, rate: "" },
   ],
 };
+
+// ─── Insights & Opportunities Mock Data ─────────────────────────────────────
+
+interface InsightSignal {
+  id: string;
+  priority: "high" | "medium" | "low";
+  category: string;
+  icon: string;
+  title: string;
+  trigger: string;
+  summary: string;
+  suggested_actions: string[];
+  rm_context: string;
+  tags: string[];
+}
+
+const INSIGHTS_SIGNALS: InsightSignal[] = [
+  {
+    id: "INS-001",
+    priority: "high",
+    category: "Lifestyle & Protection",
+    icon: "🚗",
+    title: "New Vehicle Requires Insurance & COE Review",
+    trigger: "Rolls-Royce Ghost Black Badge purchase — SGD 1.45M (Incl. COE) on 24 Mar 2026",
+    summary:
+      "Your recent luxury vehicle acquisition includes significant ARF and COE exposure. A bespoke private client motor insurance arrangement is recommended, alongside a review of your fleet's COE renewal schedule to manage future cash outflows.",
+    suggested_actions: [
+      "Arrange agreed-value motor insurance for the Rolls-Royce Ghost (est. SGD 1.45M)",
+      "Review PARF/COE rebate status for existing vehicles in your fleet due for replacement",
+      "Explore UBS premium lifestyle partnership for bundled luxury asset cover including watch collections",
+    ],
+    rm_context:
+      "Client acquired a Rolls-Royce Ghost (SGD 1.45M, 24 Mar 2026). Recommend motor insurance review and COE renewal management across his fleet.",
+    tags: ["Insurance", "COE", "Vehicle"],
+  },
+  {
+    id: "INS-002",
+    priority: "medium",
+    category: "Lifestyle & Memberships",
+    icon: "⛳",
+    title: "Exclusive Concierge Services for Sentosa Membership",
+    trigger: "Sentosa Golf Club membership joins — SGD 650k on 18 Mar 2026",
+    summary:
+      "As a member of one of the world's premier clubs, you now have access to UBS's global lifestyle partnerships — including priority booking at Michelin-starred restaurants and private flight connections to regional courses.",
+    suggested_actions: [
+      "Connect with UBS Lifestyle Services for private culinary experiences at Capella or Marina Bay Sands",
+      "Explore curated regional golf travel (Hokkaido, Danang, or Bali private courses)",
+      "Inquire about exclusive member events co-hosted by UBS at Sentosa for networking with regional peers",
+      "Explore premium equipment commissions through UBS retail partners for your new club membership",
+    ],
+    rm_context:
+      "Client joined Sentosa Golf Club (SGD 650k, 18 Mar 2026). Opportunity to introduce Singapore-based lifestyle concierge and networking events.",
+    tags: ["Lifestyle", "Concierge", "Networking"],
+  },
+  {
+    id: "INS-003",
+    priority: "high",
+    category: "Art & Collectibles",
+    icon: "🎨",
+    title: "Art Finance & Collection Management for Zao Wou-Ki Acquisition",
+    trigger: "Zao Wou-Ki painting acquired via Art SG — SGD 2.2M on 12 Mar 2026",
+    summary:
+      "Your recent acquisition of a material Zao Wou-Ki piece at Art SG represents a significant expansion of your collectible portfolio. UBS Art Advisory can assist with formal valuations and competitive art-backed lending facilities.",
+    suggested_actions: [
+      "Arrange fine art insurance with agreed value coverage (suggest Chubb Fine Art or MSIG)",
+      "Explore art-backed lending through UBS Art Finance — unlocking liquidity at 40-60% LTV",
+      "Engage UBS Art Advisory for formal collection documentation and inventory management",
+      "Discuss provenance documentation and museum-grade storage arrangements in the Singapore FreePort",
+    ],
+    rm_context:
+      "Client purchased a Zao Wou-Ki (SGD 2.2M, 12 Mar 2026). Recommend art insurance, art-backed lending, and collection management in the SG FreePort.",
+    tags: ["Art Finance", "Insurance", "FreePort"],
+  },
+  {
+    id: "INS-004",
+    priority: "medium",
+    category: "Currency & Liquidity",
+    icon: "💱",
+    title: "SGD Liquidity Rebalancing Post-Acquisitions",
+    trigger: "Material drawdown of SGD cash balances (totaling SGD 3.65M over 2 weeks)",
+    summary:
+      "Recent high-value acquisitions have reduced your immediate SGD liquidity. Rather than direct FX conversion, you may wish to review your available Lombard facility or utilize our Liquidity Management Account (LMA) for smoothing.",
+    suggested_actions: [
+      "Review SGD and USD allocation within your Multi-Currency Account",
+      "Consider drawing on your Lombard facility (SGD 10.8M available) for SGD cash flow smoothing",
+      "Explore SGD-denominated money market funds via UBS Treasury for excess cash between capital calls",
+      "Assess optimal currency composition for upcoming Niseko property stage payments",
+    ],
+    rm_context:
+      "Significant SGD drawdown due to recent lifestyle purchases. Recommend Lombard utilization or cash flow optimization discussion.",
+    tags: ["Liquidity", "Lombard", "Cash Management"],
+  },
+  {
+    id: "INS-005",
+    priority: "high",
+    category: "Real Estate (Japan)",
+    icon: "🏔️",
+    title: "Niseko Chalet Acquisition — Cross-Border Financing",
+    trigger: "Niseko Realty chalet deposit paid — SGD 580k on 8 Mar 2026",
+    summary:
+      "The commencement of a Niseko property acquisition suggests a need for bespoke cross-border financing. UBS can provide JPY-denominated lending secured against your SG-portfolio, as well as Japanese tax structuring advice.",
+    suggested_actions: [
+      "Initiate a UBS cross-border mortgage pre-assessment for the Niseko acquisition (JPY financing)",
+      "Discuss holding structure options (direct ownership vs. Japanese GK structure)",
+      "Review Japanese withholding tax and Singapore tax reporting requirements with UBS Tax team",
+      "Assess hedging JPY stage payments against SGD/USD volatility",
+    ],
+    rm_context:
+      "Client engaged for Niseko chalet acquisition (SGD 580k deposit, 8 Mar 2026). Recommend JPY-based cross-border lending and tax structuring discussion.",
+    tags: ["Real Estate", "JPY Financing", "Tax", "Structuring"],
+  },
+  {
+    id: "INS-006",
+    priority: "medium",
+    category: "Income & Tax",
+    icon: "🇸🇬",
+    title: "SRS & CPF Top-Up Opportunity for YA2027",
+    trigger: "Recent SGD 850k dividend payment from Smith Capital SG Pte Ltd",
+    summary:
+      "Following your dividend receipt, we recommend reviewing your tax relief strategies before the 31 December deadline. Maximizing your SRS and CPF top-ups can provide immediate relief while enhancing long-term planning.",
+    suggested_actions: [
+      "Consider maximum SRS contribution (SGD 15,300 for residents) before 31 Dec to reduce taxable income",
+      "Assess CPF Cash Top-up for you or your spouse for additional tax relief",
+      "Explore SRS-approved investment strategies to optimize returns on idle SRS balances",
+      "Review whether dividend funds should be deployed via the UBS Variable Capital Company (VCC) structure",
+    ],
+    rm_context:
+      "Client received SGD 850k dividend (30 Jan 2026). Recommend SRS/CPF top-up discussion and VCC utilization before year-end tax planning cycle.",
+    tags: ["Tax", "SRS", "CPF", "Retirement"],
+  },
+];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -98,7 +229,7 @@ function pieSlicePath(cx: number, cy: number, r: number, startAngle: number, end
 }
 
 function formatCurrency(value: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value);
+  return new Intl.NumberFormat("en-SG", { style: "currency", currency: "SGD", maximumFractionDigits: 0 }).format(value);
 }
 
 // ─── Question Input Panel ────────────────────────────────────────────────────
@@ -208,7 +339,7 @@ function NetWorthCalculator({ onAskQuestion }: { onAskQuestion: (context: string
       color: "#9b1318",
       items: NET_WORTH_DATA.assets.realEstate,
       icon: "🏢",
-      question: `My real estate holdings total ${formatCurrency(totalRealEstate)} across Singapore, London, and Sydney. What are your thoughts on my real estate exposure as a proportion of my net worth?`,
+      question: `My real estate holdings total ${formatCurrency(totalRealEstate)} across Singapore and Japan. What are your thoughts on my real estate exposure as a proportion of my net worth?`,
     },
     {
       key: "other",
@@ -231,7 +362,7 @@ function NetWorthCalculator({ onAskQuestion }: { onAskQuestion: (context: string
         <div>
           <h3 className={styles.netWorthTitle}>Net Worth Snapshot</h3>
           <p className={styles.netWorthSubtitle}>
-            Client: {NET_WORTH_DATA.customer} ({NET_WORTH_DATA.customerId}) · As of {NET_WORTH_DATA.asOf} · All values in USD
+            Client: {NET_WORTH_DATA.customer} ({NET_WORTH_DATA.customerId}) · As of {NET_WORTH_DATA.asOf} · All values in SGD
           </p>
         </div>
         <button
@@ -624,6 +755,217 @@ function ReturnsChart({ onClickBar }: { onClickBar: (context: string, suggestion
   );
 }
 
+// ─── Insights & Opportunities ────────────────────────────────────────────────
+
+interface RmNotifyPanelProps {
+  signal: InsightSignal;
+  onClose: () => void;
+}
+
+function RmNotifyPanel({ signal, onClose }: RmNotifyPanelProps) {
+  const [sent, setSent] = useState(false);
+  const [message, setMessage] = useState(
+    `Dear Emma,\n\n${signal.rm_context}\n\nPlease could we discuss this at your earliest convenience?\n\nKind regards,\nJohn`,
+  );
+
+  function handleSend() {
+    setSent(true);
+  }
+
+  return (
+    <div className={styles.rmPanel}>
+      <div className={styles.rmPanelHeader}>
+        <div className={styles.rmPanelTitle}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M13 2H3a1 1 0 00-1 1v8a1 1 0 001 1h2l3 2 3-2h2a1 1 0 001-1V3a1 1 0 00-1-1z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+          </svg>
+          Notify Relationship Manager
+        </div>
+        <div className={styles.rmPanelMeta}>Emma Clarke · emma.clarke@ubs.com · +44 20 7567 0100</div>
+        <button className={styles.rmPanelClose} onClick={onClose} aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+        </button>
+      </div>
+      {sent ? (
+        <div className={styles.rmSentState}>
+          <span className={styles.rmSentIcon}>✓</span>
+          <div>
+            <p className={styles.rmSentTitle}>Message sent to Emma Clarke</p>
+            <p className={styles.rmSentSub}>Your relationship manager will be in touch shortly. This is a notification only — no actions have been executed on your account.</p>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className={styles.rmDisclaimer}>
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+              <path d="M8 5v3M8 10.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            This is a suggestion only. No actions will be executed. Your RM will follow up to discuss options at your discretion.
+          </div>
+          <textarea
+            className={styles.rmTextarea}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            rows={7}
+          />
+          <div className={styles.rmPanelActions}>
+            <button className={styles.rmCancelBtn} onClick={onClose}>Cancel</button>
+            <button className={styles.rmSendBtn} onClick={handleSend} disabled={!message.trim()}>
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <path d="M2 8h12M10 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Send to Emma Clarke
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function InsightCard({ signal }: { signal: InsightSignal }) {
+  const [expanded, setExpanded] = useState(false);
+  const [showRmPanel, setShowRmPanel] = useState(false);
+
+  const priorityClass = signal.priority === "high" ? styles.priorityHigh : signal.priority === "medium" ? styles.priorityMedium : styles.priorityLow;
+  const priorityLabel = signal.priority === "high" ? "Priority" : signal.priority === "medium" ? "Consider" : "FYI";
+
+  return (
+    <div className={`${styles.insightCard} ${signal.priority === "high" ? styles.insightCardHigh : ""}`}>
+      <div className={styles.insightCardTop}>
+        <div className={styles.insightIconWrap}>
+          <span className={styles.insightIcon}>{signal.icon}</span>
+        </div>
+        <div className={styles.insightCardMain}>
+          <div className={styles.insightCardMeta}>
+            <span className={`${styles.priorityBadge} ${priorityClass}`}>{priorityLabel}</span>
+            <span className={styles.insightCategory}>{signal.category}</span>
+          </div>
+          <h4 className={styles.insightTitle}>{signal.title}</h4>
+          <p className={styles.insightTrigger}>
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+              <circle cx="8" cy="8" r="3" fill="currentColor" />
+              <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+            {signal.trigger}
+          </p>
+          <p className={styles.insightSummary}>{signal.summary}</p>
+          <div className={styles.insightTags}>
+            {signal.tags.map((tag) => (
+              <span key={tag} className={styles.insightTag}>{tag}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <button
+        className={styles.insightExpandBtn}
+        onClick={() => setExpanded(!expanded)}
+      >
+        <span>{expanded ? "Hide" : "View"} suggested actions</span>
+        <span className={`${styles.insightChevron} ${expanded ? styles.insightChevronOpen : ""}`}>
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+            <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      </button>
+
+      {expanded && (
+        <div className={styles.insightActions}>
+          <ol className={styles.insightActionList}>
+            {signal.suggested_actions.map((action, i) => (
+              <li key={i} className={styles.insightActionItem}>
+                <span className={styles.insightActionNum}>{i + 1}</span>
+                <span>{action}</span>
+              </li>
+            ))}
+          </ol>
+          <div className={styles.insightActionsFooter}>
+            <p className={styles.insightDisclaimer}>
+              These are suggestions only. No actions will be executed without your explicit instruction.
+            </p>
+            <button
+              className={styles.notifyRmBtn}
+              onClick={() => setShowRmPanel(true)}
+            >
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <path d="M13 2H3a1 1 0 00-1 1v8a1 1 0 001 1h2l3 2 3-2h2a1 1 0 001-1V3a1 1 0 00-1-1z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+              </svg>
+              Notify RM to Follow Up
+            </button>
+          </div>
+          {showRmPanel && (
+            <RmNotifyPanel signal={signal} onClose={() => setShowRmPanel(false)} />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InsightsOpportunities() {
+  const [filter, setFilter] = useState<"all" | "high" | "medium">("all");
+
+  const filtered = filter === "all"
+    ? INSIGHTS_SIGNALS
+    : INSIGHTS_SIGNALS.filter((s) => s.priority === filter);
+
+  const highCount = INSIGHTS_SIGNALS.filter((s) => s.priority === "high").length;
+  const mediumCount = INSIGHTS_SIGNALS.filter((s) => s.priority === "medium").length;
+
+  return (
+    <div className={styles.insightsSection}>
+      <div className={styles.insightsHeader}>
+        <div>
+          <h2 className={styles.insightsTitle}>
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+              <circle cx="10" cy="10" r="9" stroke="currentColor" strokeWidth="1.5" />
+              <path d="M10 6v5M10 13.5v.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+            </svg>
+            Insights & Opportunities
+          </h2>
+          <p className={styles.insightsSubtitle}>
+            Based on your recent activity, transactions, and financial profile — curated suggestions for your consideration.
+          </p>
+        </div>
+        <div className={styles.insightsBadgeRow}>
+          <span className={styles.insightsSummaryBadge} style={{ background: "#fef2f2", color: "#b91c1c", border: "1px solid #fecaca" }}>
+            {highCount} Priority
+          </span>
+          <span className={styles.insightsSummaryBadge} style={{ background: "#fffbeb", color: "#92400e", border: "1px solid #fde68a" }}>
+            {mediumCount} Consider
+          </span>
+        </div>
+      </div>
+
+      <div className={styles.insightsFilters}>
+        {(["all", "high", "medium"] as const).map((f) => (
+          <button
+            key={f}
+            className={`${styles.insightsFilterBtn} ${filter === f ? styles.insightsFilterActive : ""}`}
+            onClick={() => setFilter(f)}
+          >
+            {f === "all" ? `All (${INSIGHTS_SIGNALS.length})` : f === "high" ? `Priority (${highCount})` : `Consider (${mediumCount})`}
+          </button>
+        ))}
+      </div>
+
+      <div className={styles.insightsList}>
+        {filtered.map((signal) => (
+          <InsightCard key={signal.id} signal={signal} />
+        ))}
+      </div>
+
+      <p className={styles.insightsDisclaimer}>
+        ⚠ All insights are generated from your activity data for informational purposes only. No actions are executed by the system. Please contact your Relationship Manager to discuss any of the above.
+      </p>
+    </div>
+  );
+}
+
 // ─── Benchmark Comparison ────────────────────────────────────────────────────
 
 function BenchmarkChart({ onClickPoint }: { onClickPoint: (context: string, suggestion: string) => void }) {
@@ -763,7 +1105,10 @@ export function PerformancePage({ onAskQuestion, onBack }: PerformancePageProps)
           <ReturnsChart onClickBar={handleDataPointClick} />
           <BenchmarkChart onClickPoint={handleDataPointClick} />
         </div>
+
+        <InsightsOpportunities />
       </div>
     </div>
   );
 }
+

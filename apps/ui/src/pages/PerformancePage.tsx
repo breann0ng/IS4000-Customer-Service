@@ -9,20 +9,21 @@ interface PerformancePageProps {
 // ─── Mock Data ───────────────────────────────────────────────────────────────
 
 const PORTFOLIO_VALUE = [
-  { month: "Oct", value: 1_240_000 },
-  { month: "Nov", value: 1_285_000 },
-  { month: "Dec", value: 1_260_000 },
-  { month: "Jan", value: 1_310_000 },
-  { month: "Feb", value: 1_345_000 },
-  { month: "Mar", value: 1_382_000 },
+  { month: "Oct", value: 37_200_000 },
+  { month: "Nov", value: 38_500_000 },
+  { month: "Dec", value: 38_745_000 },
+  { month: "Jan", value: 39_900_000 },
+  { month: "Feb", value: 41_100_000 },
+  { month: "Mar", value: 42_000_000 },
 ];
 
 const ASSET_ALLOCATION = [
-  { label: "Equities", value: 45, color: "#da291c" },
-  { label: "Fixed Income", value: 25, color: "#1e1e1e" },
-  { label: "Real Estate", value: 15, color: "#ffd100" },
-  { label: "Alternatives", value: 10, color: "#9b1318" },
-  { label: "Cash", value: 5, color: "#b6b6b6" },
+  { label: "Equities", value: 48, color: "#da291c" },
+  { label: "Fixed Income", value: 20, color: "#1e1e1e" },
+  { label: "Private Equity", value: 14, color: "#ffd100" },
+  { label: "Hedge Funds", value: 8, color: "#9b1318" },
+  { label: "Structured Products", value: 6, color: "#b6b6b6" },
+  { label: "Real Assets & Cash", value: 4, color: "#888888" },
 ];
 
 const MONTHLY_RETURNS = [
@@ -43,6 +44,45 @@ const BENCHMARK_COMPARISON = [
   { month: "Mar", portfolio: 2.8, benchmark: 1.9 },
 ];
 
+// ─── Net Worth Mock Data ─────────────────────────────────────────────────────
+
+const NET_WORTH_DATA = {
+  asOf: "Mar 29, 2026",
+  customer: "John Smith",
+  customerId: "C-011",
+  assets: {
+    liquidAssets: [
+      { label: "Personal Current Account (GBP)", value: 856_800, note: "GBP 680,000 @ 1.26" },
+      { label: "Multi-Currency Wealth Account", value: 2_280_000, note: "USD + EUR + GBP + CHF" },
+      { label: "Investment Settlement Account", value: 1_440_000, note: "USD" },
+      { label: "Liquidity Management Account", value: 2_300_000, note: "USD" },
+    ],
+    investmentPortfolio: [
+      { label: "Public Equities (48%)", value: 20_160_000, note: "Advisory + Discretionary" },
+      { label: "Fixed Income (20%)", value: 8_400_000, note: "Advisory + Discretionary" },
+      { label: "Private Equity / VC (14%)", value: 5_880_000, note: "European Growth, etc." },
+      { label: "Hedge Funds (8%)", value: 3_360_000, note: "Multi-strategy" },
+      { label: "Structured Products (6%)", value: 2_520_000, note: "ELN, CPN, Rev. Conv." },
+      { label: "Real Asset Funds (2%)", value: 840_000, note: "Infrastructure" },
+      { label: "Cash within Portfolio (2%)", value: 840_000, note: "Settlement buffer" },
+    ],
+    realEstate: [
+      { label: "One Hyde Park penthouse, London", value: 12_348_000, note: "GBP 9.8M @ 1.26" },
+      { label: "Country estate, Oxfordshire", value: 5_292_000, note: "GBP 4.2M @ 1.26" },
+      { label: "Holiday villa, Côte d'Azur", value: 3_816_000, note: "EUR 3.6M @ 1.06" },
+    ],
+    otherAssets: [
+      { label: "Smith Capital Group Ltd", value: 4_500_000, note: "Business equity" },
+    ],
+  },
+  liabilities: [
+    { label: "Lombard Credit Facility (drawn)", value: -3_200_000, rate: "5.10%" },
+    { label: "Private Bank Mortgage, London", value: -5_292_000, note: "GBP 4.2M @ 1.26", rate: "4.25%" },
+    { label: "UBS Visa Infinite (outstanding)", value: -24_150, rate: "" },
+    { label: "UBS Mastercard World Elite", value: -11_340, rate: "" },
+  ],
+};
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
@@ -58,7 +98,7 @@ function pieSlicePath(cx: number, cy: number, r: number, startAngle: number, end
 }
 
 function formatCurrency(value: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "CHF", maximumFractionDigits: 0 }).format(value);
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value);
 }
 
 // ─── Question Input Panel ────────────────────────────────────────────────────
@@ -129,6 +169,225 @@ function QuestionPanel({ context, suggestedQuestion, onSend, onDismiss }: Questi
   );
 }
 
+// ─── Net Worth Calculator ────────────────────────────────────────────────────
+
+function NetWorthCalculator({ onAskQuestion }: { onAskQuestion: (context: string, suggestion: string) => void }) {
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+
+  const totalLiquid = NET_WORTH_DATA.assets.liquidAssets.reduce((s, a) => s + a.value, 0);
+  const totalPortfolio = NET_WORTH_DATA.assets.investmentPortfolio.reduce((s, a) => s + a.value, 0);
+  const totalRealEstate = NET_WORTH_DATA.assets.realEstate.reduce((s, a) => s + a.value, 0);
+  const totalOther = NET_WORTH_DATA.assets.otherAssets.reduce((s, a) => s + a.value, 0);
+  const totalAssets = totalLiquid + totalPortfolio + totalRealEstate + totalOther;
+  const totalLiabilities = NET_WORTH_DATA.liabilities.reduce((s, l) => s + Math.abs(l.value), 0);
+  const netWorth = totalAssets - totalLiabilities;
+
+  const assetSections = [
+    {
+      key: "liquid",
+      label: "Liquid & Cash Assets",
+      total: totalLiquid,
+      color: "#da291c",
+      items: NET_WORTH_DATA.assets.liquidAssets,
+      icon: "💵",
+      question: `My total liquid and cash assets are ${formatCurrency(totalLiquid)}. How does this liquidity position compare to what you'd recommend for someone with my profile?`,
+    },
+    {
+      key: "portfolio",
+      label: "Investment Portfolio (AUM)",
+      total: totalPortfolio,
+      color: "#1e1e1e",
+      items: NET_WORTH_DATA.assets.investmentPortfolio,
+      icon: "📈",
+      question: `My investment portfolio with UBS is valued at ${formatCurrency(totalPortfolio)}. Can you give me a quick assessment of my current allocation and any rebalancing opportunities?`,
+    },
+    {
+      key: "realestate",
+      label: "Real Estate",
+      total: totalRealEstate,
+      color: "#9b1318",
+      items: NET_WORTH_DATA.assets.realEstate,
+      icon: "🏢",
+      question: `My real estate holdings total ${formatCurrency(totalRealEstate)} across Singapore, London, and Sydney. What are your thoughts on my real estate exposure as a proportion of my net worth?`,
+    },
+    {
+      key: "other",
+      label: "Business & Other Assets",
+      total: totalOther,
+      color: "#ffd100",
+      items: NET_WORTH_DATA.assets.otherAssets,
+      icon: "🏛️",
+      question: `I have ${formatCurrency(totalOther)} in business equity and other assets. What strategies would you recommend to optimise or diversify this part of my wealth?`,
+    },
+  ];
+
+  // Bar widths: proportion of totalAssets
+  function pct(val: number) { return Math.round((val / totalAssets) * 100); }
+
+  return (
+    <div className={styles.netWorthCard}>
+      {/* ── Header ── */}
+      <div className={styles.netWorthHeader}>
+        <div>
+          <h3 className={styles.netWorthTitle}>Net Worth Snapshot</h3>
+          <p className={styles.netWorthSubtitle}>
+            Client: {NET_WORTH_DATA.customer} ({NET_WORTH_DATA.customerId}) · As of {NET_WORTH_DATA.asOf} · All values in USD
+          </p>
+        </div>
+        <button
+          className={styles.netWorthAskBtn}
+          onClick={() => onAskQuestion(
+            `Net worth: ${formatCurrency(netWorth)}`,
+            `My current net worth is approximately ${formatCurrency(netWorth)}. Can you provide a comprehensive assessment of my financial position and suggest estate planning or wealth optimisation strategies?`,
+          )}
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 3v4m0 2.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          Ask Advisor
+        </button>
+      </div>
+
+      {/* ── KPI Row ── */}
+      <div className={styles.nwKpis}>
+        <div className={styles.nwKpi}>
+          <span className={styles.nwKpiLabel}>Total Assets</span>
+          <span className={styles.nwKpiValue} style={{ color: "var(--color-text-primary)" }}>{formatCurrency(totalAssets)}</span>
+        </div>
+        <div className={styles.nwKpiDivider} />
+        <div className={styles.nwKpi}>
+          <span className={styles.nwKpiLabel}>Total Liabilities</span>
+          <span className={styles.nwKpiValue} style={{ color: "#da291c" }}>−{formatCurrency(totalLiabilities)}</span>
+        </div>
+        <div className={styles.nwKpiDivider} />
+        <div className={styles.nwKpi}>
+          <span className={styles.nwKpiLabel}>Net Worth</span>
+          <span className={styles.nwKpiValue} style={{ color: "#16a34a", fontWeight: 800 }}>{formatCurrency(netWorth)}</span>
+        </div>
+      </div>
+
+      {/* ── Stacked bar ── */}
+      <div className={styles.nwBar}>
+        {assetSections.map((s) => (
+          <div
+            key={s.key}
+            className={styles.nwBarSegment}
+            style={{ width: `${pct(s.total)}%`, background: s.color }}
+            title={`${s.label}: ${formatCurrency(s.total)}`}
+          />
+        ))}
+        <div
+          className={styles.nwBarSegment}
+          style={{ width: `${pct(totalLiabilities)}%`, background: "#f3f3f3", border: "1px solid #da291c", zIndex: 1 }}
+          title={`Liabilities: −${formatCurrency(totalLiabilities)}`}
+        />
+      </div>
+      <div className={styles.nwBarLegend}>
+        {assetSections.map((s) => (
+          <span key={s.key} className={styles.nwBarLegendItem}>
+            <span className={styles.legendDot} style={{ background: s.color }} />
+            {s.label}
+          </span>
+        ))}
+        <span className={styles.nwBarLegendItem}>
+          <span className={styles.legendDot} style={{ background: "#f3f3f3", border: "1px solid #da291c" }} />
+          Liabilities
+        </span>
+      </div>
+
+      {/* ── Asset sections ── */}
+      <div className={styles.nwSections}>
+        {assetSections.map((section) => (
+          <div key={section.key} className={styles.nwSection}>
+            <button
+              className={styles.nwSectionHeader}
+              onClick={() => setExpandedSection(expandedSection === section.key ? null : section.key)}
+            >
+              <span className={styles.nwSectionIcon}>{section.icon}</span>
+              <span className={styles.nwSectionLabel}>{section.label}</span>
+              <span className={styles.nwSectionTotal} style={{ color: section.color }}>
+                {formatCurrency(section.total)}
+              </span>
+              <span className={styles.nwSectionPct}>({pct(section.total)}%)</span>
+              <span className={`${styles.nwChevron} ${expandedSection === section.key ? styles.nwChevronOpen : ""}`}>
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                  <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+            </button>
+            {expandedSection === section.key && (
+              <div className={styles.nwSectionBody}>
+                {section.items.map((item) => (
+                  <div key={item.label} className={styles.nwLineItem}>
+                    <span className={styles.nwLineLabel}>
+                      {item.label}
+                      {(item as { note?: string }).note && <span className={styles.nwLineNote}> · {(item as { note?: string }).note}</span>}
+                    </span>
+                    <span className={styles.nwLineValue}>{formatCurrency(item.value)}</span>
+                  </div>
+                ))}
+                <button
+                  className={styles.nwAskLink}
+                  onClick={() => onAskQuestion(`${section.label}: ${formatCurrency(section.total)}`, section.question)}
+                >
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                    <path d="M2 8h12M10 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Ask about this category
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+
+        {/* Liabilities section */}
+        <div className={styles.nwSection}>
+          <button
+            className={styles.nwSectionHeader}
+            onClick={() => setExpandedSection(expandedSection === "liabilities" ? null : "liabilities")}
+          >
+            <span className={styles.nwSectionIcon}>🏦</span>
+            <span className={styles.nwSectionLabel}>Liabilities</span>
+            <span className={styles.nwSectionTotal} style={{ color: "#da291c" }}>−{formatCurrency(totalLiabilities)}</span>
+            <span className={styles.nwSectionPct}>({pct(totalLiabilities)}% of assets)</span>
+            <span className={`${styles.nwChevron} ${expandedSection === "liabilities" ? styles.nwChevronOpen : ""}`}>
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+          </button>
+          {expandedSection === "liabilities" && (
+            <div className={styles.nwSectionBody}>
+              {NET_WORTH_DATA.liabilities.map((l) => (
+                <div key={l.label} className={styles.nwLineItem}>
+                  <span className={styles.nwLineLabel}>
+                    {l.label}
+                    {l.rate && <span className={styles.nwLineNote}> · {l.rate} p.a.</span>}
+                    {"note" in l && l.note && <span className={styles.nwLineNote}> · {l.note}</span>}
+                  </span>
+                  <span className={styles.nwLineValue} style={{ color: "#da291c" }}>−{formatCurrency(Math.abs(l.value))}</span>
+                </div>
+              ))}
+              <button
+                className={styles.nwAskLink}
+                onClick={() => onAskQuestion(
+                  `Total liabilities: ${formatCurrency(totalLiabilities)}`,
+                  `My total liabilities are ${formatCurrency(totalLiabilities)}, including a Lombard loan and mortgage. What is your assessment of my leverage ratio and debt servicing capacity?`,
+                )}
+              >
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                  <path d="M2 8h12M10 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Ask about liabilities
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Summary Cards ───────────────────────────────────────────────────────────
 
 function SummaryCards() {
@@ -138,10 +397,10 @@ function SummaryCards() {
   const ytdReturn = ((PORTFOLIO_VALUE[PORTFOLIO_VALUE.length - 1]!.value - PORTFOLIO_VALUE[2]!.value) / PORTFOLIO_VALUE[2]!.value * 100).toFixed(1);
 
   const cards = [
-    { label: "Portfolio Value", value: formatCurrency(currentValue), sub: "As of Mar 2026" },
+    { label: "Portfolio Value", value: formatCurrency(currentValue), sub: "As of Mar 2026 · John Smith (C-011)" },
     { label: "6M Return", value: `+${totalReturn}%`, sub: `+${formatCurrency(currentValue - previousValue)}` },
     { label: "YTD Return", value: `+${ytdReturn}%`, sub: "Jan - Mar 2026" },
-    { label: "Risk Level", value: "Moderate", sub: "Sharpe Ratio: 1.42" },
+    { label: "Risk Level", value: "Growth", sub: "Sharpe Ratio: 1.55" },
   ];
 
   return (
@@ -495,6 +754,8 @@ export function PerformancePage({ onAskQuestion, onBack }: PerformancePageProps)
             onDismiss={() => setActiveQuestion(null)}
           />
         )}
+
+        <NetWorthCalculator onAskQuestion={handleDataPointClick} />
 
         <div className={styles.chartsGrid}>
           <PortfolioChart onClickPoint={handleDataPointClick} />

@@ -17,16 +17,27 @@ from apps.api.config import settings
 from mcp_servers.base import create_mock_mcp_app
 
 MOCK_PORTFOLIO: dict[str, str | dict[str, str]] = {
-    "total_aum": "CHF 12,450,000",
+    "customer_id": "C-011",
+    "customer_name": "John Smith",
+    "relationship_manager": "Emma Clarke",
+    "total_aum": "USD 42,000,000",
+    "net_worth": "USD 68,000,000",
+    "risk_profile": "Growth",
     "asset_allocation": {
-        "Equities": "42% (CHF 5,229,000)",
-        "Fixed Income": "28% (CHF 3,486,000)",
-        "Alternatives": "15% (CHF 1,867,500)",
-        "Cash & Equivalents": "10% (CHF 1,245,000)",
-        "Real Estate": "5% (CHF 622,500)",
+        "Public Equities": "48% (USD 20,160,000)",
+        "Fixed Income": "20% (USD 8,400,000)",
+        "Private Equity": "14% (USD 5,880,000)",
+        "Hedge Funds": "8% (USD 3,360,000)",
+        "Structured Products": "6% (USD 2,520,000)",
+        "Real Asset Funds": "2% (USD 840,000)",
+        "Cash within Portfolio": "2% (USD 840,000)",
     },
-    "ytd_performance": "+6.8%",
-    "benchmark_comparison": "+1.2% vs. benchmark",
+    "ytd_performance": "+8.4%",
+    "one_year_return": "+16.7%",
+    "benchmark_comparison": "+2.1% vs. MSCI World benchmark",
+    "lombard_facility": "USD 10,000,000 limit / USD 3,200,000 drawn / USD 6,800,000 available @ 5.10% p.a.",
+    "mortgage": "GBP 4,200,000 outstanding (One Hyde Park, London) @ 4.25% p.a.",
+    "liquid_accounts": "USD 5,940,000 across GBP current, multi-currency, ISA, and liquidity accounts",
 }
 
 TOOL_DEFINITIONS = [

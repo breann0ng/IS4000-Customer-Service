@@ -100,7 +100,8 @@ All LLM calls use **Gemini structured outputs** (Pydantic models) for reliable p
 │       │   │                   StructuredMessage (dashboard renderer), ChartCard (SVG charts)
 │       │   └── pages/          LoginPage, ChatPage, PerformancePage
 ├── rag/                        RAG pipeline + server
-│   ├── ingest.py               PDF/DOCX → PostgreSQL pgvector (cosine similarity)
+│   ├── pipeline/               Web and document scrapers (HTML cleaner, PDF parser, services scraper)
+│   ├── ingest.py               PDF/DOCX/HTML → PostgreSQL pgvector (cosine similarity)
 │   └── server.py               MCP server that queries pgvector for top-k chunks
 ├── mcp_servers/                Mock MCP servers for development
 ├── docs/                       Source documents for RAG (PDF/DOCX)
@@ -223,17 +224,28 @@ Wealth Advisory responses are rendered as an interactive dashboard:
 
 The `StructuredMessage` component handles all parsing (heading normalisation, JSON chart extraction) and the `ChartCard` component renders pie/bar/line SVG charts via the `ChartData` interface.
 
+## Application UI Features
+
+- **Collapsible Sidebar** — Sidebar can be pinned or unpinned to maximize screen real estate when viewing dense financial dashboards.
+- **Dark Mode Support** — Toggleable Light/Dark theme for comfortable viewing in any lighting condition.
+- **Archived Chats** — Ability to hide or reveal archived chat sessions to keep the active workspace clutter-free.
+
 ## Account Performance Page
 
-A dedicated performance dashboard accessible via the **Account Performance** button in the sidebar. It provides an at-a-glance view of the client's portfolio with interactive charts.
+A dedicated performance dashboard accessible via the **Account Performance** button in the sidebar. It provides an at-a-glance view of the client's portfolio with interactive charts, fully themed using the custom UBS Red & Grey branding palette.
 
 ### Features
 
 - **Summary Cards** — Portfolio value, 6-month return, YTD return, and risk level displayed as key metric cards.
+- **Net Worth Snapshot** — A comprehensive real-time net worth calculator dividing assets into Liquid & Cash Assets, Investment Portfolio (AUM), Real Estate, Business & Other Assets, and Liabilities. Includes an interactive visual completion bar representing the asset breakdown.
 - **Portfolio Value Over Time** — Line chart tracking portfolio value across months with clickable data points.
-- **Asset Allocation** — Interactive donut chart showing allocation across asset classes (Equities, Fixed Income, Real Estate, Alternatives, Cash).
-- **Monthly Returns** — Bar chart displaying monthly gains/losses with positive (green) and negative (red) bars.
+- **Asset Allocation** — Interactive donut chart showing allocation across asset classes (Equities, Fixed Income, Private Equity, Hedge Funds, Structured Products, Real Assets & Cash).
+- **Monthly Returns** — Bar chart displaying monthly gains/losses with positive (green/grey) and negative (red) bars.
 - **Portfolio vs Benchmark** — Dual-line chart comparing portfolio performance against the S&P 500 benchmark.
+
+### Data Coherence
+
+The application utilizes a coherent Ultra High Net Worth (UHNW) profile for **John Smith (C-011)** across both the Account Performance dashboard and the backend MCP mock servers. All financial figures are standardized to USD (e.g., $42M AUM, $66.3M Net Worth), ensuring the LLM synthesizes advice based on the exact same data shown visually to the user.
 
 ### Interactive Q&A
 

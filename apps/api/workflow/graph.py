@@ -39,7 +39,7 @@ A 2-3 sentence executive summary with key takeaways. Bold the most important num
 
 ### 2. Current Portfolio Assessment
 
-Reference the client's actual AUM, YTD performance, and allocation using exact figures from the specialist data. Bold metrics like **CHF 12.45M AUM** and **+6.8% YTD**.
+Reference the client's actual AUM, YTD performance, and allocation using exact figures from the specialist data. Bold metrics like **USD 33.5M AUM** and **+6.8% YTD**.
 
 ### 3. Market Context
 

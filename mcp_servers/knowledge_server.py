@@ -13,11 +13,20 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from apps.api.config import settings
 from mcp_servers.base import create_mock_mcp_app
 
+MOCK_CLIENT = {
+    "customer_id": "C-011",
+    "name": "John Smith",
+    "relationship_manager": "Emma Clarke",
+    "risk_profile": "Growth",
+    "aum_usd": 42000000,
+    "net_worth_usd": 68000000,
+}
+
 MOCK_ACCOUNTS = [
-    {"account": "CH93 0076 2011 6238 5295 7", "currency": "CHF", "balance": "2,345,678.50"},
-    {"account": "CH93 0076 2011 6238 5296 8", "currency": "EUR", "balance": "1,123,456.00"},
-    {"account": "CH93 0076 2011 6238 5297 9", "currency": "USD", "balance": "3,456,789.25"},
-    {"account": "CH93 0076 2011 6238 5298 0", "currency": "GBP", "balance": "567,890.75"},
+    {"account_id": "GBP-011-CA", "type": "Personal Current Account", "currency": "GBP", "balance": "680,000.00"},
+    {"account_id": "MCW-011-WA", "type": "Multi-Currency Wealth Account", "currency": "USD/EUR/GBP/CHF", "balance": "USD 2,280,000 equiv."},
+    {"account_id": "ISA-011-SA", "type": "Investment Settlement Account", "currency": "USD", "balance": "1,440,000.00"},
+    {"account_id": "LMA-011-LQ", "type": "Liquidity Management Account", "currency": "USD", "balance": "2,300,000.00"},
 ]
 
 TOOL_DEFINITIONS = [
@@ -85,29 +94,30 @@ async def handle_private_banking(params: dict) -> dict:
                     '  "type": "gauge",\n'
                     '  "title": "Lombard loans",\n'
                     '  "labels": ["Remaining lending value"],\n'
-                    '  "values": [61230, 80000],\n'
+                    '  "values": [6800000, 10000000],\n'
                     '  "badge": "Sufficient"\n'
                     "}\n"
                     "```\n\n"
                     "| | |\n"
                     "|---|---|\n"
-                    "| Credit usage | **USD -179** |\n"
-                    "| Available credit | **USD 61'230** |\n"
+                    "| Credit usage | **USD 3,200,000** |\n"
+                    "| Available credit | **USD 6,800,000** |\n"
                 )
             }
 
         account_lines = "\n".join(
-            f"  - {account['account']} ({account['currency']}): {account['balance']}"
+            f"  - {account['account_id']} ({account['type']}, {account['currency']}): {account['balance']}"
             for account in MOCK_ACCOUNTS
         )
-        total_chf = "7,493,814.50"
+        total_usd = "5,940,000"
         return {
             "response": (
                 f"[SMART MOCK PRIVATE BANKING]\n\n"
+                f"Client: {MOCK_CLIENT['name']} ({MOCK_CLIENT['customer_id']}) — {MOCK_CLIENT['risk_profile']} profile\n\n"
                 f"Account Summary:\n{account_lines}\n"
-                f"Total (CHF equivalent): {total_chf}\n\n"
+                f"Total (USD equivalent): {total_usd}\n\n"
                 f"Regarding: {task[:120]}\n\n"
-                f"The requested operation has been noted for {MOCK_ACCOUNTS[0]['account']}."
+                f"The requested operation has been noted for your account."
             )
         }
 
@@ -117,7 +127,10 @@ async def handle_private_banking(params: dict) -> dict:
     )
 
     prompt = (
-        f"Client Account Data:\n{MOCK_ACCOUNTS}\n\n"
+        f"Client: {MOCK_CLIENT['name']} ({MOCK_CLIENT['customer_id']})\n"
+        f"Risk Profile: {MOCK_CLIENT['risk_profile']}\n"
+        f"AUM: USD {MOCK_CLIENT['aum_usd']:,}\n"
+        f"Account Data:\n{MOCK_ACCOUNTS}\n\n"
         f"Task: {task}\n\n"
         f"Context: {context}\n\n"
         f"Provide a professional private banking summary or action confirmation."

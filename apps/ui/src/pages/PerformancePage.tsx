@@ -1,218 +1,33 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import styles from "./PerformancePage.module.css";
+
+interface PerformanceData {
+  portfolio_value: { month: string; value: number }[];
+  asset_allocation: { label: string; value: number; color?: string }[];
+  monthly_returns: { month: string; value: number }[];
+  benchmark_comparison: { month: string; portfolio: number; benchmark: number }[];
+  net_worth: {
+    asOf: string;
+    customer: string;
+    customerId: string;
+    assets: {
+      liquidAssets: { label: string; value: number; note: string }[];
+      investmentPortfolio: { label: string; value: number; note?: string }[];
+      realEstate: { label: string; value: number; note: string }[];
+      otherAssets: { label: string; value: number; note: string }[];
+    };
+    liabilities: { label: string; value: number; note: string; rate?: string }[];
+  };
+  insights: any[];
+}
 
 interface PerformancePageProps {
   onAskQuestion: (question: string) => void;
   onBack: () => void;
 }
 
-// ─── Mock Data ───────────────────────────────────────────────────────────────
-
-const PORTFOLIO_VALUE = [
-  { month: "Oct", value: 54_200_000 },
-  { month: "Nov", value: 56_500_000 },
-  { month: "Dec", value: 55_745_000 },
-  { month: "Jan", value: 58_900_000 },
-  { month: "Feb", value: 62_100_000 },
-  { month: "Mar", value: 65_000_000 },
-];
-
-const ASSET_ALLOCATION = [
-  { label: "Equities", value: 48, color: "#da291c" },
-  { label: "Fixed Income", value: 20, color: "#1e1e1e" },
-  { label: "Private Equity", value: 14, color: "#ffd100" },
-  { label: "Hedge Funds", value: 8, color: "#9b1318" },
-  { label: "Structured Products", value: 6, color: "#b6b6b6" },
-  { label: "Real Assets & Cash", value: 4, color: "#888888" },
-];
-
-const MONTHLY_RETURNS = [
-  { month: "Oct", value: 2.1 },
-  { month: "Nov", value: 3.6 },
-  { month: "Dec", value: -1.9 },
-  { month: "Jan", value: 4.0 },
-  { month: "Feb", value: 2.7 },
-  { month: "Mar", value: 2.8 },
-];
-
-const BENCHMARK_COMPARISON = [
-  { month: "Oct", portfolio: 2.1, benchmark: 1.8 },
-  { month: "Nov", portfolio: 3.6, benchmark: 2.5 },
-  { month: "Dec", portfolio: -1.9, benchmark: -2.3 },
-  { month: "Jan", portfolio: 4.0, benchmark: 3.1 },
-  { month: "Feb", portfolio: 2.7, benchmark: 2.0 },
-  { month: "Mar", portfolio: 2.8, benchmark: 1.9 },
-];
-
-// ─── Net Worth Mock Data ─────────────────────────────────────────────────────
-
-const NET_WORTH_DATA = {
-  asOf: "Mar 29, 2026",
-  customer: "John Smith",
-  customerId: "C-011",
-  assets: {
-    liquidAssets: [
-      { label: "Personal Current Account (SGD)", value: 1_250_800, note: "SGD Main Account" },
-      { label: "Multi-Currency Wealth Account", value: 5_280_000, note: "SGD + USD + EUR + CHF" },
-      { label: "Investment Settlement Account", value: 1_940_000, note: "SGD Equivalent" },
-      { label: "Liquidity Management Account", value: 3_300_000, note: "SGD Based" },
-    ],
-    investmentPortfolio: [
-      { label: "Public Equities (48%)", value: 31_200_000, note: "Advisory + Discretionary" },
-      { label: "Fixed Income (20%)", value: 13_000_000, note: "SGD + USD Bonds" },
-      { label: "Private Equity / VC (14%)", value: 9_100_000, note: "Asia Growth Fund V" },
-      { label: "Hedge Funds (8%)", value: 5_200_000, note: "Multi-strategy" },
-      { label: "Structured Products (6%)", value: 3_900_000, note: "Yield Enhancement" },
-      { label: "Real Asset Funds (2%)", value: 1_300_000, note: "Infrastructure" },
-      { label: "Cash within Portfolio (2%)", value: 1_300_000, note: "Settlement buffer" },
-    ],
-    realEstate: [
-      { label: "Sentosa Cove Villa, Singapore", value: 35_000_000, note: "SGD 35M" },
-      { label: "GCB @ Nassim Road, Singapore", value: 65_000_000, note: "SGD 65M" },
-      { label: "Niseko Ski Chalet, Japan", value: 4_500_000, note: "JPY 500M @ 0.009" },
-    ],
-    otherAssets: [
-      { label: "Smith Capital SG Pte Ltd", value: 12_500_000, note: "Business equity" },
-    ],
-  },
-  liabilities: [
-    { label: "Residential Mortgage, Singapore", value: -12_500_000, note: "SGD 12.5M", rate: "3.85%" },
-    { label: "Lombard Credit Facility (drawn)", value: -4_200_000, rate: "5.10%" },
-    { label: "UBS Visa Infinite (outstanding)", value: -24_150, rate: "" },
-    { label: "UBS Mastercard World Elite", value: -11_340, rate: "" },
-  ],
-};
-
-// ─── Insights & Opportunities Mock Data ─────────────────────────────────────
-
-interface InsightSignal {
-  id: string;
-  priority: "high" | "medium" | "low";
-  category: string;
-  icon: string;
-  title: string;
-  trigger: string;
-  summary: string;
-  suggested_actions: string[];
-  rm_context: string;
-  tags: string[];
-}
-
-const INSIGHTS_SIGNALS: InsightSignal[] = [
-  {
-    id: "INS-001",
-    priority: "high",
-    category: "Lifestyle & Protection",
-    icon: "🚗",
-    title: "New Vehicle Requires Insurance & COE Review",
-    trigger: "Rolls-Royce Ghost Black Badge purchase — SGD 1.45M (Incl. COE) on 24 Mar 2026",
-    summary:
-      "Your recent luxury vehicle acquisition includes significant ARF and COE exposure. A bespoke private client motor insurance arrangement is recommended, alongside a review of your fleet's COE renewal schedule to manage future cash outflows.",
-    suggested_actions: [
-      "Arrange agreed-value motor insurance for the Rolls-Royce Ghost (est. SGD 1.45M)",
-      "Review PARF/COE rebate status for existing vehicles in your fleet due for replacement",
-      "Explore UBS premium lifestyle partnership for bundled luxury asset cover including watch collections",
-    ],
-    rm_context:
-      "Client acquired a Rolls-Royce Ghost (SGD 1.45M, 24 Mar 2026). Recommend motor insurance review and COE renewal management across his fleet.",
-    tags: ["Insurance", "COE", "Vehicle"],
-  },
-  {
-    id: "INS-002",
-    priority: "medium",
-    category: "Lifestyle & Memberships",
-    icon: "⛳",
-    title: "Exclusive Concierge Services for Sentosa Membership",
-    trigger: "Sentosa Golf Club membership joins — SGD 650k on 18 Mar 2026",
-    summary:
-      "As a member of one of the world's premier clubs, you now have access to UBS's global lifestyle partnerships — including priority booking at Michelin-starred restaurants and private flight connections to regional courses.",
-    suggested_actions: [
-      "Connect with UBS Lifestyle Services for private culinary experiences at Capella or Marina Bay Sands",
-      "Explore curated regional golf travel (Hokkaido, Danang, or Bali private courses)",
-      "Inquire about exclusive member events co-hosted by UBS at Sentosa for networking with regional peers",
-      "Explore premium equipment commissions through UBS retail partners for your new club membership",
-    ],
-    rm_context:
-      "Client joined Sentosa Golf Club (SGD 650k, 18 Mar 2026). Opportunity to introduce Singapore-based lifestyle concierge and networking events.",
-    tags: ["Lifestyle", "Concierge", "Networking"],
-  },
-  {
-    id: "INS-003",
-    priority: "high",
-    category: "Art & Collectibles",
-    icon: "🎨",
-    title: "Art Finance & Collection Management for Zao Wou-Ki Acquisition",
-    trigger: "Zao Wou-Ki painting acquired via Art SG — SGD 2.2M on 12 Mar 2026",
-    summary:
-      "Your recent acquisition of a material Zao Wou-Ki piece at Art SG represents a significant expansion of your collectible portfolio. UBS Art Advisory can assist with formal valuations and competitive art-backed lending facilities.",
-    suggested_actions: [
-      "Arrange fine art insurance with agreed value coverage (suggest Chubb Fine Art or MSIG)",
-      "Explore art-backed lending through UBS Art Finance — unlocking liquidity at 40-60% LTV",
-      "Engage UBS Art Advisory for formal collection documentation and inventory management",
-      "Discuss provenance documentation and museum-grade storage arrangements in the Singapore FreePort",
-    ],
-    rm_context:
-      "Client purchased a Zao Wou-Ki (SGD 2.2M, 12 Mar 2026). Recommend art insurance, art-backed lending, and collection management in the SG FreePort.",
-    tags: ["Art Finance", "Insurance", "FreePort"],
-  },
-  {
-    id: "INS-004",
-    priority: "medium",
-    category: "Currency & Liquidity",
-    icon: "💱",
-    title: "SGD Liquidity Rebalancing Post-Acquisitions",
-    trigger: "Material drawdown of SGD cash balances (totaling SGD 3.65M over 2 weeks)",
-    summary:
-      "Recent high-value acquisitions have reduced your immediate SGD liquidity. Rather than direct FX conversion, you may wish to review your available Lombard facility or utilize our Liquidity Management Account (LMA) for smoothing.",
-    suggested_actions: [
-      "Review SGD and USD allocation within your Multi-Currency Account",
-      "Consider drawing on your Lombard facility (SGD 10.8M available) for SGD cash flow smoothing",
-      "Explore SGD-denominated money market funds via UBS Treasury for excess cash between capital calls",
-      "Assess optimal currency composition for upcoming Niseko property stage payments",
-    ],
-    rm_context:
-      "Significant SGD drawdown due to recent lifestyle purchases. Recommend Lombard utilization or cash flow optimization discussion.",
-    tags: ["Liquidity", "Lombard", "Cash Management"],
-  },
-  {
-    id: "INS-005",
-    priority: "high",
-    category: "Real Estate (Japan)",
-    icon: "🏔️",
-    title: "Niseko Chalet Acquisition — Cross-Border Financing",
-    trigger: "Niseko Realty chalet deposit paid — SGD 580k on 8 Mar 2026",
-    summary:
-      "The commencement of a Niseko property acquisition suggests a need for bespoke cross-border financing. UBS can provide JPY-denominated lending secured against your SG-portfolio, as well as Japanese tax structuring advice.",
-    suggested_actions: [
-      "Initiate a UBS cross-border mortgage pre-assessment for the Niseko acquisition (JPY financing)",
-      "Discuss holding structure options (direct ownership vs. Japanese GK structure)",
-      "Review Japanese withholding tax and Singapore tax reporting requirements with UBS Tax team",
-      "Assess hedging JPY stage payments against SGD/USD volatility",
-    ],
-    rm_context:
-      "Client engaged for Niseko chalet acquisition (SGD 580k deposit, 8 Mar 2026). Recommend JPY-based cross-border lending and tax structuring discussion.",
-    tags: ["Real Estate", "JPY Financing", "Tax", "Structuring"],
-  },
-  {
-    id: "INS-006",
-    priority: "medium",
-    category: "Income & Tax",
-    icon: "🇸🇬",
-    title: "SRS & CPF Top-Up Opportunity for YA2027",
-    trigger: "Recent SGD 850k dividend payment from Smith Capital SG Pte Ltd",
-    summary:
-      "Following your dividend receipt, we recommend reviewing your tax relief strategies before the 31 December deadline. Maximizing your SRS and CPF top-ups can provide immediate relief while enhancing long-term planning.",
-    suggested_actions: [
-      "Consider maximum SRS contribution (SGD 15,300 for residents) before 31 Dec to reduce taxable income",
-      "Assess CPF Cash Top-up for you or your spouse for additional tax relief",
-      "Explore SRS-approved investment strategies to optimize returns on idle SRS balances",
-      "Review whether dividend funds should be deployed via the UBS Variable Capital Company (VCC) structure",
-    ],
-    rm_context:
-      "Client received SGD 850k dividend (30 Jan 2026). Recommend SRS/CPF top-up discussion and VCC utilization before year-end tax planning cycle.",
-    tags: ["Tax", "SRS", "CPF", "Retirement"],
-  },
-];
+// Colors for asset allocation if not provided by API
+const ALLOCATION_COLORS = ["#da291c", "#1e1e1e", "#ffd100", "#9b1318", "#b6b6b6", "#888888"];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -302,15 +117,21 @@ function QuestionPanel({ context, suggestedQuestion, onSend, onDismiss }: Questi
 
 // ─── Net Worth Calculator ────────────────────────────────────────────────────
 
-function NetWorthCalculator({ onAskQuestion }: { onAskQuestion: (context: string, suggestion: string) => void }) {
+function NetWorthCalculator({ 
+  data, 
+  onAskQuestion 
+}: { 
+  data: PerformanceData["net_worth"];
+  onAskQuestion: (context: string, suggestion: string) => void 
+}) {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
-  const totalLiquid = NET_WORTH_DATA.assets.liquidAssets.reduce((s, a) => s + a.value, 0);
-  const totalPortfolio = NET_WORTH_DATA.assets.investmentPortfolio.reduce((s, a) => s + a.value, 0);
-  const totalRealEstate = NET_WORTH_DATA.assets.realEstate.reduce((s, a) => s + a.value, 0);
-  const totalOther = NET_WORTH_DATA.assets.otherAssets.reduce((s, a) => s + a.value, 0);
+  const totalLiquid = data.assets.liquidAssets.reduce((s: number, a: any) => s + a.value, 0);
+  const totalPortfolio = data.assets.investmentPortfolio.reduce((s: number, a: any) => s + a.value, 0);
+  const totalRealEstate = data.assets.realEstate.reduce((s: number, a: any) => s + a.value, 0);
+  const totalOther = data.assets.otherAssets.reduce((s: number, a: any) => s + a.value, 0);
   const totalAssets = totalLiquid + totalPortfolio + totalRealEstate + totalOther;
-  const totalLiabilities = NET_WORTH_DATA.liabilities.reduce((s, l) => s + Math.abs(l.value), 0);
+  const totalLiabilities = data.liabilities.reduce((s: number, l: any) => s + Math.abs(l.value), 0);
   const netWorth = totalAssets - totalLiabilities;
 
   const assetSections = [
@@ -319,7 +140,7 @@ function NetWorthCalculator({ onAskQuestion }: { onAskQuestion: (context: string
       label: "Liquid & Cash Assets",
       total: totalLiquid,
       color: "#da291c",
-      items: NET_WORTH_DATA.assets.liquidAssets,
+      items: data.assets.liquidAssets,
       icon: "💵",
       question: `My total liquid and cash assets are ${formatCurrency(totalLiquid)}. How does this liquidity position compare to what you'd recommend for someone with my profile?`,
     },
@@ -328,7 +149,7 @@ function NetWorthCalculator({ onAskQuestion }: { onAskQuestion: (context: string
       label: "Investment Portfolio (AUM)",
       total: totalPortfolio,
       color: "#1e1e1e",
-      items: NET_WORTH_DATA.assets.investmentPortfolio,
+      items: data.assets.investmentPortfolio,
       icon: "📈",
       question: `My investment portfolio with UBS is valued at ${formatCurrency(totalPortfolio)}. Can you give me a quick assessment of my current allocation and any rebalancing opportunities?`,
     },
@@ -337,7 +158,7 @@ function NetWorthCalculator({ onAskQuestion }: { onAskQuestion: (context: string
       label: "Real Estate",
       total: totalRealEstate,
       color: "#9b1318",
-      items: NET_WORTH_DATA.assets.realEstate,
+      items: data.assets.realEstate,
       icon: "🏢",
       question: `My real estate holdings total ${formatCurrency(totalRealEstate)} across Singapore and Japan. What are your thoughts on my real estate exposure as a proportion of my net worth?`,
     },
@@ -346,7 +167,7 @@ function NetWorthCalculator({ onAskQuestion }: { onAskQuestion: (context: string
       label: "Business & Other Assets",
       total: totalOther,
       color: "#ffd100",
-      items: NET_WORTH_DATA.assets.otherAssets,
+      items: data.assets.otherAssets,
       icon: "🏛️",
       question: `I have ${formatCurrency(totalOther)} in business equity and other assets. What strategies would you recommend to optimise or diversify this part of my wealth?`,
     },
@@ -362,7 +183,7 @@ function NetWorthCalculator({ onAskQuestion }: { onAskQuestion: (context: string
         <div>
           <h3 className={styles.netWorthTitle}>Net Worth Snapshot</h3>
           <p className={styles.netWorthSubtitle}>
-            Client: {NET_WORTH_DATA.customer} ({NET_WORTH_DATA.customerId}) · As of {NET_WORTH_DATA.asOf} · All values in SGD
+            Client: {data.customer} ({data.customerId}) · As of {data.asOf} · All values in SGD
           </p>
         </div>
         <button
@@ -487,9 +308,9 @@ function NetWorthCalculator({ onAskQuestion }: { onAskQuestion: (context: string
               </svg>
             </span>
           </button>
-          {expandedSection === "liabilities" && (
+            {expandedSection === "liabilities" && (
             <div className={styles.nwSectionBody}>
-              {NET_WORTH_DATA.liabilities.map((l) => (
+              {data.liabilities.map((l: any) => (
                 <div key={l.label} className={styles.nwLineItem}>
                   <span className={styles.nwLineLabel}>
                     {l.label}
@@ -521,16 +342,20 @@ function NetWorthCalculator({ onAskQuestion }: { onAskQuestion: (context: string
 
 // ─── Summary Cards ───────────────────────────────────────────────────────────
 
-function SummaryCards() {
-  const currentValue = PORTFOLIO_VALUE[PORTFOLIO_VALUE.length - 1]!.value;
-  const previousValue = PORTFOLIO_VALUE[0]!.value;
-  const totalReturn = ((currentValue - previousValue) / previousValue * 100).toFixed(1);
-  const ytdReturn = ((PORTFOLIO_VALUE[PORTFOLIO_VALUE.length - 1]!.value - PORTFOLIO_VALUE[2]!.value) / PORTFOLIO_VALUE[2]!.value * 100).toFixed(1);
+function SummaryCards({ data, customerId, customerName }: { data: { month: string; value: number }[], customerId: string, customerName: string }) {
+  if (!data || data.length === 0) return null;
+
+  const currentValue = data[data.length - 1]?.value || 0;
+  const previousValue = data[0]?.value || 1; // Avoid div by zero
+  const totalReturn = (((currentValue - previousValue) / previousValue) * 100).toFixed(1);
+  const ytdReturn = data.length >= 3 
+    ? (((data[data.length - 1]!.value - data[data.length - 3]!.value) / data[data.length - 3]!.value) * 100).toFixed(1) 
+    : "0.0";
 
   const cards = [
-    { label: "Portfolio Value", value: formatCurrency(currentValue), sub: "As of Mar 2026 · John Smith (C-011)" },
-    { label: "6M Return", value: `+${totalReturn}%`, sub: `+${formatCurrency(currentValue - previousValue)}` },
-    { label: "YTD Return", value: `+${ytdReturn}%`, sub: "Jan - Mar 2026" },
+    { label: "Portfolio Value", value: formatCurrency(currentValue), sub: `As of Mar 2026 · ${customerName} (${customerId})` },
+    { label: "6M Return", value: `${Number(totalReturn) >= 0 ? "+" : ""}${totalReturn}%`, sub: `${Number(totalReturn) >= 0 ? "+" : "-"}${formatCurrency(Math.abs(currentValue - previousValue))}` },
+    { label: "YTD Return", value: `${Number(ytdReturn) >= 0 ? "+" : ""}${ytdReturn}%`, sub: "Jan - Mar 2026" },
     { label: "Risk Level", value: "Growth", sub: "Sharpe Ratio: 1.55" },
   ];
 
@@ -549,9 +374,25 @@ function SummaryCards() {
 
 // ─── Portfolio Value Line Chart ──────────────────────────────────────────────
 
-function PortfolioChart({ onClickPoint }: { onClickPoint: (context: string, suggestion: string) => void }) {
+function PortfolioChart({ 
+  data, 
+  onClickPoint 
+}: { 
+  data: { month: string; value: number }[],
+  onClickPoint: (context: string, suggestion: string) => void 
+}) {
   const [hovered, setHovered] = useState<number | null>(null);
-  const values = PORTFOLIO_VALUE.map((d) => d.value);
+  
+  if (!data || data.length === 0) {
+    return (
+      <div className={styles.chartCard}>
+        <h3 className={styles.chartTitle}>Portfolio Value Over Time</h3>
+        <p className={styles.chartSubtitle}>No data available for this period</p>
+      </div>
+    );
+  }
+
+  const values = data.map((d) => d.value);
   const maxVal = Math.max(...values);
   const minVal = Math.min(...values);
   const range = maxVal - minVal || 1;
@@ -594,7 +435,7 @@ function PortfolioChart({ onClickPoint }: { onClickPoint: (context: string, sugg
         />
         <polyline points={polyline} fill="none" stroke="#da291c" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
         {points.map((p, i) => {
-          const d = PORTFOLIO_VALUE[i]!;
+          const d = data[i]!;
           return (
             <g key={i}>
               <circle
@@ -605,7 +446,7 @@ function PortfolioChart({ onClickPoint }: { onClickPoint: (context: string, sugg
                 onMouseLeave={() => setHovered(null)}
                 onClick={() => onClickPoint(
                   `Portfolio value in ${d.month}: ${formatCurrency(d.value)}`,
-                  `Why did my portfolio value ${d.value > PORTFOLIO_VALUE[0]!.value ? "increase" : "decrease"} to ${formatCurrency(d.value)} in ${d.month}? What were the key drivers?`,
+                  `Why did my portfolio value ${data[0] && d.value > data[0].value ? "increase" : "decrease"} to ${formatCurrency(d.value)} in ${d.month}? What were the key drivers?`,
                 )}
               />
               {hovered === i && (
@@ -626,19 +467,25 @@ function PortfolioChart({ onClickPoint }: { onClickPoint: (context: string, sugg
 
 // ─── Asset Allocation Pie Chart ──────────────────────────────────────────────
 
-function AllocationChart({ onClickSlice }: { onClickSlice: (context: string, suggestion: string) => void }) {
+function AllocationChart({ 
+  data, 
+  onClickSlice 
+}: { 
+  data: { label: string; value: number; color?: string }[],
+  onClickSlice: (context: string, suggestion: string) => void 
+}) {
   const [hovered, setHovered] = useState<number | null>(null);
-  const total = ASSET_ALLOCATION.reduce((s, d) => s + d.value, 0);
+  const total = data.reduce((s: number, d: any) => s + d.value, 0);
   const cx = 100;
   const cy = 100;
   const r = 85;
 
   let cumulative = 0;
-  const slices = ASSET_ALLOCATION.map((d, i) => {
+  const slices = data.map((d: any, i: number) => {
     const startAngle = (cumulative / total) * 360;
     cumulative += d.value;
     const endAngle = (cumulative / total) * 360;
-    return { ...d, startAngle, endAngle, i };
+    return { ...d, startAngle, endAngle, i, color: d.color || ALLOCATION_COLORS[i % ALLOCATION_COLORS.length] };
   });
 
   return (
@@ -668,7 +515,7 @@ function AllocationChart({ onClickSlice }: { onClickSlice: (context: string, sug
           <text x={cx} y={cy + 12} textAnchor="middle" className={styles.donutSub}>Allocated</text>
         </svg>
         <div className={styles.pieLegend}>
-          {ASSET_ALLOCATION.map((d, i) => (
+          {slices.map((d, i) => (
             <div
               key={d.label}
               className={`${styles.legendItem} ${hovered === i ? styles.legendActive : ""}`}
@@ -692,9 +539,15 @@ function AllocationChart({ onClickSlice }: { onClickSlice: (context: string, sug
 
 // ─── Monthly Returns Bar Chart ───────────────────────────────────────────────
 
-function ReturnsChart({ onClickBar }: { onClickBar: (context: string, suggestion: string) => void }) {
+function ReturnsChart({ 
+  data, 
+  onClickBar 
+}: { 
+  data: { month: string; value: number }[],
+  onClickBar: (context: string, suggestion: string) => void 
+}) {
   const [hovered, setHovered] = useState<number | null>(null);
-  const maxVal = Math.max(...MONTHLY_RETURNS.map((d) => Math.abs(d.value)));
+  const maxVal = Math.max(...data.map((d: any) => Math.abs(d.value)));
   const W = 500;
   const H = 200;
   const padLeft = 40;
@@ -704,8 +557,8 @@ function ReturnsChart({ onClickBar }: { onClickBar: (context: string, suggestion
   const innerW = W - padLeft - padRight;
   const innerH = H - padTop - padBottom;
   const zeroY = padTop + innerH / 2;
-  const barW = innerW / MONTHLY_RETURNS.length - 16;
-  const gap = innerW / MONTHLY_RETURNS.length;
+  const barW = innerW / data.length - 16;
+  const gap = innerW / data.length;
 
   return (
     <div className={styles.chartCard}>
@@ -721,7 +574,7 @@ function ReturnsChart({ onClickBar }: { onClickBar: (context: string, suggestion
             </text>
           );
         })}
-        {MONTHLY_RETURNS.map((d, i) => {
+        {data.map((d: any, i: number) => {
           const barH = (Math.abs(d.value) / maxVal) * (innerH / 2);
           const x = padLeft + gap * i + (gap - barW) / 2;
           const y = d.value >= 0 ? zeroY - barH : zeroY;
@@ -826,6 +679,19 @@ function RmNotifyPanel({ signal, onClose }: RmNotifyPanelProps) {
   );
 }
 
+interface InsightSignal {
+  id: string;
+  priority: "high" | "medium" | "low";
+  category: string;
+  icon: string;
+  title: string;
+  trigger: string;
+  summary: string;
+  suggested_actions: string[];
+  rm_context: string;
+  tags: string[];
+}
+
 function InsightCard({ signal }: { signal: InsightSignal }) {
   const [expanded, setExpanded] = useState(false);
   const [showRmPanel, setShowRmPanel] = useState(false);
@@ -854,7 +720,7 @@ function InsightCard({ signal }: { signal: InsightSignal }) {
           </p>
           <p className={styles.insightSummary}>{signal.summary}</p>
           <div className={styles.insightTags}>
-            {signal.tags.map((tag) => (
+            {signal.tags.map((tag: any) => (
               <span key={tag} className={styles.insightTag}>{tag}</span>
             ))}
           </div>
@@ -876,7 +742,7 @@ function InsightCard({ signal }: { signal: InsightSignal }) {
       {expanded && (
         <div className={styles.insightActions}>
           <ol className={styles.insightActionList}>
-            {signal.suggested_actions.map((action, i) => (
+            {signal.suggested_actions.map((action: any, i: number) => (
               <li key={i} className={styles.insightActionItem}>
                 <span className={styles.insightActionNum}>{i + 1}</span>
                 <span>{action}</span>
@@ -906,15 +772,15 @@ function InsightCard({ signal }: { signal: InsightSignal }) {
   );
 }
 
-function InsightsOpportunities() {
+function InsightsOpportunities({ insights }: { insights: InsightSignal[] }) {
   const [filter, setFilter] = useState<"all" | "high" | "medium">("all");
 
   const filtered = filter === "all"
-    ? INSIGHTS_SIGNALS
-    : INSIGHTS_SIGNALS.filter((s) => s.priority === filter);
+    ? insights
+    : insights.filter((s) => s.priority === filter);
 
-  const highCount = INSIGHTS_SIGNALS.filter((s) => s.priority === "high").length;
-  const mediumCount = INSIGHTS_SIGNALS.filter((s) => s.priority === "medium").length;
+  const highCount = insights.filter((s) => s.priority === "high").length;
+  const mediumCount = insights.filter((s) => s.priority === "medium").length;
 
   return (
     <div className={styles.insightsSection}>
@@ -948,7 +814,7 @@ function InsightsOpportunities() {
             className={`${styles.insightsFilterBtn} ${filter === f ? styles.insightsFilterActive : ""}`}
             onClick={() => setFilter(f)}
           >
-            {f === "all" ? `All (${INSIGHTS_SIGNALS.length})` : f === "high" ? `Priority (${highCount})` : `Consider (${mediumCount})`}
+            {f === "all" ? `All (${insights.length})` : f === "high" ? `Priority (${highCount})` : `Consider (${mediumCount})`}
           </button>
         ))}
       </div>
@@ -968,9 +834,15 @@ function InsightsOpportunities() {
 
 // ─── Benchmark Comparison ────────────────────────────────────────────────────
 
-function BenchmarkChart({ onClickPoint }: { onClickPoint: (context: string, suggestion: string) => void }) {
+function BenchmarkChart({ 
+  data, 
+  onClickPoint 
+}: { 
+  data: { month: string; portfolio: number; benchmark: number }[],
+  onClickPoint: (context: string, suggestion: string) => void 
+}) {
   const [hovered, setHovered] = useState<number | null>(null);
-  const allValues = BENCHMARK_COMPARISON.flatMap((d) => [d.portfolio, d.benchmark]);
+  const allValues = data.flatMap((d: any) => [d.portfolio, d.benchmark]);
   const maxVal = Math.max(...allValues);
   const minVal = Math.min(...allValues);
   const range = maxVal - minVal || 1;
@@ -984,8 +856,8 @@ function BenchmarkChart({ onClickPoint }: { onClickPoint: (context: string, sugg
   const innerH = H - padTop - padBottom;
 
   function getPoints(key: "portfolio" | "benchmark") {
-    return BENCHMARK_COMPARISON.map((d, i) => ({
-      x: padLeft + (i / (BENCHMARK_COMPARISON.length - 1)) * innerW,
+    return data.map((d: any, i: number) => ({
+      x: padLeft + (i / (data.length - 1)) * innerW,
       y: padTop + innerH - ((d[key] - minVal) / range) * innerH,
       v: d[key],
     }));
@@ -1023,8 +895,8 @@ function BenchmarkChart({ onClickPoint }: { onClickPoint: (context: string, sugg
           points={portfolioPoints.map((p) => `${p.x},${p.y}`).join(" ")}
           fill="none" stroke="#da291c" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round"
         />
-        {portfolioPoints.map((p, i) => {
-          const d = BENCHMARK_COMPARISON[i]!;
+        {portfolioPoints.map((p, i: number) => {
+          const d = data[i]!;
           const diff = d.portfolio - d.benchmark;
           return (
             <g key={i}>
@@ -1050,7 +922,7 @@ function BenchmarkChart({ onClickPoint }: { onClickPoint: (context: string, sugg
             </g>
           );
         })}
-        {benchmarkPoints.map((p, i) => (
+        {benchmarkPoints.map((p, i: number) => (
           <circle key={`b${i}`} cx={p.x} cy={p.y} r={3} fill="#1e1e1e" stroke="var(--color-bg)" strokeWidth={1.5} />
         ))}
       </svg>
@@ -1061,15 +933,61 @@ function BenchmarkChart({ onClickPoint }: { onClickPoint: (context: string, sugg
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export function PerformancePage({ onAskQuestion, onBack }: PerformancePageProps) {
+  const [data, setData] = useState<PerformanceData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeQuestion, setActiveQuestion] = useState<{ context: string; suggestion: string } | null>(null);
 
-  function handleDataPointClick(context: string, suggestion: string) {
+  useEffect(() => {
+    async function fetchPerformance() {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch("http://localhost:8000/api/customers/me/performance", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!response.ok) throw new Error("Failed to fetch performance data");
+        const json = await response.json();
+        setData(json);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchPerformance();
+  }, []);
+
+  const handleDataPointClick = useCallback((context: string, suggestion: string) => {
     setActiveQuestion({ context, suggestion });
-  }
+  }, []);
 
   function handleSendQuestion(question: string) {
     setActiveQuestion(null);
     onAskQuestion(question);
+  }
+
+  if (loading) {
+    return (
+      <div className={styles.page}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '1rem' }}>
+          <div className={styles.spinner} />
+          <p>Analyzing portfolio performance...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className={styles.page}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '1rem' }}>
+          <p style={{ color: '#da291c' }}>Error: {error || "Unable to load performance data"}</p>
+          <button onClick={() => window.location.reload()} style={{ padding: '0.5rem 1rem', background: '#da291c', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Retry</button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -1086,7 +1004,11 @@ export function PerformancePage({ onAskQuestion, onBack }: PerformancePageProps)
       </header>
 
       <div className={styles.content}>
-        <SummaryCards />
+        <SummaryCards 
+          data={data.portfolio_value} 
+          customerId={data.net_worth.customerId} 
+          customerName={data.net_worth.customer} 
+        />
 
         {activeQuestion && (
           <QuestionPanel
@@ -1097,16 +1019,16 @@ export function PerformancePage({ onAskQuestion, onBack }: PerformancePageProps)
           />
         )}
 
-        <NetWorthCalculator onAskQuestion={handleDataPointClick} />
+        <NetWorthCalculator data={data.net_worth} onAskQuestion={handleDataPointClick} />
 
         <div className={styles.chartsGrid}>
-          <PortfolioChart onClickPoint={handleDataPointClick} />
-          <AllocationChart onClickSlice={handleDataPointClick} />
-          <ReturnsChart onClickBar={handleDataPointClick} />
-          <BenchmarkChart onClickPoint={handleDataPointClick} />
+          <PortfolioChart data={data.portfolio_value} onClickPoint={handleDataPointClick} />
+          <AllocationChart data={data.asset_allocation} onClickSlice={handleDataPointClick} />
+          <ReturnsChart data={data.monthly_returns} onClickBar={handleDataPointClick} />
+          <BenchmarkChart data={data.benchmark_comparison} onClickPoint={handleDataPointClick} />
         </div>
 
-        <InsightsOpportunities />
+        <InsightsOpportunities insights={data.insights} />
       </div>
     </div>
   );

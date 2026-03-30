@@ -66,6 +66,7 @@ fx_treasury_mcp_client = McpClient(server_url=settings.mcp_service_workflow_url)
 async def execute_fx_treasury_task(
     task: str,
     conversation_context: str,
+    customer_id: str = "C-011",
 ) -> str:
     """Execute a foreign exchange or treasury task using the MCP-connected tools.
 
@@ -83,6 +84,7 @@ async def execute_fx_treasury_task(
         arguments={
             "task": task,
             "context": conversation_context,
+            "customer_id": customer_id,
             "system_prompt": FX_TREASURY_SYSTEM_PROMPT,
         },
     )

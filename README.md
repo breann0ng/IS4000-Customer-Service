@@ -16,6 +16,7 @@ AI-powered customer service chatbot for UBS Wealth Management, serving High Net 
 - [API Client Generation](#api-client-generation)
 - [Environment Variables](#environment-variables)
 - [Tech Stack](#tech-stack)
+- [Data Service Layer](#data-service-layer)
 - [Streaming & Thinking Steps](#streaming--thinking-steps)
 - [Sample Queries](#sample-queries)
 - [Future Work](#future-work)
@@ -47,14 +48,14 @@ Client (React) ──> FastAPI ──> LangGraph Workflow
                      │                   │
                      │         MCP Servers (Streamable HTTP)
                      │         ├── Banking Ops    :9001
-                     │         ├── Knowledge      :9002
+                     │         ├── Knowledge      :9002 (uses Data Service)
                      │         ├── Service Wkflow :9003
                      │         └── RAG MCP        :9004
                      │
-              ┌──────┼──────────────────┐
-           Postgres  Redis           LangSmith
-        (sessions,   (mem0)           (tracing)
-        pgvector RAG)
+              ┌──────┼──────────────────────────┐
+           Postgres  Redis           Data Service   LangSmith
+        (sessions,   (mem0)          (Unified Mock  (tracing)
+        pgvector RAG)                 JSON Loader)
 ```
 
 **Escalation Check** inspects queries for high-distress or advisory intents (e.g., "What should I invest in?"), immediately bypassing the LLM workflow to return a static Relationship Manager response. All inputs are sanitized by the **Security Middleware**, which masks PII (NRIC, account numbers) and detects prompt injection attempts before they reach the LLM.
@@ -67,12 +68,12 @@ All LLM calls use **Gemini structured outputs** (Pydantic models) for reliable p
 
 | Agent                | MCP Server               | Responsibilities                                                                               |
 | -------------------- | ------------------------ | ---------------------------------------------------------------------------------------------- |
-| **Wealth Advisory**  | Banking Ops (:9001)      | Portfolio performance, investment strategy, market insights (Tavily live search), asset allocation, estate planning |
-| **Private Banking**  | Knowledge (:9002)        | Account operations, fund transfers, card services, statements, multi-currency management       |
-| **Client Services**  | Service Workflow (:9003) | Onboarding, KYC/AML, document requests, appointments, escalations (uses RAG)                   |
-| **Lending & Credit** | Banking Ops (:9001)      | Lombard lending, mortgages, credit lines, structured lending, margin facilities                |
-| **Compliance & Tax** | Knowledge (:9002)        | CRS/FATCA reporting, cross-border tax, regulatory updates, documentation (uses RAG)            |
-| **FX & Treasury**    | Service Workflow (:9003) | Foreign exchange, currency hedging, FX derivatives, treasury management                        |
+| **Wealth Advisory**  | Banking Ops (:9001)      | Portfolio performance (YTD, 1Y, 24M), **Risk Metrics (Sharpe, Volatility, VAR)**, **Performance Attribution**, **Quantitative Market Insights (Tavily 5-result depth)** |
+| **Private Banking**  | Knowledge (:9002)        | Account operations, fund transfers, statements, **Cross-border exposure analysis**, **Client preference management** |
+| **Client Services**  | Service Workflow (:9003) | Onboarding, KYC/AML, **Service status tracking**, **Appointment scheduling**, **Tavily service context** |
+| **Lending & Credit** | Banking Ops (:9001)      | **Tavily live mortgage/Lombard rates**, credit lines, LTV monitoring, **Covenant management** |
+| **Compliance & Tax** | Knowledge (:9002)        | **Tax Loss Harvesting monitoring**, jurisdictions (CRS/FATCA), **KYC refresh workflows**, regulatory triggers |
+| **FX & Treasury**    | Service Workflow (:9003) | **Tavily live foreign exchange rates**, currency hedging, FX derivatives, treasury management |
 
 ## Project Structure
 
@@ -81,6 +82,9 @@ All LLM calls use **Gemini structured outputs** (Pydantic models) for reliable p
 │   ├── api/                    FastAPI backend
 │   │   ├── auth/               LDAP authentication (mock) + JWT
 │   │   ├── chat/               Chat session CRUD + message handling
+│   │   ├── customers/          Customer performance & profile routes
+│   │   │   ├── routes.py       API endpoint handlers
+│   │   │   └── data_service.py **Centralized Data Service Layer**
 │   │   ├── database/           SQLAlchemy async models (Postgres + pgvector)
 │   │   ├── memory/             mem0 + Redis short-context memory (HuggingFace embeddings)
 │   │   ├── workflow/           LangGraph agentic workflow
@@ -201,7 +205,7 @@ poe docker-up
 | Memory        | mem0 + Redis                           |
 | Embeddings    | sentence-transformers (local)          |
 | Integration   | MCP (Streamable HTTP)                  |
-| Live Search   | Tavily (market data for Wealth Advisory)|
+| Live Search   | Tavily (**Intelligent Market-Contextualized Queries** for proactive advisory) |
 
 ## Streaming & Thinking Steps
 
@@ -223,6 +227,16 @@ Wealth Advisory responses are rendered as an interactive dashboard:
 - **GFM Tables** — Portfolio overview tables rendered with styled headers and rows.
 
 The `StructuredMessage` component handles all parsing (heading normalisation, JSON chart extraction) and the `ChartCard` component renders pie/bar/line SVG charts via the `ChartData` interface.
+
+## Advanced Wealth Analytics
+
+The platform now supports high-fidelity financial metrics visible to all specialist agents:
+
+- **Risk Management** — Real-time tracking of **Value-at-Risk (VAR)**, **Sharpe Ratio**, and **Portfolio Volatility**. Automated system triggers detect concentration risks and regulatory flags.
+- **Market Insight Precision** — Wealth Advisory queries now utilize an increased **Tavily search depth (5 results)** and a **quantitative mandate** that requires specific market figures (e.g., actual index levels, Fed/ECB rate moves) in its analysis.
+- **Performance Attribution** — Deeper analysis of returns categorized by **Selection Effect** and **Allocation Effect** relative to benchmarks.
+- **Goal-Based Planning** — Structured tracking of client objectives (e.g., Wealth Preservation, Property Acquisition, Philanthropy) with automated liquidity and cashflow projections.
+- **Tax Optimization** — Real-time monitoring of **Tax Loss Harvesting** buckets and localized tax slots (e.g., VCC, SRS/CPF) for tax-efficient reinvestment.
 
 ## Application UI Features
 
@@ -263,6 +277,16 @@ Clicking any data point on the charts (or an Insight signal) opens an inline **q
 - **Chart Context** — Captures specific data points (e.g., "Oct return: +2.1%") for precise querying.
 - **Insight Follow-up** — Allows direct notification of the Relationship Manager with one click via pre-drafted SGD-contextualized messages.
 - **Unified Chat Session** — All performance-related questions are routed to a persistent "Account Performance Q&A" thread.
+
+## Data Service Layer
+
+To ensure 100% data coherence between the visual dashboard and the agentic chatbot, a centralized **Data Service** (`apps/api/customers/data_service.py`) acts as the single source of truth for **all client-specific data**.
+
+- **Unified Loading** — Locates and globs mock JSON files in `mocks/customer_data/` based on `customer_id`.
+- **SGD Defaulting** — All service layers and agent prompts are standardized to **SGD** (e.g., SGD 125M Net Worth, SGD 65M AUM) to ensure localized consistency for Singaporean HNWI clients.
+- **Domain-Specific Contexts** — Provides tailored methods for `get_risk_analysis()`, `get_financial_planning()`, and `get_compliance_context()` ensuring high-fidelity data injection into agent prompts.
+- **Dynamic Lending Context** — Combines real-time client limits with live market rates fetched via Tavily for personalized lending summaries.
+- **Consistency Guarantee** — Any update to the mock JSON files is immediately reflected across all dashboard charts and AI agent responses.
 
 ## Sample Queries
 

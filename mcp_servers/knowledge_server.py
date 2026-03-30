@@ -1,33 +1,16 @@
-"""Mock MCP server for Knowledge Systems (port 9002).
-
-Serves: private_banking, compliance_tax, knowledge_query tools.
-
-Run standalone:
-    uv run uvicorn mocks.knowledge_server:app --host 0.0.0.0 --port 9002
-"""
+import asyncio
+import json
+import os
+from pathlib import Path
 
 import httpx
+from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from apps.api.config import settings
+from apps.api.customers.data_service import DataService
 from mcp_servers.base import create_mock_mcp_app
-
-MOCK_CLIENT = {
-    "customer_id": "C-011",
-    "name": "John Smith",
-    "relationship_manager": "Emma Clarke",
-    "risk_profile": "Growth",
-    "aum_usd": 42000000,
-    "net_worth_usd": 68000000,
-}
-
-MOCK_ACCOUNTS = [
-    {"account_id": "GBP-011-CA", "type": "Personal Current Account", "currency": "GBP", "balance": "680,000.00"},
-    {"account_id": "MCW-011-WA", "type": "Multi-Currency Wealth Account", "currency": "USD/EUR/GBP/CHF", "balance": "USD 2,280,000 equiv."},
-    {"account_id": "ISA-011-SA", "type": "Investment Settlement Account", "currency": "USD", "balance": "1,440,000.00"},
-    {"account_id": "LMA-011-LQ", "type": "Liquidity Management Account", "currency": "USD", "balance": "2,300,000.00"},
-]
 
 TOOL_DEFINITIONS = [
     {
@@ -38,6 +21,7 @@ TOOL_DEFINITIONS = [
             "properties": {
                 "task": {"type": "string"},
                 "context": {"type": "string"},
+                "customer_id": {"type": "string"},
                 "system_prompt": {"type": "string"},
             },
         },
@@ -71,8 +55,21 @@ TOOL_DEFINITIONS = [
 ]
 
 
+async def _fetch_tavily(task: str) -> str:
+    """Fetch live market or regulatory data using Tavily API."""
+    if settings.is_llm_mock_mode or not settings.tavily_api_key:
+        return "No live market data retrieved."
+    try:
+        search = TavilySearchResults(max_results=3)
+        results = await asyncio.wait_for(search.ainvoke(task), timeout=5.0)
+        return str(results)
+    except Exception as e:
+        print(f"Tavily search failed: {e}")
+    return "No live market data retrieved."
+
+
 async def handle_private_banking(params: dict) -> dict:
-    """Generate a high-quality private banking response using LLM.
+    """Generate a high-quality private banking response using dynamic data and LLM.
 
     Args:
         params: Tool invocation arguments.
@@ -82,42 +79,75 @@ async def handle_private_banking(params: dict) -> dict:
     """
     task = params.get("task", "")
     context = params.get("context", "")
+    customer_id = params.get("customer_id", "C-011")
     system_prompt = params.get("system_prompt", "")
 
+    client_profile, accounts = DataService.get_banking_context(customer_id)
+    lending_context = DataService.get_lending_context(customer_id)
+    planning_context = DataService.get_financial_planning(customer_id)
+
+    # Fetch live market data if relevant (e.g., mortgage rates, market conditions)
+    market_info = ""
+    is_loan_query = any(word in task.lower() for word in ["loan", "lombard", "credit", "mortgage"])
+    if is_loan_query:
+        market_info = await _fetch_tavily(f"Current mortgage and Lombard lending rates and trends for: {task}")
+
     if settings.is_llm_mock_mode:
-        if "loan" in task.lower() or "lombard" in task.lower() or "credit" in task.lower():
+        if "performance" in task.lower() or "return" in task.lower():
+             return {
+                "response": (
+                    f"[DYNAMIC MOCK PERFORMANCE]\n\n"
+                    f"Your YTD Return is **{client_profile.get('ytd_return_pct')}%**. "
+                    f"Your 1-year return is **{client_profile.get('one_year_return_pct')}%**.\n\n"
+                    f"As a client with **{client_profile.get('derived_flags', {}).get('cross_border_exposure')}** cross-border exposure, "
+                    f"we recommend a review of these returns against your **{client_profile.get('risk_profile')}** risk profile."
+                )
+            }
+        
+        if is_loan_query:
+            # Dynamically construct mock response using DataService values
+            lombard = lending_context.get("lombard_facility", "Facility details not available")
+            
+            # Extract raw values for the gauge if possible
+            limit = 15000000 # Specific to John Smith C-011
+            drawn = 4200000
+            
             return {
                 "response": (
-                    "[SMART MOCK LOAN SUMMARY]\n\n"
+                    f"[DYNAMIC MOCK LOAN SUMMARY]\n\n"
+                    f"Based on your AUM of {lending_context.get('total_aum', 'N/A')}, here is your current credit status:\n\n"
                     "```json\n"
                     "{\n"
                     '  "type": "gauge",\n'
                     '  "title": "Lombard loans",\n'
                     '  "labels": ["Remaining lending value"],\n'
-                    '  "values": [6800000, 10000000],\n'
+                    f'  "values": [{limit - drawn}, {limit}],\n'
                     '  "badge": "Sufficient"\n'
                     "}\n"
                     "```\n\n"
                     "| | |\n"
                     "|---|---|\n"
-                    "| Credit usage | **USD 3,200,000** |\n"
-                    "| Available credit | **USD 6,800,000** |\n"
+                    f"| Credit usage | **SGD {drawn:,}** |\n"
+                    f"| Available credit | **SGD {limit - drawn:,}** |\n"
+                    f"\nMarket Context:\n{market_info[:200]}..."
                 )
             }
 
         account_lines = "\n".join(
             f"  - {account['account_id']} ({account['type']}, {account['currency']}): {account['balance']}"
-            for account in MOCK_ACCOUNTS
+            for account in accounts
         )
-        total_usd = "5,940,000"
+        total_sgd = str(client_profile.get("aum_sgd", 0))
         return {
             "response": (
-                f"[SMART MOCK PRIVATE BANKING]\n\n"
-                f"Client: {MOCK_CLIENT['name']} ({MOCK_CLIENT['customer_id']}) — {MOCK_CLIENT['risk_profile']} profile\n\n"
+                f"[DYNAMIC MOCK PRIVATE BANKING]\n\n"
+                f"Client: {client_profile.get('name', 'Unknown')} ({client_profile.get('customer_id', customer_id)}) — {client_profile.get('risk_profile', 'Unknown')} profile\n\n"
                 f"Account Summary:\n{account_lines}\n"
-                f"Total (USD equivalent): {total_usd}\n\n"
+                f"Total (SGD equivalent): {total_sgd}\n\n"
+                f"Derived Flags: {client_profile.get('derived_flags')}\n"
+                f"Preferences: {client_profile.get('preferences')}\n\n"
                 f"Regarding: {task[:120]}\n\n"
-                f"The requested operation has been noted for your account."
+                "The requested operation has been noted for your account."
             )
         }
 
@@ -127,31 +157,24 @@ async def handle_private_banking(params: dict) -> dict:
     )
 
     prompt = (
-        f"Client: {MOCK_CLIENT['name']} ({MOCK_CLIENT['customer_id']})\n"
-        f"Risk Profile: {MOCK_CLIENT['risk_profile']}\n"
-        f"AUM: USD {MOCK_CLIENT['aum_usd']:,}\n"
-        f"Account Data:\n{MOCK_ACCOUNTS}\n\n"
+        f"Client: {client_profile.get('name')} ({client_profile.get('customer_id')})\n"
+        f"Risk Profile: {client_profile.get('risk_profile')}\n"
+        f"Performance: YTD {client_profile.get('ytd_return_pct')}%, 1Y {client_profile.get('one_year_return_pct')}%\n"
+        f"AUM: SGD {client_profile.get('aum_sgd', 0):,}\n"
+        f"Account Data:\n{accounts}\n\n"
+        f"Preferences & Goals:\n{planning_context}\n\n"
+        f"Lending Context:\n{lending_context}\n\n"
+        f"Market Information (Live):\n{market_info}\n\n"
         f"Task: {task}\n\n"
         f"Context: {context}\n\n"
-        f"Provide a professional private banking summary or action confirmation."
+        f"Provide a professional private banking summary or action confirmation. Default all currency reporting to SGD."
     )
-    if "loan" in task.lower() or "lombard" in task.lower() or "credit" in task.lower():
+    
+    if is_loan_query:
         prompt += (
-            "\n\nIMPORTANT: For this loan request, include this exact JSON chart in your response:\n"
-            "```json\n"
-            "{\n"
-            '  "type": "gauge",\n'
-            '  "title": "Lombard loans",\n'
-            '  "labels": ["Remaining lending value"],\n'
-            '  "values": [61230, 80000],\n'
-            '  "badge": "Sufficient"\n'
-            "}\n"
-            "```\n"
-            "And output this exact markdown table below it:\n"
-            "| | |\n"
-            "|---|---|\n"
-            "| Credit usage | **USD -179** |\n"
-            "| Available credit | **USD 61'230** |\n"
+            "\n\nIMPORTANT: For this loan request, include a JSON chart of type 'gauge' "
+            "showing the available vs total limit from the Lending Context provided. "
+            "Also include a markdown table summarizing credit usage and available credit."
         )
 
     try:
@@ -172,7 +195,7 @@ async def handle_private_banking(params: dict) -> dict:
 
 
 async def handle_compliance_tax(params: dict) -> dict:
-    """Generate a high-quality compliance and tax response using LLM and RAG.
+    """Generate a high-quality compliance and tax response using LLM and RAG/Live search.
 
     Args:
         params: Tool invocation arguments.
@@ -182,9 +205,12 @@ async def handle_compliance_tax(params: dict) -> dict:
     """
     task = params.get("task", "")
     context = params.get("context", "")
+    customer_id = params.get("customer_id", "C-011")
     system_prompt = params.get("system_prompt", "")
 
-    # Retrieve context
+    compliance_data = DataService.get_compliance_context(customer_id)
+
+    # Retrieve RAG context
     retrieved_docs = "No relevant regulatory context found."
     try:
         async with httpx.AsyncClient() as client:
@@ -209,13 +235,20 @@ async def handle_compliance_tax(params: dict) -> dict:
     except Exception:
         pass
 
+    # Fetch live market/regulatory data
+    live_info = await _fetch_tavily(f"Current regulations and tax updates for: {task}")
+
     if settings.is_llm_mock_mode:
         return {
             "response": (
-                f"[SMART MOCK COMPLIANCE]\n\n"
+                f"[DYNAMIC MOCK COMPLIANCE]\n\n"
+                f"Tax Profile: {compliance_data.get('tax_profile')}\n\n"
+                f"KYC Status: {compliance_data.get('kyc_status')} (Last reviewed: {compliance_data.get('kyc_last_reviewed')})\n"
+                f"Triggers: {compliance_data.get('system_triggers')}\n\n"
                 f"Regarding: {task[:120]}\n\n"
-                f"Regulatory context: {retrieved_docs[:200]}...\n\n"
-                f"You appear to be compliant. Contact tax specialists for details."
+                f"Regulatory context (Internal): {retrieved_docs[:200]}...\n\n"
+                f"Live Market Info: {live_info[:200]}...\n\n"
+                f"You appear to be compliant based on available info. Contact tax specialists for details."
             )
         }
 
@@ -226,7 +259,9 @@ async def handle_compliance_tax(params: dict) -> dict:
 
     prompt = (
         f"Task: {task}\n\n"
-        f"Regulatory Context from RAG:\n{retrieved_docs}\n\n"
+        f"Client Compliance Data:\n{compliance_data}\n\n"
+        f"Internal Regulatory Context (RAG):\n{retrieved_docs}\n\n"
+        f"Live Tax/Regulatory Updates (Tavily):\n{live_info}\n\n"
         f"Provide a professional compliance and tax advisory response."
     )
 
@@ -245,7 +280,7 @@ async def handle_compliance_tax(params: dict) -> dict:
 
 
 async def handle_knowledge_query(params: dict) -> dict:
-    """Generate a high-quality knowledge query response using LLM and RAG.
+    """Generate a high-quality knowledge query response using LLM, RAG, and Live Search.
 
     Args:
         params: Tool invocation arguments.
@@ -257,7 +292,7 @@ async def handle_knowledge_query(params: dict) -> dict:
     context = params.get("context", "")
     system_prompt = params.get("system_prompt", "")
 
-    # Retrieve context
+    # Retrieve RAG context
     retrieved_docs = "No relevant knowledge base entries found."
     try:
         async with httpx.AsyncClient() as client:
@@ -282,32 +317,16 @@ async def handle_knowledge_query(params: dict) -> dict:
     except Exception:
         pass
 
-    if settings.is_llm_mock_mode:
-        if "loan" in task.lower() or "lombard" in task.lower() or "credit" in task.lower():
-            return {
-                "response": (
-                    "[SMART MOCK LOAN SUMMARY]\n\n"
-                    "```json\n"
-                    "{\n"
-                    '  "type": "gauge",\n'
-                    '  "title": "Lombard loans",\n'
-                    '  "labels": ["Remaining lending value"],\n'
-                    '  "values": [61230, 80000],\n'
-                    '  "badge": "Sufficient"\n'
-                    "}\n"
-                    "```\n\n"
-                    "| | |\n"
-                    "|---|---|\n"
-                    "| Credit usage | **USD -179** |\n"
-                    "| Available credit | **USD 61'230** |\n"
-                )
-            }
+    # Fetch live information
+    live_info = await _fetch_tavily(f"Current market info and news for: {task}")
 
+    if settings.is_llm_mock_mode:
         return {
             "response": (
-                f"[SMART MOCK KNOWLEDGE]\n\n"
+                f"[DYNAMIC MOCK KNOWLEDGE]\n\n"
                 f"Result for: {task[:120]}\n\n"
                 f"Policy context: {retrieved_docs[:200]}...\n\n"
+                f"Live Market Context: {live_info[:200]}...\n\n"
                 f"Refer to RM for the latest T&Cs."
             )
         }
@@ -319,27 +338,10 @@ async def handle_knowledge_query(params: dict) -> dict:
 
     prompt = (
         f"Query: {task}\n\n"
-        f"Knowledge Base Context:\n{retrieved_docs}\n\n"
-        f"Provide a professional response based on our available documents."
+        f"Internal Knowledge Base Context:\n{retrieved_docs}\n\n"
+        f"Live Market Environment (Tavily):\n{live_info}\n\n"
+        f"Provide a professional response based on our available documents and current market context."
     )
-    if "loan" in task.lower() or "lombard" in task.lower() or "credit" in task.lower():
-        prompt += (
-            "\n\nIMPORTANT: For this loan request, include this exact JSON chart in your response:\n"
-            "```json\n"
-            "{\n"
-            '  "type": "gauge",\n'
-            '  "title": "Lombard loans",\n'
-            '  "labels": ["Remaining lending value"],\n'
-            '  "values": [61230, 80000],\n'
-            '  "badge": "Sufficient"\n'
-            "}\n"
-            "```\n"
-            "And output this exact markdown table below it:\n"
-            "| | |\n"
-            "|---|---|\n"
-            "| Credit usage | **USD -179** |\n"
-            "| Available credit | **USD 61'230** |\n"
-        )
 
     try:
         response = await llm.ainvoke(

@@ -14,31 +14,8 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from apps.api.config import settings
+from apps.api.customers.data_service import DataService
 from mcp_servers.base import create_mock_mcp_app
-
-MOCK_PORTFOLIO: dict[str, str | dict[str, str]] = {
-    "customer_id": "C-011",
-    "customer_name": "John Smith",
-    "relationship_manager": "Emma Clarke",
-    "total_aum": "USD 42,000,000",
-    "net_worth": "USD 68,000,000",
-    "risk_profile": "Growth",
-    "asset_allocation": {
-        "Public Equities": "48% (USD 20,160,000)",
-        "Fixed Income": "20% (USD 8,400,000)",
-        "Private Equity": "14% (USD 5,880,000)",
-        "Hedge Funds": "8% (USD 3,360,000)",
-        "Structured Products": "6% (USD 2,520,000)",
-        "Real Asset Funds": "2% (USD 840,000)",
-        "Cash within Portfolio": "2% (USD 840,000)",
-    },
-    "ytd_performance": "+8.4%",
-    "one_year_return": "+16.7%",
-    "benchmark_comparison": "+2.1% vs. MSCI World benchmark",
-    "lombard_facility": "USD 10,000,000 limit / USD 3,200,000 drawn / USD 6,800,000 available @ 5.10% p.a.",
-    "mortgage": "GBP 4,200,000 outstanding (One Hyde Park, London) @ 4.25% p.a.",
-    "liquid_accounts": "USD 5,940,000 across GBP current, multi-currency, ISA, and liquidity accounts",
-}
 
 TOOL_DEFINITIONS = [
     {
@@ -49,6 +26,7 @@ TOOL_DEFINITIONS = [
             "properties": {
                 "task": {"type": "string"},
                 "context": {"type": "string"},
+                "customer_id": {"type": "string"},
                 "system_prompt": {"type": "string"},
             },
         },
@@ -61,6 +39,7 @@ TOOL_DEFINITIONS = [
             "properties": {
                 "task": {"type": "string"},
                 "context": {"type": "string"},
+                "customer_id": {"type": "string"},
                 "system_prompt": {"type": "string"},
             },
         },
@@ -73,6 +52,7 @@ TOOL_DEFINITIONS = [
             "properties": {
                 "task": {"type": "string"},
                 "context": {"type": "string"},
+                "customer_id": {"type": "string"},
                 "system_prompt": {"type": "string"},
             },
         },
@@ -94,7 +74,12 @@ async def handle_wealth_advisory(params: dict) -> dict:
     """
     task = params.get("task", "")
     context = params.get("context", "")
+    customer_id = params.get("customer_id", "C-011")
     system_prompt = params.get("system_prompt", "")
+
+    portfolio = DataService.get_advisory_context(customer_id)
+    planning = DataService.get_financial_planning(customer_id)
+    risk = DataService.get_risk_analysis(customer_id)
 
     async def _fetch_rag() -> str:
         try:
@@ -127,8 +112,16 @@ async def handle_wealth_advisory(params: dict) -> dict:
         if settings.is_llm_mock_mode or not settings.tavily_api_key:
             return "No live market data retrieved."
         try:
-            search = TavilySearchResults(max_results=3)
-            results = await asyncio.wait_for(search.ainvoke(task), timeout=5.0)
+            # Construct a better search query to ensure relevant market context is found
+            search_query = f"Current global market outlook, trends, and macroeconomic and sector news relevant to: {task}"
+            search = TavilySearchResults(max_results=5)
+            results = await asyncio.wait_for(search.ainvoke(search_query), timeout=6.0)
+            
+            if isinstance(results, list):
+                return "\n\n".join(
+                    f"[Source: {r.get('url', 'N/A')}]\n{r.get('content', r.get('text', str(r)))}"
+                    for r in results
+                )
             return str(results)
         except Exception as e:
             print(f"Tavily search failed: {e}")
@@ -139,16 +132,17 @@ async def handle_wealth_advisory(params: dict) -> dict:
 
     # 3. Check for mock mode
     if settings.is_llm_mock_mode:
-        portfolio = MOCK_PORTFOLIO
         return {
             "response": (
                 f"[SMART MOCK ADVISORY]\n\n"
-                f"Based on your AUM of {portfolio['total_aum']} and the query about '{task[:50]}', "
-                f"I have consulted our recent market research and live market data.\n\n"
-                f"RAG Context:\n{retrieved_docs[:200]}...\n\n"
-                f"Tavily Context:\n{tavily_data[:200]}...\n\n"
-                f"Our stance remains moderately constructive. Please contact your RM to discuss "
-                f"how this outlook impacts your specific allocation."
+                f"Client: {portfolio.get('customer_name', 'Unknown')}\n"
+                f"AUM: {portfolio.get('total_aum', 'N/A')}\n"
+                f"Performance: {portfolio.get('ytd_performance')} (Attribution: {portfolio.get('performance_attribution')})\n"
+                f"Risk Metrics: {portfolio.get('risk_metrics')}\n"
+                f"Strategic Goals: {planning.get('goals')}\n\n"
+                f"Live Market Intelligence (Tavily):\n{tavily_data[:500]}...\n\n"
+                f"Based on your query about '{task[:50]}', our stance remains moderately constructive. "
+                f"Please contact your RM to discuss how this outlook impacts your specific allocation."
             )
         }
 
@@ -161,13 +155,20 @@ async def handle_wealth_advisory(params: dict) -> dict:
     )
 
     prompt = (
-        f"Client Account Summary:\nTotal AUM: {MOCK_PORTFOLIO['total_aum']}\n"
-        f"Performance: {MOCK_PORTFOLIO['ytd_performance']}\n\n"
+        f"Client Account Summary:\nTotal AUM: {portfolio.get('total_aum')}\n"
+        f"Performance: {portfolio.get('ytd_performance')}\n"
+        f"Attribution: {portfolio.get('performance_attribution')}\n"
+        f"Risk Metrics: {portfolio.get('risk_metrics')}\n"
+        f"Financial Goals: {planning.get('goals')}\n"
+        f"Asset Allocation:\n{portfolio.get('asset_allocation')}\n\n"
         f"Client Question: {task}\n\n"
         f"Conversation Context: {context}\n\n"
         f"Internal Research (RAG):\n{retrieved_docs}\n\n"
         f"Live Market Data (Tavily):\n{tavily_data}\n\n"
-        f"Please provide a professional wealth advisory response."
+        f"Please provide a professional wealth advisory response in JSON format. \n"
+        f"IMPORTANT: Proactively include specific, quantitative market insights (index levels, rate changes) "
+        f"from the Tavily data in your 'market_context' field. Do not be vague or generic. "
+        f"Default all currency reporting to SGD unless the user explicitly requests another currency."
     )
 
     try:
@@ -187,53 +188,76 @@ async def handle_wealth_advisory(params: dict) -> dict:
         return {"response": f"Wealth advisory processing failed: {str(e)}", "error": str(e)}
 
 
-def handle_lending_credit(params: dict) -> dict:
-    """Generate a mock lending and credit response.
+async def handle_lending_credit(params: dict) -> dict:
+    """Generate a high-quality lending and credit response using dynamic data and live search.
 
     Args:
         params: Tool invocation arguments.
 
     Returns:
-        A dictionary with the mock response.
+        A dictionary with the response.
     """
     task = params.get("task", "")
+    customer_id = params.get("customer_id", "C-011")
+    lending = DataService.get_lending_context(customer_id)
+    planning = DataService.get_financial_planning(customer_id)
+
+    # Fetch live mortgage or lending rates/products
+    market_info = await asyncio.to_thread(_fetch_tavily_sync, f"Current mortgage and Lombard lending rates and products for: {task}")
+
     return {
         "response": (
             f"Lending Assessment for your inquiry: {task[:120]}\n\n"
-            f"Based on your portfolio valuation of {MOCK_PORTFOLIO['total_aum']}, "
-            f"the following credit facilities are available:\n\n"
-            f"Lombard Credit Line:\n"
-            f"  - Maximum facility: CHF 8,715,000 (70% LTV on diversified portfolio)\n"
-            f"  - Indicative rate: SARON + 0.85% p.a.\n"
-            f"  - Arrangement fee: 0.10% (waived for existing premium clients)\n"
-            f"  - Flexible drawdown and repayment, no fixed maturity\n\n"
-            f"Mortgage Financing:\n"
-            f"  - Fixed 5-year: 1.35% p.a.\n"
-            f"  - Fixed 10-year: 1.45% p.a.\n"
-            f"  - Variable (SARON-linked): SARON + 0.65% p.a.\n"
-            f"  - Maximum LTV: 80% (residential), 65% (commercial)\n\n"
+            f"Based on your portfolio valuation of {lending.get('total_aum')} and YTD return of {lending.get('ytd_return')}, "
+            f"the following credit facilities are currently associated with your account:\n\n"
+            f"Current Facilities:\n"
+            f"  - Lombard: {lending.get('lombard_facility')}\n"
+            f"  - Mortgage: {lending.get('mortgage')}\n\n"
+            f"Financial Goals (Relevant to Lending): {planning.get('goals')}\n\n"
+            f"Market Intelligence (Live Search):\n{market_info[:500]}...\n\n"
+            f"New Facility Options & Guidelines:\n"
+            f"  - Indicative LTV: Based on live market collateral valuation\n"
+            f"  - Indicative Rate: Derived from live benchmark rates (e.g. SARON/LIBOR) as shown above\n"
+            f"  - Arrangement fee: Standard 0.10% (waived for existing premium clients)\n\n"
             f"A detailed credit proposal can be prepared within 48 hours. "
-            f"Please confirm if you would like to proceed."
+            f"Please confirm if you would like to proceed with a formal application."
         )
     }
 
+def _fetch_tavily_sync(task: str) -> str:
+    """Synchronous wrapper for tavily search."""
+    if settings.is_llm_mock_mode or not settings.tavily_api_key:
+        return "No live market data retrieved."
+    try:
+        from langchain_community.tools.tavily_search import TavilySearchResults
+        search = TavilySearchResults(max_results=3)
+        return str(search.invoke(task))
+    except Exception as e:
+        print(f"Tavily search failed: {e}")
+    return "No live market data retrieved."
 
-def handle_banking_operation(params: dict) -> dict:
-    """Generate a mock general banking response.
+
+async def handle_banking_operation(params: dict) -> dict:
+    """Generate a mock general banking response with live operational context.
 
     Args:
         params: Tool invocation arguments.
 
     Returns:
-        A dictionary with the mock response.
+        A dictionary with the response.
     """
     task = params.get("task", "")
+    
+    # Fetch live information on banking procedures or news if relevant
+    live_ops_info = await _fetch_tavily(f"Banking operations procedures or holiday schedules for: {task}")
+
     return {
         "response": (
             f"Banking operation processed for: {task[:120]}\n\n"
+            f"Operational Context (Live Search):\n{live_ops_info[:300]}...\n\n"
             f"The requested operation has been queued for processing. "
             f"Standard operations are completed within the same business day. "
-            f"Cross-border transactions may require 1-2 additional business days."
+            f"Cross-border transactions may require 1-2 additional business days depending on receiving institution."
         )
     }
 

@@ -87,6 +87,7 @@ class WorkflowState(BaseModel):
     memory_context: list[dict] = Field(default_factory=list)
     session_id: str = Field(default="")
     user_id: str = Field(default="")
+    customer_id: str = Field(default="C-011")
     plan: PlannerOutput | None = Field(default=None, description="The execution plan")
     current_step_index: int = Field(default=0, description="Index of the step being executed")
     agent_outputs: list[dict[str, Any]] = Field(

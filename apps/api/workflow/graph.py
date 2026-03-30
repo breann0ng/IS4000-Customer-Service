@@ -312,6 +312,7 @@ async def run_workflow(
     memory_context: list[dict],
     session_id: str,
     user_id: str,
+    customer_id: str = "C-011",
 ) -> dict[str, str | dict | None]:
     """Execute the full agentic workflow for a user message.
 
@@ -338,6 +339,7 @@ async def run_workflow(
         memory_context=memory_context,
         session_id=session_id,
         user_id=user_id,
+        customer_id=customer_id,
     )
 
     try:

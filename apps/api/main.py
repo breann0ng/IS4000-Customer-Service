@@ -68,8 +68,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from apps.api.customers.routes import router as customer_router
+
 app.include_router(auth_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
+app.include_router(customer_router, prefix="/api")
 
 
 @app.get("/api/health")

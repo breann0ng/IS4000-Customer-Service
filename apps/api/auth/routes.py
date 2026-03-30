@@ -111,11 +111,16 @@ async def login(
         user = User(
             username=ldap_result["username"],
             display_name=ldap_result["display_name"],
+            customer_id="C-011",  # Default for demo
         )
         database_session.add(user)
         await database_session.commit()
         await database_session.refresh(user)
         logger.info("user_created", user_id=str(user.user_id), username=user.username)
+    elif user.customer_id is None:
+        user.customer_id = "C-011"
+        await database_session.commit()
+        await database_session.refresh(user)
 
     token, expires_in = create_access_token(str(user.user_id))
     return TokenResponse(access_token=token, expires_in=expires_in)
@@ -135,5 +140,6 @@ async def get_profile(current_user: User = Depends(get_current_user)) -> UserPro
         user_id=current_user.user_id,
         username=current_user.username,
         display_name=current_user.display_name,
+        customer_id=current_user.customer_id,
         created_at=current_user.created_at,
     )

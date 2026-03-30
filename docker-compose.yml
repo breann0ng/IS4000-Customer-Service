@@ -42,6 +42,7 @@ services:
     volumes:
       - ./mcp_servers:/app/mcp_servers
       - ./apps/api:/app/apps/api
+      - ./mocks:/app/mocks
 
   mock-knowledge:
     build:
@@ -58,6 +59,7 @@ services:
     volumes:
       - ./mcp_servers:/app/mcp_servers
       - ./apps/api:/app/apps/api
+      - ./mocks:/app/mocks
 
   mock-service-workflow:
     build:
@@ -74,6 +76,7 @@ services:
     volumes:
       - ./mcp_servers:/app/mcp_servers
       - ./apps/api:/app/apps/api
+      - ./mocks:/app/mocks
 
   rag-server:
     build:
@@ -126,6 +129,7 @@ services:
       - ./rag:/app/rag
       - ./data:/app/data
       - ./docs:/app/docs
+      - ./mocks:/app/mocks
 
   frontend:
     build:

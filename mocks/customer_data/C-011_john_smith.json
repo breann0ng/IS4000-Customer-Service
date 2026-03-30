@@ -24,7 +24,29 @@
     "aum_with_ubs_sgd": 65000000,
     "family_office": "Smith Capital SG Pte Ltd",
     "trust_structure": true,
-    "philanthropic_fund": false
+    "philanthropic_fund": false,
+    "tax_profile": {
+      "tax_id": "S1234567A",
+      "tax_loss_harvesting_available_sgd": 450000,
+      "unrealized_gains_sgd": 12500000,
+      "tax_slots": [
+        { "asset": "DBS Group Holdings", "gain_sgd": 1200000, "qualified": true },
+        { "asset": "Apple Inc", "gain_sgd": 850000, "qualified": true }
+      ]
+    },
+    "preferences": {
+      "communication_channel": "Secure Chat / WhatsApp",
+      "meeting_frequency": "Quarterly",
+      "esg_intensity": "High",
+      "excluded_sectors": ["Tobacco", "Controversial Weapons"],
+      "preferred_asset_classes": ["Private Equity", "Technology Equities"]
+    },
+    "derived_flags": {
+      "is_hnwi": true,
+      "is_institutional_capable": true,
+      "has_complex_structures": true,
+      "cross_border_exposure": "High (SG/JP/US)"
+    }
   },
   "accounts": [
     {
@@ -187,7 +209,72 @@
       }
     ],
     "ytd_return_pct": 8.4,
-    "one_year_return_pct": 16.7
+    "one_year_return_pct": 16.7,
+    "risk_metrics": {
+      "sharpe_ratio": 1.45,
+      "volatility_pct": 12.2,
+      "beta_vs_msci_world": 0.85,
+      "var_95pct_sgd": 2450000,
+      "stress_tests": {
+        "Global Financial Crisis 2.0": -18.5,
+        "Equity Market Correction (-10%)": -7.2,
+        "Interest Rate Hike (+100bps)": -2.1
+      }
+    },
+    "performance_attribution": {
+      "selection_effect_pct": 4.2,
+      "allocation_effect_pct": 3.8,
+      "currency_effect_pct": 0.4,
+      "top_contributors": [
+        { "name": "Technology Selection", "impact": 2.1 },
+        { "name": "US Equity Overweight", "impact": 1.5 }
+      ],
+      "top_detractors": [
+        { "name": "Fixed Income Duration", "impact": -0.8 }
+      ]
+    },
+    "portfolio_history": [
+      { "month": "Apr-24", "value": 42000000 },
+      { "month": "May-24", "value": 43500000 },
+      { "month": "Jun-24", "value": 44800000 },
+      { "month": "Jul-24", "value": 46200000 },
+      { "month": "Aug-24", "value": 45800000 },
+      { "month": "Sep-24", "value": 47500000 },
+      { "month": "Oct-24", "value": 48900000 },
+      { "month": "Nov-24", "value": 50100000 },
+      { "month": "Dec-24", "value": 51200000 },
+      { "month": "Jan-25", "value": 52500000 },
+      { "month": "Feb-25", "value": 53800000 },
+      { "month": "Mar-25", "value": 55100000 },
+      { "month": "Apr-25", "value": 56250000 },
+      { "month": "May-25", "value": 57400000 },
+      { "month": "Jun-25", "value": 58900000 },
+      { "month": "Jul-25", "value": 57800000 },
+      { "month": "Aug-25", "value": 59100000 },
+      { "month": "Sep-25", "value": 60500000 },
+      { "month": "Oct-25", "value": 54200000 },
+      { "month": "Nov-25", "value": 56500000 },
+      { "month": "Dec-25", "value": 55745000 },
+      { "month": "Jan-26", "value": 58900000 },
+      { "month": "Feb-26", "value": 62100000 },
+      { "month": "Mar-26", "value": 65000000 }
+    ],
+    "monthly_returns": [
+      { "month": "Oct-25", "value": 2.1 },
+      { "month": "Nov-25", "value": 3.6 },
+      { "month": "Dec-25", "value": -1.9 },
+      { "month": "Jan-26", "value": 4.0 },
+      { "month": "Feb-26", "value": 2.7 },
+      { "month": "Mar-26", "value": 2.8 }
+    ],
+    "benchmark_comparison": [
+      { "month": "Oct-25", "portfolio": 2.1, "benchmark": 1.8 },
+      { "month": "Nov-25", "portfolio": 3.6, "benchmark": 2.5 },
+      { "month": "Dec-25", "portfolio": -1.9, "benchmark": -2.3 },
+      { "month": "Jan-26", "portfolio": 4.0, "benchmark": 3.1 },
+      { "month": "Feb-26", "portfolio": 2.7, "benchmark": 2.0 },
+      { "month": "Mar-26", "portfolio": 2.8, "benchmark": 1.9 }
+    ]
   },
   "credit": {
     "lombard_facility": {
@@ -553,6 +640,68 @@
       ],
       "rm_context": "Client received SGD 850k dividend (30 Jan 2026). Recommend SRS/CPF top-up discussion and VCC utilization before year-end tax planning cycle.",
       "tags": ["Tax", "SRS", "CPF", "Retirement"]
+    }
+  ],
+  "goals": [
+    {
+      "goal_id": "G-001",
+      "name": "Wealth Preservation & Transfer",
+      "target_amount_sgd": 100000000,
+      "current_amount_sgd": 65000000,
+      "status": "On Track",
+      "deadline": "2040-12-31",
+      "category": "Intergenerational"
+    },
+    {
+      "goal_id": "G-002",
+      "name": "Niseko Property Acquisition",
+      "target_amount_sgd": 5000000,
+      "current_amount_sgd": 580000,
+      "status": "In Progress",
+      "deadline": "2026-12-31",
+      "category": "Lifestyle"
+    },
+    {
+      "goal_id": "G-003",
+      "name": "Smith Family Foundation Endowment",
+      "target_amount_sgd": 10000000,
+      "current_amount_sgd": 2500000,
+      "status": "Delayed",
+      "deadline": "2030-01-01",
+      "category": "Philanthropy"
+    }
+  ],
+  "cashflow": {
+    "monthly_inflow_sgd": 250000,
+    "monthly_outflow_sgd": 185000,
+    "net_monthly_surplus_sgd": 65000,
+    "upcoming_large_commitments": [
+      { "date": "2026-06-15", "description": "Asia Growth Buyout Fund VI - Capital Call", "amount_sgd": 1500000 },
+      { "date": "2026-09-01", "description": "Property Tax - GCB @ Nassim Road", "amount_sgd": 120000 }
+    ],
+    "projected_liquidity_12m_sgd": 8500000
+  },
+  "system_triggers": [
+    {
+      "trigger_id": "T-001",
+      "type": "Concentration",
+      "description": "Tech exposure at 48%, above 40% soft limit",
+      "severity": "Medium",
+      "status": "Active"
+    },
+    {
+      "trigger_id": "T-002",
+      "type": "Performance",
+      "description": "YTD Return 8.4% exceeds annual target (7%)",
+      "severity": "Low",
+      "status": "Informational"
+    },
+    {
+      "trigger_id": "T-003",
+      "type": "Regulatory",
+      "description": "KYC review cycle initiated",
+      "severity": "High",
+      "status": "Action Required"
     }
   ]
 }

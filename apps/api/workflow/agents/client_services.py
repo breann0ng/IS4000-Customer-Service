@@ -70,6 +70,7 @@ client_services_mcp_client = McpClient(server_url=settings.mcp_service_workflow_
 async def execute_client_services_task(
     task: str,
     conversation_context: str,
+    customer_id: str = "C-011",
 ) -> str:
     """Execute a client services task using RAG and MCP tools.
 
@@ -97,6 +98,7 @@ async def execute_client_services_task(
         arguments={
             "task": task,
             "context": conversation_context,
+            "customer_id": customer_id,
             "retrieved_documents": retrieved_context,
             "system_prompt": CLIENT_SERVICES_SYSTEM_PROMPT,
         },

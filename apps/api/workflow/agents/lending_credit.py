@@ -79,6 +79,7 @@ lending_credit_mcp_client = McpClient(server_url=settings.mcp_banking_ops_url)
 async def execute_lending_credit_task(
     task: str,
     conversation_context: str,
+    customer_id: str = "C-011",
 ) -> str:
     """Execute a lending and credit task using the MCP-connected tools.
 
@@ -96,6 +97,7 @@ async def execute_lending_credit_task(
         arguments={
             "task": task,
             "context": conversation_context,
+            "customer_id": customer_id,
             "system_prompt": LENDING_CREDIT_SYSTEM_PROMPT,
         },
     )

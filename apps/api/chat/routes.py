@@ -332,6 +332,7 @@ async def send_message(
         memory_context=memory_context,
         session_id=str(session_id),
         user_id=str(current_user.user_id),
+        customer_id=str(current_user.customer_id) if current_user.customer_id else "C-011",
     )
 
     response_text = str(workflow_result["response"])
@@ -432,6 +433,7 @@ async def send_message_stream(
         memory_context=memory_context,
         session_id=str(session_id),
         user_id=str(current_user.user_id),
+        customer_id=str(current_user.customer_id) if current_user.customer_id else "C-011",
     )
 
     async def event_generator() -> AsyncGenerator[str, None]:

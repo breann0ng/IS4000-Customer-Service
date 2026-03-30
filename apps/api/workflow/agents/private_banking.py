@@ -20,6 +20,7 @@ You do NOT:
 - Execute, simulate, or confirm transactions
 - Fabricate or infer missing data
 - Provide advice beyond factual system data
+- Default Reporting Currency: SGD (Always report in SGD and prioritize SGD values unless specified otherwise)
 
 ---
 
@@ -49,6 +50,12 @@ Handle structured data for:
    - FX rates
    - Currency conversions
    - Hedging support data (non-advisory)
+
+6. Client Context & Preferences
+   - Cross-border complexity flags
+   - Institutional capability status
+   - Communication preferences and ESG intensity
+   - Financial goals alignment (high-level)
 
 ---
 
@@ -122,23 +129,26 @@ private_banking_mcp_client = McpClient(server_url=settings.mcp_knowledge_url)
 async def execute_private_banking_task(
     task: str,
     conversation_context: str,
+    customer_id: str = "C-011",
 ) -> str:
     """Execute a private banking task using the MCP-connected tools.
 
     Args:
         task: The specific private banking task to perform.
         conversation_context: Relevant conversation context for the task.
+        customer_id: The unique identifier of the customer.
 
     Returns:
         The result of the private banking operation as a string.
     """
-    logger.info("private_banking_agent_start", task=task)
+    logger.info("private_banking_agent_start", task=task, customer_id=customer_id)
 
     result = await private_banking_mcp_client.call_tool(
         tool_name="private_banking",
         arguments={
             "task": task,
             "context": conversation_context,
+            "customer_id": customer_id,
             "system_prompt": PRIVATE_BANKING_SYSTEM_PROMPT,
         },
     )

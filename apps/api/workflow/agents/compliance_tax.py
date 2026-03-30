@@ -45,6 +45,12 @@ You do NOT:
    - Flag areas of potential non-compliance or missing documentation  
    - Indicate need for further review by internal compliance or tax teams  
 
+5. Client Tax & Regulatory Context
+   - Tax loss harvesting status and unrealized gains
+   - Specific tax slots and asset-level tax data
+   - KYC review cycle status and system triggers
+   - Beneficial ownership and ACRA status for family offices
+
 ---
 
 # OUTPUT REQUIREMENTS
@@ -70,6 +76,7 @@ compliance_tax_mcp_client = McpClient(server_url=settings.mcp_knowledge_url)
 async def execute_compliance_tax_task(
     task: str,
     conversation_context: str,
+    customer_id: str = "C-011",
 ) -> str:
     """Execute a compliance or tax task using RAG and MCP tools.
 

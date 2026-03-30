@@ -27,4 +27,5 @@ class UserProfile(BaseModel):
     user_id: uuid.UUID
     username: str
     display_name: str
+    customer_id: str | None = None
     created_at: datetime

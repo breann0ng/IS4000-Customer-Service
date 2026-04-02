@@ -7,6 +7,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from apps.api.auth.routes import get_current_user
+from apps.api.customers.customer_data_client import get_customer_bundle
 from apps.api.database.models import User
 from apps.api.logging_config import get_logger
 from apps.api.customers.data_service import DataService
@@ -28,7 +29,8 @@ async def get_my_performance(current_user: User = Depends(get_current_user)) -> 
             detail="User is not mapped to a customer profile",
         )
 
-    data = DataService.get_customer_performance(current_user.customer_id)
+    bundle = await get_customer_bundle(current_user.customer_id)
+    data = DataService.get_customer_performance_from_bundle(current_user.customer_id, bundle)
     if not data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -47,7 +49,8 @@ async def get_my_summary(current_user: User = Depends(get_current_user)) -> dict
             detail="User is not mapped to a customer profile",
         )
 
-    data = DataService.get_customer_summary(current_user.customer_id)
+    bundle = await get_customer_bundle(current_user.customer_id)
+    data = DataService.get_customer_summary_from_bundle(bundle)
     if not data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

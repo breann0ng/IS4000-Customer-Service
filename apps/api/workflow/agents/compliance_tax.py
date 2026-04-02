@@ -5,6 +5,7 @@ regulatory compliance, CRS/FATCA reporting, and documentation requirements.
 """
 
 from apps.api.config import settings
+from apps.api.customers.registry import DEFAULT_CUSTOMER_ID
 from apps.api.logging_config import get_logger
 from apps.api.workflow.tools.mcp_client import McpClient
 from apps.api.workflow.tools.rag_tool import retrieve_rag_chunks
@@ -76,7 +77,7 @@ compliance_tax_mcp_client = McpClient(server_url=settings.mcp_knowledge_url)
 async def execute_compliance_tax_task(
     task: str,
     conversation_context: str,
-    customer_id: str = "C-011",
+    customer_id: str = DEFAULT_CUSTOMER_ID,
 ) -> str:
     """Execute a compliance or tax task using RAG and MCP tools.
 

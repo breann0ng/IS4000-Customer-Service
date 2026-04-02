@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     mcp_knowledge_url: str = "http://localhost:9002/mcp"
     mcp_service_workflow_url: str = "http://localhost:9003/mcp"
     mcp_rag_server_url: str = "http://localhost:9004/mcp"
+    mcp_customer_data_url: str = "http://localhost:9005/mcp"
+    customer_data_access_mode: str = "mcp"
 
     langsmith_api_key: str = ""
     langsmith_project: str = "ubs-chatbot"

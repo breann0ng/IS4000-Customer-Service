@@ -5,6 +5,7 @@ credit lines, structured lending solutions, and margin facilities.
 """
 
 from apps.api.config import settings
+from apps.api.customers.registry import DEFAULT_CUSTOMER_ID
 from apps.api.logging_config import get_logger
 from apps.api.workflow.tools.mcp_client import McpClient
 
@@ -79,7 +80,7 @@ lending_credit_mcp_client = McpClient(server_url=settings.mcp_banking_ops_url)
 async def execute_lending_credit_task(
     task: str,
     conversation_context: str,
-    customer_id: str = "C-011",
+    customer_id: str = DEFAULT_CUSTOMER_ID,
 ) -> str:
     """Execute a lending and credit task using the MCP-connected tools.
 

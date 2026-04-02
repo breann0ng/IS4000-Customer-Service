@@ -14,6 +14,7 @@ from apps.api.auth.models import LoginRequest, TokenResponse, UserProfile
 from apps.api.config import settings
 from apps.api.database.connection import get_database_session
 from apps.api.database.models import User
+from apps.api.customers.registry import get_customer_id_for_username
 from apps.api.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -108,17 +109,32 @@ async def login(
     user = result.scalar_one_or_none()
 
     if user is None:
+        customer_id = get_customer_id_for_username(ldap_result["username"])
+        if customer_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Authenticated user is not mapped to an allowed customer profile",
+            )
+
         user = User(
             username=ldap_result["username"],
             display_name=ldap_result["display_name"],
-            customer_id="C-011",  # Default for demo
+            customer_id=customer_id,
         )
         database_session.add(user)
         await database_session.commit()
         await database_session.refresh(user)
         logger.info("user_created", user_id=str(user.user_id), username=user.username)
-    elif user.customer_id is None:
-        user.customer_id = "C-011"
+
+    customer_id = get_customer_id_for_username(user.username)
+    if customer_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Authenticated user is not mapped to an allowed customer profile",
+        )
+
+    if user.customer_id != customer_id:
+        user.customer_id = customer_id
         await database_session.commit()
         await database_session.refresh(user)
 

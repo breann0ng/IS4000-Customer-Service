@@ -1,10 +1,12 @@
 import asyncio
+import json
 import random
 
 from langchain_community.tools.tavily_search import TavilySearchResults
 
 from apps.api.config import settings
 from apps.api.customers.data_service import DataService
+from apps.api.customers.registry import DEFAULT_CUSTOMER_ID
 from mcp_servers.base import create_mock_mcp_app
 
 TOOL_DEFINITIONS = [
@@ -74,16 +76,88 @@ async def handle_client_services(params: dict) -> dict:
         A dictionary with the mock response.
     """
     task = params.get("task", "")
-    customer_id = params.get("customer_id", "C-011")
+    task_lower = task.lower()
+    customer_id = params.get("customer_id", DEFAULT_CUSTOMER_ID)
     summary = DataService.get_customer_summary(customer_id)
     planning = DataService.get_financial_planning(customer_id)
+    compliance = DataService.get_compliance_context(customer_id)
+    client_profile, _ = DataService.get_banking_context(customer_id)
     
     pref_name = "Client"
     if summary and "profile" in summary:
         pref_name = (summary["profile"] or {}).get("preferred_name", (summary["profile"] or {}).get("full_name", "Client"))
 
+    goals = planning.get("goals", []) if isinstance(planning, dict) else []
+    kyc_goal = next(
+        (
+            goal
+            for goal in goals
+            if isinstance(goal, dict)
+            and "kyc" in str(goal.get("goal", "")).lower()
+        ),
+        {},
+    )
+
+    is_contact_query = any(
+        phrase in task_lower
+        for phrase in ["point of contact", "primary contact", "who is", "relationship manager", "contact"]
+    ) and any(
+        phrase in task_lower
+        for phrase in ["kyc", "onboarding", "service", "approval", "document"]
+    )
+
+    if is_contact_query:
+        response_payload = {
+            "request_type": "client_services_primary_contact",
+            "primary_point_of_contact": client_profile.get("relationship_manager")
+            or "Your UBS Relationship Manager",
+            "current_status": kyc_goal.get("status") or compliance.get("kyc_status") or "Status not available",
+            "next_steps": [
+                "Use secure message channel to contact your Relationship Manager.",
+                "If urgent, request escalation to the client services operations desk.",
+            ],
+        }
+        return {"response": json.dumps(response_payload)}
+
+    is_kyc_docs_query = any(
+        phrase in task_lower
+        for phrase in ["kyc", "document", "documents", "docs", "required", "pending"]
+    )
+    if is_kyc_docs_query:
+        response_payload = {
+            "request_type": "kyc_documents_status",
+            "kyc_status": compliance.get("kyc_status", "Unknown"),
+            "kyc_last_reviewed": compliance.get("kyc_last_reviewed", "Unknown"),
+            "workflow_status": kyc_goal.get("status", "Status not available"),
+            "required_documents": [
+                "Valid passport or national ID",
+                "Proof of residential address (dated within 3 months)",
+                "Source of wealth declaration",
+            ],
+            "primary_point_of_contact": client_profile.get("relationship_manager")
+            or "Your UBS Relationship Manager",
+        }
+        return {"response": json.dumps(response_payload)}
+
+    is_status_query = any(
+        phrase in task_lower
+        for phrase in ["status", "pending", "eta", "timeline", "when"]
+    ) and any(
+        phrase in task_lower
+        for phrase in ["service", "request", "onboarding", "kyc"]
+    )
+    if is_status_query:
+        response_payload = {
+            "request_type": "client_service_status",
+            "status": kyc_goal.get("status") or "In Progress",
+            "target_date": kyc_goal.get("target_date", "Not specified"),
+            "primary_point_of_contact": client_profile.get("relationship_manager")
+            or "Your UBS Relationship Manager",
+        }
+        return {"response": json.dumps(response_payload)}
+
     # Check if this is a performance query (fallback handler needs to answer this in mock mode)
-    if "performance" in task.lower() or "return" in task.lower():
+    if "performance" in task_lower or "return" in task_lower:
         ytd = summary.get("portfolio_summary", {}).get("ytd_return", "N/A")
         return {
             "response": (
@@ -95,7 +169,7 @@ async def handle_client_services(params: dict) -> dict:
         }
 
     # Check if this is a greeting task
-    if any(greet in task.lower() for greet in ["greeting", "welcome", "hello", "hi"]):
+    if any(greet in task_lower for greet in ["greeting", "welcome", "hello", "hi"]):
         return {
             "response": (
                 f"Good day, {pref_name}. It is a pleasure to assist you. As your premium wealth management "
@@ -154,6 +228,29 @@ async def handle_fx_treasury(params: dict) -> dict:
         A dictionary with the mock response.
     """
     task = params.get("task", "")
+    task_lower = task.lower()
+    customer_id = params.get("customer_id", DEFAULT_CUSTOMER_ID)
+    client_profile, _ = DataService.get_banking_context(customer_id)
+
+    is_fx_contact_query = any(
+        phrase in task_lower
+        for phrase in ["point of contact", "primary contact", "who", "contact", "approval"]
+    ) and any(
+        phrase in task_lower
+        for phrase in ["fx", "foreign exchange", "transfer", "payment", "currency"]
+    )
+    if is_fx_contact_query:
+        response_payload = {
+            "request_type": "fx_transfer_approval_contact",
+            "primary_point_of_contact": client_profile.get("relationship_manager")
+            or "Your UBS Relationship Manager",
+            "fx_operations_desk": "UBS FX & Treasury Operations Desk",
+            "next_steps": [
+                "Submit transfer instruction via secure channel.",
+                "Request RM confirmation once treasury validation is complete.",
+            ],
+        }
+        return {"response": json.dumps(response_payload)}
     
     # Fetch live FX rates and treasury info using Tavily
     market_data = await _fetch_tavily(f"Current FX rates and treasury insights for: {task}")

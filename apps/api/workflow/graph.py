@@ -13,6 +13,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import END, StateGraph
 
 from apps.api.config import settings
+from apps.api.customers.registry import DEFAULT_CUSTOMER_ID
 from apps.api.logging_config import get_logger
 from apps.api.workflow.escalation import check_escalation, escalation_node
 from apps.api.workflow.executor import executor_node
@@ -35,15 +36,24 @@ Do NOT treat the JSON as literal text to paste — extract the meaningful data f
 
 ---
 
-## STEP 2 — Choose Sections Based on Content
+## STEP 2 — Choose Response Shape Dynamically
 
-You MUST structure your response using Markdown `###` section headers.
-Do NOT write a single block of prose. Each section must have its own `###` heading.
+Choose the response format based on query complexity and agent data richness.
 
-### Always include:
-- `### Summary` — 2–3 sentence executive summary with bold key figures.
-- `### Next Steps` — Numbered list of actionable next steps for the client.
-- `### Important Notes` — Regulatory disclaimers, caveats, or escalation flags if present.
+### For simple queries (single factual ask, status check, one direct question):
+- Prefer a concise direct answer (1–3 short paragraphs or bullets).
+- Do NOT force section headers.
+- Include only what is relevant; omit empty or generic blocks.
+
+### For multi-part or advisory queries:
+- Use Markdown `###` section headers.
+- Include only sections that are relevant to the actual agent output.
+- Do NOT include placeholder sections.
+
+### Core optional sections (use only when relevant):
+- `### Summary` — concise executive synthesis.
+- `### Next Steps` — actionable items when there are genuine actions.
+- `### Important Notes` — caveats/disclaimers only when applicable.
 
 ### Include ONLY if the agent data contains portfolio or financial metrics (e.g., AUM, YTD return, asset allocation):
 - `### Portfolio Overview` — Reference actual figures: **AUM**, **YTD return**, allocation breakdown. Bold all key numbers.
@@ -83,7 +93,7 @@ unless a specific monetary figure is directly relevant.
 
 ## Rules
 
-- **DO NOT** collapse all content into one or two paragraphs.
+- **DO** adapt structure and length to the question complexity.
 - **DO** bold all key figures (AUM, YTD, amounts, percentages, dates).
 - **DO** generate 3–5 relevant follow-up questions in `follow_up_suggestions`.
 - **DO** assess whether human RM escalation is needed based on `escalation_required` or `requires_rm_approval` flags in the JSON.
@@ -312,7 +322,7 @@ async def run_workflow(
     memory_context: list[dict],
     session_id: str,
     user_id: str,
-    customer_id: str = "C-011",
+    customer_id: str = DEFAULT_CUSTOMER_ID,
 ) -> dict[str, str | dict | None]:
     """Execute the full agentic workflow for a user message.
 
@@ -346,19 +356,19 @@ async def run_workflow(
         final_state = await workflow_graph.ainvoke(initial_state)
 
         # Handle either string or Pydantic model (SynthesizerOutput)
-        response = final_state["final_response"]
+        response = final_state.get("final_response", "")
 
         trace_data = {
-            "plan": final_state["plan"].model_dump() if final_state["plan"] else None,
-            "agent_outputs": final_state["agent_outputs"],
+            "plan": final_state["plan"].model_dump() if final_state.get("plan") else None,
+            "agent_outputs": final_state.get("agent_outputs", []),
         }
 
         logger.info("workflow_complete", session_id=session_id)
 
         return {
             "response": response,
-            "metrics": final_state.final_metrics,
-            "suggestions": final_state.final_suggestions,
+            "metrics": final_state.get("final_metrics", []),
+            "suggestions": final_state.get("final_suggestions", []),
             "trace": trace_data,
         }
 

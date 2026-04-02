@@ -2,9 +2,26 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import styles from "./PerformancePage.module.css";
 
 interface PerformanceData {
+  portfolio_current_value: number;
   portfolio_value: { month: string; value: number }[];
   asset_allocation: { label: string; value: number; color?: string }[];
   monthly_returns: { month: string; value: number }[];
+  return_metrics: {
+    six_month_return_pct: number;
+    ytd_return_pct: number;
+    one_year_return_pct: number;
+  };
+  risk_metrics: {
+    risk_profile: string;
+    sharpe_ratio: number;
+    volatility_pct: number;
+  };
+  benchmark_name: string;
+  relationship_manager: {
+    name: string;
+    email: string;
+    phone: string;
+  };
   benchmark_comparison: { month: string; portfolio: number; benchmark: number }[];
   net_worth: {
     asOf: string;
@@ -28,6 +45,151 @@ interface PerformancePageProps {
 
 // Colors for asset allocation if not provided by API
 const ALLOCATION_COLORS = ["#da291c", "#1e1e1e", "#ffd100", "#9b1318", "#b6b6b6", "#888888"];
+
+function toNumber(value: unknown, fallback = 0): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function normalizePerformanceData(raw: any): PerformanceData {
+  const portfolioValue = Array.isArray(raw?.portfolio_value)
+    ? raw.portfolio_value.map((entry: any) => ({
+        month: String(entry?.month ?? ""),
+        value: toNumber(entry?.value),
+      }))
+    : [];
+
+  const monthlyReturns: { month: string; value: number }[] = Array.isArray(raw?.monthly_returns)
+    ? raw.monthly_returns.map((entry: any) => ({
+        month: String(entry?.month ?? ""),
+        value: toNumber(entry?.value),
+      }))
+    : [];
+
+  const sixMonthFallback = monthlyReturns
+    .slice(-6)
+    .reduce((acc: number, entry: { value: number }) => acc * (1 + entry.value / 100), 1);
+
+  const returnsByMonth = new Map(monthlyReturns.map((entry) => [entry.month, entry.value]));
+
+  const benchmarkComparison = Array.isArray(raw?.benchmark_comparison)
+    ? raw.benchmark_comparison.map((entry: any) => {
+        const month = String(entry?.month ?? "");
+        const hasPortfolioAndBenchmark =
+          entry && typeof entry === "object" && "portfolio" in entry && "benchmark" in entry;
+
+        if (hasPortfolioAndBenchmark) {
+          return {
+            month,
+            portfolio: toNumber(entry?.portfolio),
+            benchmark: toNumber(entry?.benchmark),
+          };
+        }
+
+        return {
+          month,
+          portfolio: toNumber(returnsByMonth.get(month), 0),
+          benchmark: toNumber(entry?.value, 0),
+        };
+      })
+    : [];
+
+  const assets = raw?.net_worth?.assets ?? {};
+
+  const insights = Array.isArray(raw?.insights)
+    ? raw.insights.map((signal: any, index: number) => ({
+        id: String(signal?.id ?? `insight-${index + 1}`),
+        priority:
+          signal?.priority === "high" || signal?.priority === "medium" || signal?.priority === "low"
+            ? signal.priority
+            : "medium",
+        category: String(signal?.category ?? "General"),
+        icon: String(signal?.icon ?? "💡"),
+        title: String(signal?.title ?? "Insight"),
+        trigger: String(signal?.trigger ?? "Portfolio activity signal"),
+        summary: String(signal?.summary ?? "No summary available."),
+        suggested_actions: Array.isArray(signal?.suggested_actions)
+          ? signal.suggested_actions.map((action: any) => String(action))
+          : [],
+        rm_context: String(signal?.rm_context ?? signal?.summary ?? ""),
+        tags: Array.isArray(signal?.tags) ? signal.tags.map((tag: any) => String(tag)) : [],
+      }))
+    : [];
+
+  return {
+    portfolio_current_value: toNumber(raw?.portfolio_current_value),
+    portfolio_value: portfolioValue,
+    asset_allocation: Array.isArray(raw?.asset_allocation)
+      ? raw.asset_allocation.map((entry: any) => ({
+          label: String(entry?.label ?? "Unknown"),
+          value: toNumber(entry?.value),
+          color: entry?.color,
+        }))
+      : [],
+    monthly_returns: monthlyReturns,
+    return_metrics: {
+      six_month_return_pct: toNumber(raw?.return_metrics?.six_month_return_pct, (sixMonthFallback - 1) * 100),
+      ytd_return_pct: toNumber(raw?.return_metrics?.ytd_return_pct),
+      one_year_return_pct: toNumber(raw?.return_metrics?.one_year_return_pct),
+    },
+    risk_metrics: {
+      risk_profile: String(raw?.risk_metrics?.risk_profile ?? "N/A"),
+      sharpe_ratio: toNumber(raw?.risk_metrics?.sharpe_ratio),
+      volatility_pct: toNumber(raw?.risk_metrics?.volatility_pct),
+    },
+    benchmark_name: String(raw?.benchmark_name ?? "Benchmark"),
+    relationship_manager: {
+      name: String(raw?.relationship_manager?.name ?? "Relationship Manager"),
+      email: String(raw?.relationship_manager?.email ?? ""),
+      phone: String(raw?.relationship_manager?.phone ?? ""),
+    },
+    benchmark_comparison: benchmarkComparison,
+    net_worth: {
+      asOf: String(raw?.net_worth?.asOf ?? ""),
+      customer: String(raw?.net_worth?.customer ?? "Client"),
+      customerId: String(raw?.net_worth?.customerId ?? ""),
+      assets: {
+        liquidAssets: Array.isArray(assets?.liquidAssets)
+          ? assets.liquidAssets.map((entry: any) => ({
+              label: String(entry?.label ?? ""),
+              value: toNumber(entry?.value),
+              note: String(entry?.note ?? ""),
+            }))
+          : [],
+        investmentPortfolio: Array.isArray(assets?.investmentPortfolio)
+          ? assets.investmentPortfolio.map((entry: any) => ({
+              label: String(entry?.label ?? ""),
+              value: toNumber(entry?.value),
+              note: entry?.note,
+            }))
+          : [],
+        realEstate: Array.isArray(assets?.realEstate)
+          ? assets.realEstate.map((entry: any) => ({
+              label: String(entry?.label ?? ""),
+              value: toNumber(entry?.value),
+              note: String(entry?.note ?? ""),
+            }))
+          : [],
+        otherAssets: Array.isArray(assets?.otherAssets)
+          ? assets.otherAssets.map((entry: any) => ({
+              label: String(entry?.label ?? ""),
+              value: toNumber(entry?.value),
+              note: String(entry?.note ?? ""),
+            }))
+          : [],
+      },
+      liabilities: Array.isArray(raw?.net_worth?.liabilities)
+        ? raw.net_worth.liabilities.map((entry: any) => ({
+            label: String(entry?.label ?? ""),
+            value: toNumber(entry?.value),
+            note: String(entry?.note ?? ""),
+            rate: entry?.rate,
+          }))
+        : [],
+    },
+    insights,
+  };
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -342,21 +504,23 @@ function NetWorthCalculator({
 
 // ─── Summary Cards ───────────────────────────────────────────────────────────
 
-function SummaryCards({ data, customerId, customerName }: { data: { month: string; value: number }[], customerId: string, customerName: string }) {
-  if (!data || data.length === 0) return null;
-
-  const currentValue = data[data.length - 1]?.value || 0;
-  const previousValue = data[0]?.value || 1; // Avoid div by zero
-  const totalReturn = (((currentValue - previousValue) / previousValue) * 100).toFixed(1);
-  const ytdReturn = data.length >= 3 
-    ? (((data[data.length - 1]!.value - data[data.length - 3]!.value) / data[data.length - 3]!.value) * 100).toFixed(1) 
-    : "0.0";
+function SummaryCards({ currentValue, asOf, customerId, customerName, returnMetrics, riskMetrics }: {
+  currentValue: number,
+  asOf: string,
+  customerId: string,
+  customerName: string,
+  returnMetrics: { six_month_return_pct: number; ytd_return_pct: number; one_year_return_pct: number },
+  riskMetrics: { risk_profile: string; sharpe_ratio: number; volatility_pct: number }
+}) {
+  const sixMonthReturn = returnMetrics.six_month_return_pct;
+  const ytdReturn = returnMetrics.ytd_return_pct;
+  const oneYearReturn = returnMetrics.one_year_return_pct;
 
   const cards = [
-    { label: "Portfolio Value", value: formatCurrency(currentValue), sub: `As of Mar 2026 · ${customerName} (${customerId})` },
-    { label: "6M Return", value: `${Number(totalReturn) >= 0 ? "+" : ""}${totalReturn}%`, sub: `${Number(totalReturn) >= 0 ? "+" : "-"}${formatCurrency(Math.abs(currentValue - previousValue))}` },
-    { label: "YTD Return", value: `${Number(ytdReturn) >= 0 ? "+" : ""}${ytdReturn}%`, sub: "Jan - Mar 2026" },
-    { label: "Risk Level", value: "Growth", sub: "Sharpe Ratio: 1.55" },
+    { label: "Portfolio Value", value: formatCurrency(currentValue), sub: `As of ${asOf} · ${customerName} (${customerId})` },
+    { label: "6M Return", value: `${sixMonthReturn >= 0 ? "+" : ""}${sixMonthReturn.toFixed(1)}%`, sub: "Compounded monthly returns" },
+    { label: "YTD Return", value: `${ytdReturn >= 0 ? "+" : ""}${ytdReturn.toFixed(1)}%`, sub: "From portfolio summary" },
+    { label: "1Y Return", value: `${oneYearReturn >= 0 ? "+" : ""}${oneYearReturn.toFixed(1)}%`, sub: `Risk: ${riskMetrics.risk_profile} · Sharpe: ${riskMetrics.sharpe_ratio.toFixed(2)}` },
   ];
 
   return (
@@ -612,13 +776,14 @@ function ReturnsChart({
 
 interface RmNotifyPanelProps {
   signal: InsightSignal;
+  relationshipManager: PerformanceData["relationship_manager"];
   onClose: () => void;
 }
 
-function RmNotifyPanel({ signal, onClose }: RmNotifyPanelProps) {
+function RmNotifyPanel({ signal, relationshipManager, onClose }: RmNotifyPanelProps) {
   const [sent, setSent] = useState(false);
   const [message, setMessage] = useState(
-    `Dear Emma,\n\n${signal.rm_context}\n\nPlease could we discuss this at your earliest convenience?\n\nKind regards,\nJohn`,
+    `Dear ${relationshipManager.name},\n\n${signal.rm_context}\n\nPlease could we discuss this at your earliest convenience?\n\nKind regards,\nClient`,
   );
 
   function handleSend() {
@@ -634,7 +799,7 @@ function RmNotifyPanel({ signal, onClose }: RmNotifyPanelProps) {
           </svg>
           Notify Relationship Manager
         </div>
-        <div className={styles.rmPanelMeta}>Emma Clarke · emma.clarke@ubs.com · +44 20 7567 0100</div>
+        <div className={styles.rmPanelMeta}>{relationshipManager.name} · {relationshipManager.email} · {relationshipManager.phone}</div>
         <button className={styles.rmPanelClose} onClick={onClose} aria-label="Close">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
             <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -645,7 +810,7 @@ function RmNotifyPanel({ signal, onClose }: RmNotifyPanelProps) {
         <div className={styles.rmSentState}>
           <span className={styles.rmSentIcon}>✓</span>
           <div>
-            <p className={styles.rmSentTitle}>Message sent to Emma Clarke</p>
+            <p className={styles.rmSentTitle}>Message sent to {relationshipManager.name}</p>
             <p className={styles.rmSentSub}>Your relationship manager will be in touch shortly. This is a notification only — no actions have been executed on your account.</p>
           </div>
         </div>
@@ -670,7 +835,7 @@ function RmNotifyPanel({ signal, onClose }: RmNotifyPanelProps) {
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                 <path d="M2 8h12M10 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              Send to Emma Clarke
+              Send to {relationshipManager.name}
             </button>
           </div>
         </>
@@ -692,7 +857,7 @@ interface InsightSignal {
   tags: string[];
 }
 
-function InsightCard({ signal }: { signal: InsightSignal }) {
+function InsightCard({ signal, relationshipManager }: { signal: InsightSignal; relationshipManager: PerformanceData["relationship_manager"] }) {
   const [expanded, setExpanded] = useState(false);
   const [showRmPanel, setShowRmPanel] = useState(false);
 
@@ -720,7 +885,7 @@ function InsightCard({ signal }: { signal: InsightSignal }) {
           </p>
           <p className={styles.insightSummary}>{signal.summary}</p>
           <div className={styles.insightTags}>
-            {signal.tags.map((tag: any) => (
+            {(signal.tags ?? []).map((tag: any) => (
               <span key={tag} className={styles.insightTag}>{tag}</span>
             ))}
           </div>
@@ -742,7 +907,7 @@ function InsightCard({ signal }: { signal: InsightSignal }) {
       {expanded && (
         <div className={styles.insightActions}>
           <ol className={styles.insightActionList}>
-            {signal.suggested_actions.map((action: any, i: number) => (
+            {(signal.suggested_actions ?? []).map((action: any, i: number) => (
               <li key={i} className={styles.insightActionItem}>
                 <span className={styles.insightActionNum}>{i + 1}</span>
                 <span>{action}</span>
@@ -764,7 +929,7 @@ function InsightCard({ signal }: { signal: InsightSignal }) {
             </button>
           </div>
           {showRmPanel && (
-            <RmNotifyPanel signal={signal} onClose={() => setShowRmPanel(false)} />
+            <RmNotifyPanel signal={signal} relationshipManager={relationshipManager} onClose={() => setShowRmPanel(false)} />
           )}
         </div>
       )}
@@ -772,7 +937,7 @@ function InsightCard({ signal }: { signal: InsightSignal }) {
   );
 }
 
-function InsightsOpportunities({ insights }: { insights: InsightSignal[] }) {
+function InsightsOpportunities({ insights, relationshipManager }: { insights: InsightSignal[]; relationshipManager: PerformanceData["relationship_manager"] }) {
   const [filter, setFilter] = useState<"all" | "high" | "medium">("all");
 
   const filtered = filter === "all"
@@ -821,7 +986,7 @@ function InsightsOpportunities({ insights }: { insights: InsightSignal[] }) {
 
       <div className={styles.insightsList}>
         {filtered.map((signal) => (
-          <InsightCard key={signal.id} signal={signal} />
+          <InsightCard key={signal.id} signal={signal} relationshipManager={relationshipManager} />
         ))}
       </div>
 
@@ -836,13 +1001,28 @@ function InsightsOpportunities({ insights }: { insights: InsightSignal[] }) {
 
 function BenchmarkChart({ 
   data, 
+  benchmarkName,
   onClickPoint 
 }: { 
   data: { month: string; portfolio: number; benchmark: number }[],
+  benchmarkName: string,
   onClickPoint: (context: string, suggestion: string) => void 
 }) {
   const [hovered, setHovered] = useState<number | null>(null);
-  const allValues = data.flatMap((d: any) => [d.portfolio, d.benchmark]);
+  const safeData = (Array.isArray(data) ? data : []).filter(
+    (entry) => Number.isFinite(entry?.portfolio) && Number.isFinite(entry?.benchmark),
+  );
+
+  if (safeData.length < 2) {
+    return (
+      <div className={styles.chartCard}>
+        <h3 className={styles.chartTitle}>Portfolio vs Benchmark</h3>
+        <p className={styles.chartSubtitle}>Not enough benchmark data available yet.</p>
+      </div>
+    );
+  }
+
+  const allValues = safeData.flatMap((d: any) => [d.portfolio, d.benchmark]);
   const maxVal = Math.max(...allValues);
   const minVal = Math.min(...allValues);
   const range = maxVal - minVal || 1;
@@ -856,8 +1036,8 @@ function BenchmarkChart({
   const innerH = H - padTop - padBottom;
 
   function getPoints(key: "portfolio" | "benchmark") {
-    return data.map((d: any, i: number) => ({
-      x: padLeft + (i / (data.length - 1)) * innerW,
+    return safeData.map((d: any, i: number) => ({
+      x: padLeft + (i / (safeData.length - 1)) * innerW,
       y: padTop + innerH - ((d[key] - minVal) / range) * innerH,
       v: d[key],
     }));
@@ -872,7 +1052,7 @@ function BenchmarkChart({
       <p className={styles.chartSubtitle}>Click a point to compare your performance against the benchmark</p>
       <div className={styles.benchmarkLegend}>
         <span className={styles.benchmarkKey}><span className={styles.legendDot} style={{ background: "#da291c" }} /> Your Portfolio</span>
-        <span className={styles.benchmarkKey}><span className={styles.legendDot} style={{ background: "#1e1e1e" }} /> Benchmark (S&P 500)</span>
+        <span className={styles.benchmarkKey}><span className={styles.legendDot} style={{ background: "#1e1e1e" }} /> Benchmark ({benchmarkName})</span>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className={styles.chartSvg}>
         {[0, 0.5, 1].map((frac) => {
@@ -896,7 +1076,7 @@ function BenchmarkChart({
           fill="none" stroke="#da291c" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round"
         />
         {portfolioPoints.map((p, i: number) => {
-          const d = data[i]!;
+          const d = safeData[i]!;
           const diff = d.portfolio - d.benchmark;
           return (
             <g key={i}>
@@ -941,7 +1121,10 @@ export function PerformancePage({ onAskQuestion, onBack }: PerformancePageProps)
   useEffect(() => {
     async function fetchPerformance() {
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          throw new Error("Missing auth token. Please sign in again.");
+        }
         const response = await fetch("http://localhost:8000/api/customers/me/performance", {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -949,7 +1132,7 @@ export function PerformancePage({ onAskQuestion, onBack }: PerformancePageProps)
         });
         if (!response.ok) throw new Error("Failed to fetch performance data");
         const json = await response.json();
-        setData(json);
+        setData(normalizePerformanceData(json));
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -1005,9 +1188,12 @@ export function PerformancePage({ onAskQuestion, onBack }: PerformancePageProps)
 
       <div className={styles.content}>
         <SummaryCards 
-          data={data.portfolio_value} 
+          currentValue={data.portfolio_current_value}
+          asOf={data.net_worth.asOf}
           customerId={data.net_worth.customerId} 
           customerName={data.net_worth.customer} 
+          returnMetrics={data.return_metrics}
+          riskMetrics={data.risk_metrics}
         />
 
         {activeQuestion && (
@@ -1025,10 +1211,10 @@ export function PerformancePage({ onAskQuestion, onBack }: PerformancePageProps)
           <PortfolioChart data={data.portfolio_value} onClickPoint={handleDataPointClick} />
           <AllocationChart data={data.asset_allocation} onClickSlice={handleDataPointClick} />
           <ReturnsChart data={data.monthly_returns} onClickBar={handleDataPointClick} />
-          <BenchmarkChart data={data.benchmark_comparison} onClickPoint={handleDataPointClick} />
+          <BenchmarkChart data={data.benchmark_comparison} benchmarkName={data.benchmark_name} onClickPoint={handleDataPointClick} />
         </div>
 
-        <InsightsOpportunities insights={data.insights} />
+        <InsightsOpportunities insights={data.insights} relationshipManager={data.relationship_manager} />
       </div>
     </div>
   );

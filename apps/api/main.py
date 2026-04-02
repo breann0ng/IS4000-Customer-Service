@@ -13,10 +13,23 @@ from apps.api.chat.routes import router as chat_router
 from apps.api.config import settings
 from apps.api.database.connection import engine
 from apps.api.database.models import Base
+from apps.api.performance.routes import router as performance_router
 from apps.api.logging_config import get_logger, setup_logging
 
 setup_logging()
 logger = get_logger(__name__)
+
+
+async def _create_tables_without_vector_extension() -> None:
+    """Create the core tables needed for auth/chat when pgvector is unavailable."""
+    from apps.api.database.models import Base as ModelsBase
+
+    document_table = ModelsBase.metadata.tables.get("documents")
+    if document_table is not None:
+        ModelsBase.metadata.remove(document_table)
+
+    async with engine.begin() as connection:
+        await connection.run_sync(ModelsBase.metadata.create_all)
 
 
 @asynccontextmanager
@@ -42,9 +55,16 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
         os.environ["LANGCHAIN_PROJECT"] = settings.langsmith_project
         logger.info("langsmith_enabled", project=settings.langsmith_project)
 
-    async with engine.begin() as connection:
-        await connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-        await connection.run_sync(Base.metadata.create_all)
+    try:
+        async with engine.begin() as connection:
+            await connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+            await connection.run_sync(Base.metadata.create_all)
+    except Exception as error:
+        logger.warning(
+            "vector_extension_unavailable_falling_back_to_core_tables",
+            error=str(error),
+        )
+        await _create_tables_without_vector_extension()
     logger.info("database_tables_created")
     yield
     await engine.dispose()
@@ -73,6 +93,7 @@ from apps.api.customers.routes import router as customer_router
 app.include_router(auth_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
 app.include_router(customer_router, prefix="/api")
+app.include_router(performance_router, prefix="/api")
 
 
 @app.get("/api/health")

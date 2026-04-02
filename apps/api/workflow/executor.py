@@ -6,6 +6,7 @@ collects their results for UBS Wealth Management HNWI support.
 
 import asyncio
 
+from apps.api.customers.registry import DEFAULT_CUSTOMER_ID
 from apps.api.logging_config import get_logger
 from apps.api.workflow.agents.client_services import execute_client_services_task
 from apps.api.workflow.agents.compliance_tax import execute_compliance_tax_task
@@ -27,7 +28,7 @@ AGENT_DISPATCH_TABLE = {
 }
 
 
-async def _run_step(agent_name: str, task: str, conversation_context: str, customer_id: str = "C-011") -> dict:
+async def _run_step(agent_name: str, task: str, conversation_context: str, customer_id: str = DEFAULT_CUSTOMER_ID) -> dict:
     """Run a single agent step, returning a result dict."""
     agent_function = AGENT_DISPATCH_TABLE.get(agent_name)
     if agent_function is None:

@@ -7,6 +7,7 @@ Run standalone:
 """
 
 import asyncio
+import json
 
 import httpx
 from langchain_community.tools.tavily_search import TavilySearchResults
@@ -15,6 +16,8 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 
 from apps.api.config import settings
 from apps.api.customers.data_service import DataService
+from apps.api.customers.sqlite_repository import repository
+from apps.api.customers.registry import DEFAULT_CUSTOMER_ID
 from mcp_servers.base import create_mock_mcp_app
 
 TOOL_DEFINITIONS = [
@@ -74,12 +77,68 @@ async def handle_wealth_advisory(params: dict) -> dict:
     """
     task = params.get("task", "")
     context = params.get("context", "")
-    customer_id = params.get("customer_id", "C-011")
+    customer_id = params.get("customer_id", DEFAULT_CUSTOMER_ID)
     system_prompt = params.get("system_prompt", "")
 
     portfolio = DataService.get_advisory_context(customer_id)
     planning = DataService.get_financial_planning(customer_id)
     risk = DataService.get_risk_analysis(customer_id)
+    bundle = repository.build_customer_bundle(customer_id)
+
+    task_lower = task.lower()
+    is_snapshot_query = any(
+        phrase in task_lower
+        for phrase in [
+            "portfolio snapshot",
+            "portfolio summary",
+            "short portfolio snapshot",
+            "give me a short portfolio snapshot",
+            "performance",
+            "return",
+            "outperform",
+            "benchmark",
+        ]
+    )
+
+    if is_snapshot_query and bundle:
+        portfolio_data = bundle.get("portfolio", {})
+        profile = bundle.get("profile", {})
+        accounts = bundle.get("accounts", [])
+        allocation = portfolio_data.get("allocation", {})
+        response_payload = {
+            "summary": [
+                f"Portfolio value is {portfolio_data.get('currency', 'USD')} {portfolio_data.get('total_value_usd', 0):,.0f}.",
+                f"YTD return is {portfolio_data.get('ytd_return_pct', 0)}%.",
+                f"Primary relationship manager is {profile.get('relationship_manager', 'Not specified')}.",
+            ],
+            "portfolio_assessment": {
+                "total_value_sgd": portfolio_data.get("total_value_sgd", 0),
+                "ytd_performance_pct": portfolio_data.get("ytd_return_pct", 0),
+                "allocation_breakdown": [
+                    {
+                        "asset_class": label,
+                        "allocation_pct": values.get("pct", 0),
+                        "value_sgd": values.get("value_sgd", values.get("value", 0)),
+                    }
+                    for label, values in allocation.items()
+                ],
+                "liquidity_summary": {
+                    "cash_sgd": sum(float(a.get("balance_usd") or 0) for a in accounts if "current" in str(a.get("account_type", "")).lower()),
+                    "available_credit_sgd": float(bundle.get("credit", {}).get("lombard_facility", {}).get("available_sgd", 0) or 0),
+                },
+            },
+            "market_context": [
+                "Current response is derived directly from the latest SQLite customer bundle.",
+            ],
+            "implications": [
+                "This snapshot reflects the same source used by the account performance endpoint.",
+            ],
+            "advisory_considerations": [
+                "Review the latest allocation and credit summary with your relationship manager if needed.",
+            ],
+            "risks_and_caveats": [],
+        }
+        return {"response": json.dumps(response_payload)}
 
     async def _fetch_rag() -> str:
         try:
@@ -198,9 +257,96 @@ async def handle_lending_credit(params: dict) -> dict:
         A dictionary with the response.
     """
     task = params.get("task", "")
-    customer_id = params.get("customer_id", "C-011")
+    customer_id = params.get("customer_id", DEFAULT_CUSTOMER_ID)
     lending = DataService.get_lending_context(customer_id)
     planning = DataService.get_financial_planning(customer_id)
+    client_profile, _ = DataService.get_banking_context(customer_id)
+
+    task_lower = task.lower()
+    goals = planning.get("goals", []) if isinstance(planning, dict) else []
+    lombard_goal = next(
+        (
+            goal
+            for goal in goals
+            if isinstance(goal, dict)
+            and "lombard" in str(goal.get("goal", "")).lower()
+        ),
+        {},
+    )
+
+    is_contact_query = any(
+        phrase in task_lower
+        for phrase in [
+            "point of contact",
+            "primary contact",
+            "who is",
+            "relationship manager",
+            "contact for",
+        ]
+    ) and any(
+        phrase in task_lower
+        for phrase in ["lombard", "facility", "approval", "credit"]
+    )
+
+    is_status_query = any(
+        phrase in task_lower
+        for phrase in ["status", "pending", "timeline", "eta", "when", "approval"]
+    ) and any(
+        phrase in task_lower
+        for phrase in ["lombard", "facility", "credit"]
+    )
+
+    is_docs_query = any(
+        phrase in task_lower
+        for phrase in ["document", "documents", "docs", "required", "pending"]
+    ) and any(
+        phrase in task_lower
+        for phrase in ["lombard", "facility", "approval", "kyc"]
+    )
+
+    if is_contact_query:
+        response_payload = {
+            "request_type": "lombard_facility_approval_contact",
+            "primary_point_of_contact": client_profile.get("relationship_manager")
+            or "Your UBS Relationship Manager",
+            "approval_status": lombard_goal.get("status", "Status not available"),
+            "target_date": lombard_goal.get("target_date", "Not specified"),
+            "next_steps": [
+                "Contact your Relationship Manager via secure UBS channel for approval progress.",
+                "Confirm any pending supporting documents for the approval workflow.",
+                "Request a callback from the credit team if urgent processing is needed.",
+            ],
+            "requires_escalation": False,
+        }
+        return {"response": json.dumps(response_payload)}
+
+    if is_status_query:
+        response_payload = {
+            "request_type": "lombard_facility_approval_status",
+            "approval_status": lombard_goal.get("status", "Status not available"),
+            "target_date": lombard_goal.get("target_date", "Not specified"),
+            "primary_point_of_contact": client_profile.get("relationship_manager")
+            or "Your UBS Relationship Manager",
+            "next_steps": [
+                "Follow up with your Relationship Manager for latest credit committee update.",
+                "Confirm if any supporting documentation is still outstanding.",
+            ],
+        }
+        return {"response": json.dumps(response_payload)}
+
+    if is_docs_query:
+        response_payload = {
+            "request_type": "lombard_facility_required_documents",
+            "approval_status": lombard_goal.get("status", "Status not available"),
+            "required_documents": [
+                "Latest signed facility amendment request",
+                "Updated source-of-wealth declaration (if requested)",
+                "Most recent KYC refresh documents",
+            ],
+            "primary_point_of_contact": client_profile.get("relationship_manager")
+            or "Your UBS Relationship Manager",
+        }
+        return {"response": json.dumps(response_payload)}
 
     # Fetch live mortgage or lending rates/products
     market_info = await asyncio.to_thread(_fetch_tavily_sync, f"Current mortgage and Lombard lending rates and products for: {task}")

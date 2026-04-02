@@ -1,0 +1,702 @@
+{
+  "profile": {
+    "customer_id": "C-002",
+    "full_name": "Alice Johnson",
+    "preferred_name": "Alice",
+    "date_of_birth": "1971-04-02",
+    "nationality": "Singaporean",
+    "tax_residency": "Singapore",
+    "segment": "UHNW",
+    "tier": "UBS Private Banking",
+    "relationship_manager": "David Wong",
+    "rm_email": "david.wong@ubs.com",
+    "rm_phone": "+65 6831 0123",
+    "onboarded_date": "2015-11-20",
+    "kyc_status": "Verified",
+    "kyc_last_reviewed": "2025-02-10",
+    "address": "Ardmore Park, #12-05, Singapore 259959",
+    "email": "alice.johnson@example.com",
+    "mobile": "+65 9876 5432",
+    "preferred_contact": "Secure chat",
+    "language": "English",
+    "risk_profile": "Balanced",
+    "net_worth_sgd": 45000000,
+    "aum_with_ubs_sgd": 28000000,
+    "family_office": null,
+    "trust_structure": true,
+    "philanthropic_fund": false,
+    "tax_profile": {
+      "tax_id": "S7123456B",
+      "tax_loss_harvesting_available_sgd": 120000,
+      "unrealized_gains_sgd": 4500000,
+      "tax_slots": [
+        { "asset": "UOB Ltd", "gain_sgd": 450000, "qualified": true },
+        { "asset": "Microsoft Corp", "gain_sgd": 320000, "qualified": true }
+      ]
+    },
+    "preferences": {
+      "communication_channel": "Secure Chat",
+      "meeting_frequency": "Annually",
+      "esg_intensity": "Medium",
+      "excluded_sectors": ["Tobacco", "Controversial Weapons"],
+      "preferred_asset_classes": ["Real Estate", "Fixed Income", "Blue-chip Equities"]
+    },
+    "derived_flags": {
+      "is_hnwi": true,
+      "is_institutional_capable": false,
+      "has_complex_structures": true,
+      "cross_border_exposure": "Medium (SG/UK)"
+    }
+  },
+  "accounts": [
+    {
+      "account_id": "SGD-002-CA",
+      "account_type": "Personal Current Account",
+      "currency": "SGD",
+      "balance": 850000.0,
+      "available_balance": 845000.0,
+      "iban": "SG65UBS12345611112222",
+      "status": "Active",
+      "opened_date": "2015-11-20"
+    },
+    {
+      "account_id": "MCW-002-WA",
+      "account_type": "Multi-Currency Wealth Account",
+      "currency": "SGD/USD/GBP",
+      "balances": {
+        "SGD": 3200000.0,
+        "USD": 850000.0,
+        "GBP": 150000.0,
+        "EUR": 100000.0
+      },
+      "total_sgd_equivalent": 4650000.0,
+      "status": "Active",
+      "opened_date": "2015-11-20"
+    },
+    {
+      "account_id": "ISA-002-SA",
+      "account_type": "Investment Settlement Account",
+      "currency": "SGD",
+      "balance": 1120000.0,
+      "available_balance": 1120000.0,
+      "status": "Active",
+      "opened_date": "2016-01-15"
+    },
+    {
+      "account_id": "LMA-002-LQ",
+      "account_type": "Liquidity Management Account",
+      "currency": "SGD",
+      "balance": 2500000.0,
+      "available_balance": 2500000.0,
+      "status": "Active",
+      "opened_date": "2017-03-01"
+    }
+  ],
+  "portfolio": {
+    "portfolio_id": "PORT-002",
+    "total_value_sgd": 28000000,
+    "currency": "SGD",
+    "last_updated": "2026-03-31",
+    "mandate_type": "Advisory",
+    "allocation": {
+      "Public Equities": {
+        "pct": 40,
+        "value_sgd": 11200000
+      },
+      "Fixed Income": {
+        "pct": 35,
+        "value_sgd": 9800000
+      },
+      "Private Equity": {
+        "pct": 5,
+        "value_sgd": 1400000
+      },
+      "Hedge Funds": {
+        "pct": 5,
+        "value_sgd": 1400000
+      },
+      "Structured Products": {
+        "pct": 3,
+        "value_sgd": 840000
+      },
+      "Real Asset Funds": {
+        "pct": 10,
+        "value_sgd": 2800000
+      },
+      "Cash within Portfolio": {
+        "pct": 2,
+        "value_sgd": 560000
+      }
+    },
+    "top_equity_holdings": [
+      {
+        "name": "UOB Ltd",
+        "ticker": "UOB:SP",
+        "sector": "Financials",
+        "value_sgd": 2500000,
+        "pnl_pct": 12.4
+      },
+      {
+        "name": "Microsoft Corp",
+        "ticker": "MSFT",
+        "sector": "Technology",
+        "value_sgd": 1800000,
+        "pnl_pct": 18.2
+      },
+      {
+        "name": "Alphabet Inc",
+        "ticker": "GOOGL",
+        "sector": "Technology",
+        "value_sgd": 1500000,
+        "pnl_pct": 14.5
+      },
+      {
+        "name": "Singapore Exchange",
+        "ticker": "SGX:SP",
+        "sector": "Financials",
+        "value_sgd": 1100000,
+        "pnl_pct": 5.2
+      },
+      {
+        "name": "Mastercard Inc",
+        "ticker": "MA",
+        "sector": "Financials",
+        "value_sgd": 800000,
+        "pnl_pct": 9.8
+      }
+    ],
+    "private_markets": [
+      {
+        "fund": "Global Real Estate Partners",
+        "type": "Real Estate",
+        "commitment_sgd": 5000000,
+        "nav_sgd": 4200000,
+        "vintage": 2021
+      },
+      {
+        "fund": "European Infrastructure Fund",
+        "type": "Infrastructure",
+        "commitment_sgd": 2000000,
+        "nav_sgd": 2100000,
+        "vintage": 2020
+      },
+      {
+        "fund": "Private Equity Growth Fund III",
+        "type": "Private Equity",
+        "commitment_sgd": 3000000,
+        "nav_sgd": 3300000,
+        "vintage": 2019
+      }
+    ],
+    "structured_products": [
+      {
+        "name": "Capital Protected Note",
+        "underlying": "Global Blue Chip Basket",
+        "value_sgd": 1500000,
+        "maturity": "2027-06-30"
+      },
+      {
+        "name": "Equity Linked Note",
+        "underlying": "S&P 500",
+        "value_sgd": 800000,
+        "maturity": "2026-12-15"
+      },
+      {
+        "name": "Reverse Convertible",
+        "underlying": "STI Index",
+        "value_sgd": 500000,
+        "maturity": "2026-09-20"
+      }
+    ],
+    "ytd_return_pct": 4.2,
+    "one_year_return_pct": 9.5,
+    "risk_metrics": {
+      "sharpe_ratio": 1.15,
+      "volatility_pct": 8.5,
+      "beta_vs_msci_world": 0.65,
+      "var_95pct_sgd": 850000,
+      "stress_tests": {
+        "Global Financial Crisis 2.0": -12.4,
+        "Equity Market Correction (-10%)": -4.8,
+        "Interest Rate Hike (+100bps)": -3.5
+      }
+    },
+    "performance_attribution": {
+      "selection_effect_pct": 1.2,
+      "allocation_effect_pct": 2.8,
+      "currency_effect_pct": 0.2,
+      "top_contributors": [
+        { "name": "Fixed Income Selection", "impact": 1.8 },
+        { "name": "Real Estate Revaluation", "impact": 1.2 }
+      ],
+      "top_detractors": [
+        { "name": "ESG Tilt", "impact": -0.3 }
+      ]
+    },
+    "portfolio_history": [
+      { "month": "Apr-24", "value": 24000000 },
+      { "month": "May-24", "value": 24200000 },
+      { "month": "Jun-24", "value": 24350000 },
+      { "month": "Jul-24", "value": 24600000 },
+      { "month": "Aug-24", "value": 24100000 },
+      { "month": "Sep-24", "value": 24500000 },
+      { "month": "Oct-24", "value": 24800000 },
+      { "month": "Nov-24", "value": 25100000 },
+      { "month": "Dec-24", "value": 25300000 },
+      { "month": "Jan-25", "value": 25500000 },
+      { "month": "Feb-25", "value": 25800000 },
+      { "month": "Mar-25", "value": 26100000 },
+      { "month": "Apr-25", "value": 26400000 },
+      { "month": "May-25", "value": 26600000 },
+      { "month": "Jun-25", "value": 26900000 },
+      { "month": "Jul-25", "value": 26500000 },
+      { "month": "Aug-25", "value": 26800000 },
+      { "month": "Sep-25", "value": 27100000 },
+      { "month": "Oct-25", "value": 27400000 },
+      { "month": "Nov-25", "value": 27700000 },
+      { "month": "Dec-25", "value": 27300000 },
+      { "month": "Jan-26", "value": 27600000 },
+      { "month": "Feb-26", "value": 27800000 },
+      { "month": "Mar-26", "value": 28000000 }
+    ],
+    "monthly_returns": [
+      { "month": "Oct-25", "value": 1.2 },
+      { "month": "Nov-25", "value": 1.1 },
+      { "month": "Dec-25", "value": -1.4 },
+      { "month": "Jan-26", "value": 1.1 },
+      { "month": "Feb-26", "value": 0.7 },
+      { "month": "Mar-26", "value": 0.7 }
+    ],
+    "benchmark_comparison": [
+      { "month": "Oct-25", "portfolio": 1.2, "benchmark": 1.0 },
+      { "month": "Nov-25", "portfolio": 1.1, "benchmark": 1.0 },
+      { "month": "Dec-25", "portfolio": -1.4, "benchmark": -1.2 },
+      { "month": "Jan-26", "portfolio": 1.1, "benchmark": 0.9 },
+      { "month": "Feb-26", "portfolio": 0.7, "benchmark": 0.6 },
+      { "month": "Mar-26", "portfolio": 0.7, "benchmark": 0.5 }
+    ]
+  },
+  "credit": {
+    "lombard_facility": {
+      "product": "Lombard Credit Facility",
+      "limit_sgd": 10000000,
+      "drawn_sgd": 2000000,
+      "available_sgd": 8000000,
+      "collateral": "Securities portfolio",
+      "interest_rate_pct": 5.25,
+      "status": "Active"
+    },
+    "mortgage": {
+      "product": "Residential Mortgage",
+      "property": "Ardmore Park, Singapore",
+      "outstanding_sgd": 5000000,
+      "original_amount_sgd": 8500000,
+      "interest_rate_pct": 3.95,
+      "monthly_repayment_sgd": 32000,
+      "maturity_date": "2045-12-01",
+      "status": "Active"
+    },
+    "credit_cards": [
+      {
+        "product": "UBS Visa Infinite",
+        "limit_sgd": 250000,
+        "outstanding_sgd": 5420,
+        "status": "Active"
+      },
+      {
+        "product": "UBS Mastercard World Elite",
+        "limit_sgd": 250000,
+        "outstanding_sgd": 0,
+        "status": "Active"
+      }
+    ]
+  },
+  "real_estate": [
+    {
+      "property": "Ardmore Park Residence",
+      "location": "Singapore",
+      "value_sgd": 12000000,
+      "loan_sgd": 5000000
+    },
+    {
+      "property": "Chelsea Apartment",
+      "location": "London, UK",
+      "value_sgd": 4500000,
+      "loan_sgd": 0
+    },
+    {
+      "property": "Orchard Towers Unit",
+      "location": "Singapore",
+      "value_sgd": 1800000,
+      "loan_sgd": 0
+    }
+  ],
+  "recent_transactions": [
+    {
+      "date": "2026-03-25",
+      "description": "Mortgage repayment — Ardmore Park",
+      "amount": -32000.0,
+      "currency": "SGD",
+      "account": "SGD-012-CA"
+    },
+    {
+      "date": "2026-03-20",
+      "description": "UOB Ltd Dividend",
+      "amount": 12400.0,
+      "currency": "SGD",
+      "account": "ISA-012-SA"
+    },
+    {
+      "date": "2026-03-15",
+      "description": "Chanel Boutique — Fashion purchase",
+      "amount": -12500.0,
+      "currency": "SGD",
+      "account": "SGD-012-CA"
+    },
+    {
+      "date": "2026-03-10",
+      "description": "Management fee — portfolio",
+      "amount": -4500.0,
+      "currency": "SGD",
+      "account": "MCW-012-WA"
+    },
+    {
+      "date": "2026-03-05",
+      "description": "Quarterly property tax — Chelsea",
+      "amount": -2200.0,
+      "currency": "GBP",
+      "account": "MCW-012-WA"
+    },
+    {
+      "date": "2026-03-01",
+      "description": "Internal transfer — LMA to CA",
+      "amount": 50000.0,
+      "currency": "SGD",
+      "account": "SGD-012-CA"
+    },
+    {
+      "date": "2026-02-25",
+      "description": "Microsoft Corp dividend",
+      "amount": 4200.0,
+      "currency": "SGD",
+      "account": "ISA-012-SA"
+    },
+    {
+      "date": "2026-02-20",
+      "description": "Capital call payment — Real Estate Fund",
+      "amount": -120000.0,
+      "currency": "SGD",
+      "account": "LMA-012-LQ"
+    }
+  ],
+  "appointments": [
+    {
+      "appointment_id": "APT-012-A",
+      "type": "Legacy Planning Session",
+      "date": "2026-04-15",
+      "time": "14:00",
+      "rm": "David Wong",
+      "location": "UBS Singapore, 9 Penang Road",
+      "status": "Confirmed"
+    },
+    {
+      "appointment_id": "APT-012-B",
+      "type": "Annual Tax Review",
+      "date": "2026-04-28",
+      "time": "10:00",
+      "rm": "David Wong",
+      "location": "Video call",
+      "status": "Pending Confirmation"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "N-012-1",
+      "type": "Action Required",
+      "message": "Loan eligibility review for child's property purchase is ready",
+      "date": "2026-03-30",
+      "read": false
+    },
+    {
+      "id": "N-012-2",
+      "type": "Market Alert",
+      "message": "UOB:SP position up 3.4% — above your alert threshold",
+      "date": "2026-03-28",
+      "read": false
+    },
+    {
+      "id": "N-012-3",
+      "type": "Statement",
+      "message": "February 2026 portfolio statement available",
+      "date": "2026-03-02",
+      "read": true
+    }
+  ],
+  "applications": [
+    {
+      "application_id": "APP-012-1",
+      "application_type": "Mortgage Eligibility Pre-Assessment",
+      "description": "Assessment for a second residential mortgage for property purchase in District 10/11.",
+      "status": "In Progress",
+      "submitted_date": "2026-03-28",
+      "expected_completion": "2026-04-05",
+      "assigned_to": "Credit Team (cc: David Wong)",
+      "documents_required": "Income statements, Property details",
+      "notes": "Client avoids meeting RM due to schedule; prefers all info presented via the platform. Eligibility confirmed based on AUM."
+    },
+    {
+      "application_id": "APP-012-2",
+      "application_type": "Address Change Request",
+      "description": "Updating mailing address for London property tax notices.",
+      "status": "Pending Documents",
+      "submitted_date": "2026-03-12",
+      "expected_completion": "2026-03-20",
+      "assigned_to": "Compliance (cc: David Wong)",
+      "documents_required": "Utility bill from Chelsea residence",
+      "notes": "Updated to Chelsea Apartment address."
+    }
+  ],
+  "lifestyle_transactions": [
+    {
+      "date": "2026-03-24",
+      "merchant": "European Art Fair",
+      "description": "Abstract Painting Acquisition",
+      "amount": -85000,
+      "currency": "SGD",
+      "category": "Art",
+      "signals": ["insurance_review", "asset_storage"]
+    },
+    {
+      "date": "2026-03-18",
+      "merchant": "Tanglin Club",
+      "description": "Annual Membership Dues",
+      "amount": -12000,
+      "currency": "SGD",
+      "category": "Memberships",
+      "signals": ["lifestyle_partner"]
+    },
+    {
+      "date": "2026-03-12",
+      "merchant": "Chanel Boutique",
+      "description": "Seasonal Collection Acquisition",
+      "amount": -12500,
+      "currency": "SGD",
+      "category": "Luxury Goods",
+      "signals": ["insurance_review"]
+    },
+    {
+      "date": "2026-03-08",
+      "merchant": "British Airways",
+      "description": "Business Class Tickets — SG to London",
+      "amount": -18500,
+      "currency": "SGD",
+      "category": "Travel",
+      "signals": ["travel_insurance"]
+    },
+    {
+      "date": "2026-02-28",
+      "merchant": "Capella Singapore",
+      "description": "Weekend Retreat",
+      "amount": -4500,
+      "currency": "SGD",
+      "category": "Hospitality",
+      "signals": ["lifestyle_partner"]
+    },
+    {
+      "date": "2026-02-14",
+      "merchant": "St. Regis Singapore",
+      "description": "Valentine's Family dinner",
+      "amount": -2200,
+      "currency": "SGD",
+      "category": "Hospitality",
+      "signals": ["concierge_service"]
+    },
+    {
+      "date": "2026-01-30",
+      "merchant": "UOB Bank Singapore",
+      "description": "Legacy Trust Management Fee",
+      "amount": -5500,
+      "currency": "SGD",
+      "category": "Professional Services",
+      "signals": ["trust_review"]
+    },
+    {
+      "date": "2026-01-15",
+      "merchant": "BMW Performance Motors",
+      "description": "Annual Maintenance — 7 Series",
+      "amount": -3800,
+      "currency": "SGD",
+      "category": "Automotive",
+      "signals": ["insurance_review"]
+    },
+    {
+      "date": "2026-01-05",
+      "merchant": "Selfridges London",
+      "description": "Home Furnishings for Chelsea",
+      "amount": -14500,
+      "currency": "GBP",
+      "category": "Home & Decor",
+      "signals": ["tax_refund"]
+    }
+  ],
+  "insights_signals": [
+    {
+      "id": "INS-012-1",
+      "priority": "high",
+      "category": "Lending & Credit",
+      "icon": "🏠",
+      "title": "Mortgage Eligibility for New Property Purchase",
+      "trigger": "Upcoming goal: Wedding Gift Home purchase (Target SGD 8M)",
+      "summary": "Based on your assets, you are eligible for an additional mortgage of up to SGD 6.4M. This would allow you to fund the wedding gift home with minimal impact on your liquid portfolio.",
+      "suggested_actions": [
+        "Review mortgage options for SGD 8M purchase",
+        "Assess Lombard facility utilization vs. new mortgage",
+        "Explore UBS premium lifestyle partnership for bundled luxury asset cover"
+      ],
+      "rm_context": "Client planning a property purchase for her child. High eligibility. Prefers automated info over RM meetings.",
+      "tags": ["Mortgage Eligibility", "Real Estate Finance"]
+    },
+    {
+      "id": "INS-012-2",
+      "priority": "medium",
+      "category": "Lending & Credit",
+      "icon": "📊",
+      "title": "Lombard Facility Optimization for Liquidity",
+      "trigger": "High available balance on Lombard facility (SGD 8M)",
+      "summary": "Your Lombard facility currently has a low utilization rate. Utilizing a portion of this facility could bridge the gap for the property deposit, providing immediate liquidity.",
+      "suggested_actions": [
+        "Review current interest rates for Lombard drawdowns",
+        "Calculate impact on portfolio risk metrics",
+        "Explore exclusive member events co-hosted by UBS at Sentosa"
+      ],
+      "rm_context": "Client has untapped liquidity. Suggesting Lombard as a bridge for property purchase.",
+      "tags": ["Lombard", "Liquidity Management"]
+    },
+    {
+      "id": "INS-012-3",
+      "priority": "high",
+      "category": "Tax & Legacy",
+      "icon": "📜",
+      "title": "Trust Structure Review for Cross-Border Assets",
+      "trigger": "Upcoming legacy planning session (15 Apr 2026)",
+      "summary": "With material assets in both Singapore and the UK, a review of your current trust structure is recommended to optimize for cross-border inheritance and tax efficiency.",
+      "suggested_actions": [
+        "Prepare asset list for legacy session",
+        "Inquire about UK inheritance tax implications",
+        "Discuss provenance documentation in the Singapore FreePort"
+      ],
+      "rm_context": "Client has significant UK exposure. Recommend tax-efficient structuring discussion.",
+      "tags": ["Trust", "Legacy", "Tax"]
+    },
+    {
+      "id": "INS-012-4",
+      "priority": "medium",
+      "category": "Portfolio & Performance",
+      "icon": "📈",
+      "title": "Fixed Income Rebalancing Opportunity",
+      "trigger": "Recent rise in yield curve in SGD fixed income markets.",
+      "summary": "We recommend rebalancing your fixed income portfolio to lock in higher yields, which aligns with your goal of steady wealth preservation.",
+      "suggested_actions": [
+        "Review fixed income allocation with David Wong",
+        "Assess SGD bond quality in portfolio",
+        "Assess optimal currency composition for Upcoming London property"
+      ],
+      "rm_context": "Client prefers preservation. Yield curve shift offers opportunity.",
+      "tags": ["Rebalancing", "Fixed Income"]
+    },
+    {
+      "id": "INS-012-5",
+      "priority": "medium",
+      "category": "Lifestyle & Protection",
+      "icon": "🖼️",
+      "title": "Fine Art Insurance for New Acquisition",
+      "trigger": "Recent painting purchase (SGD 85k on 24 Mar 2026)",
+      "summary": "Your recent art acquisition should be added to your fine art insurance schedule. We can provide valuations and coverage through our premium lifestyle partners.",
+      "suggested_actions": [
+        "Submit appraisal for the new painting",
+        "Explore bundled luxury asset insurance",
+        "Review Japanese withholding tax if considering Niseko"
+      ],
+      "rm_context": "Client acquired new art. Recommend insurance coverage update.",
+      "tags": ["Art Insurance", "Protection"]
+    },
+    {
+      "id": "INS-012-6",
+      "priority": "low",
+      "category": "Lifestyle",
+      "icon": "🏨",
+      "title": "Concierge Services for Upcoming London Trip",
+      "trigger": "Recent flight booking to London (8 Mar 2026)",
+      "summary": "As you travel to London, our concierge can assist with restaurant bookings near your Chelsea residence and private car transfers from Heathrow.",
+      "suggested_actions": [
+        "Request restaurant reservations in Chelsea",
+        "Book airport transfer through lifestyle portal",
+        "Assess optimal currency composition for Niseko"
+      ],
+      "rm_context": "Client traveling to UK. Offer lifestyle support.",
+      "tags": ["Lifestyle", "Concierge"]
+    }
+  ],
+  "goals": [
+    {
+      "goal_id": "G-012-1",
+      "name": "Wedding Gift Home for Daughter",
+      "target_amount_sgd": 8000000,
+      "current_amount_sgd": 2000000,
+      "status": "In Progress",
+      "deadline": "2027-06-30",
+      "category": "Family"
+    },
+    {
+      "goal_id": "G-012-2",
+      "name": "Wealth Preservation Target",
+      "target_amount_sgd": 50000000,
+      "current_amount_sgd": 45000000,
+      "status": "On Track",
+      "deadline": "2035-12-31",
+      "category": "Legacy"
+    },
+    {
+      "goal_id": "G-012-3",
+      "name": "London Property Renovation",
+      "target_amount_sgd": 500000,
+      "current_amount_sgd": 350000,
+      "status": "In Progress",
+      "deadline": "2026-10-01",
+      "category": "Lifestyle"
+    }
+  ],
+  "cashflow": {
+    "monthly_inflow_sgd": 125000,
+    "monthly_outflow_sgd": 85000,
+    "net_monthly_surplus_sgd": 40000,
+    "upcoming_large_commitments": [
+      { "date": "2026-12-30", "description": "Property Purchase Downpayment", "amount_sgd": 2000000 },
+      { "date": "2026-09-01", "description": "Chelsea Renovation Installment", "amount_sgd": 150000 }
+    ],
+    "projected_liquidity_12m_sgd": 4500000
+  },
+  "system_triggers": [
+    {
+      "trigger_id": "T-012-1",
+      "type": "Regulatory",
+      "description": "KYC Document Update Pending",
+      "severity": "Medium",
+      "status": "Active"
+    },
+    {
+      "trigger_id": "T-012-2",
+      "type": "Performance",
+      "description": "Annual return target met",
+      "severity": "Low",
+      "status": "Informational"
+    },
+    {
+      "trigger_id": "T-012-3",
+      "type": "LTV",
+      "description": "Mortgage LTV below threshold — eligibility high",
+      "severity": "Low",
+      "status": "Opportunity"
+    }
+  ]
+}

@@ -11,8 +11,8 @@ logger = get_logger(__name__)
 
 MOCK_LDAP_DIRECTORY: dict[str, dict[str, str]] = {
     "jsmith": {"password": "password123", "display_name": "John Smith"},
-    "ajones": {"password": "password123", "display_name": "Alice Jones"},
-    "bwilson": {"password": "password123", "display_name": "Bob Wilson"},
+    "ajones": {"password": "password123", "display_name": "Alice Johnson"},
+    "mtan": {"password": "password123", "display_name": "Marcus Tan"},
 }
 
 

@@ -32,6 +32,7 @@ from apps.api.chat.service import (
 from apps.api.config import settings
 from apps.api.database.connection import get_database_session
 from apps.api.database.models import User
+from apps.api.customers.registry import DEFAULT_CUSTOMER_ID
 from apps.api.logging_config import get_logger
 from apps.api.memory.mem0_client import memory_manager
 from apps.api.security.input_guard import check_prompt_injection, sanitize_input
@@ -332,7 +333,7 @@ async def send_message(
         memory_context=memory_context,
         session_id=str(session_id),
         user_id=str(current_user.user_id),
-        customer_id=str(current_user.customer_id) if current_user.customer_id else "C-011",
+        customer_id=str(current_user.customer_id) if current_user.customer_id else DEFAULT_CUSTOMER_ID,
     )
 
     response_text = str(workflow_result["response"])
@@ -342,6 +343,7 @@ async def send_message(
         "suggestions": workflow_result.get("suggestions", []),
     }
 
+    trace_dict = workflow_result.get("trace") or {}
     full_context = trace_dict or {}
     full_context["metadata"] = metadata
 
@@ -433,7 +435,7 @@ async def send_message_stream(
         memory_context=memory_context,
         session_id=str(session_id),
         user_id=str(current_user.user_id),
-        customer_id=str(current_user.customer_id) if current_user.customer_id else "C-011",
+        customer_id=str(current_user.customer_id) if current_user.customer_id else DEFAULT_CUSTOMER_ID,
     )
 
     async def event_generator() -> AsyncGenerator[str, None]:

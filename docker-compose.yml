@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: pgvector/pgvector:pg16
+    image: postgres:16
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -43,6 +43,20 @@ services:
       - ./mcp_servers:/app/mcp_servers
       - ./apps/api:/app/apps/api
       - ./mocks:/app/mocks
+
+  mock-customer-data:
+    build:
+      context: .
+      target: backend
+    command: ["uv", "run", "uvicorn", "mcp_servers.customer_data_server:app", "--host", "0.0.0.0", "--port", "9005", "--reload"]
+    ports:
+      - "9005:9005"
+    env_file:
+      - .env
+    volumes:
+      - ./mcp_servers:/app/mcp_servers
+      - ./apps/api:/app/apps/api
+      - ./data:/app/data
 
   mock-knowledge:
     build:
@@ -111,11 +125,14 @@ services:
       MCP_KNOWLEDGE_URL: http://mock-knowledge:9002/mcp
       MCP_SERVICE_WORKFLOW_URL: http://mock-service-workflow:9003/mcp
       MCP_RAG_SERVER_URL: http://rag-server:9004/mcp
+      MCP_CUSTOMER_DATA_URL: http://mock-customer-data:9005/mcp
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+      mock-customer-data:
+        condition: service_started
       mock-banking-ops:
         condition: service_started
       mock-knowledge:

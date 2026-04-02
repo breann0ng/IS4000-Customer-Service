@@ -5,6 +5,7 @@ credit facilities, lending, and card services.
 """
 
 from apps.api.config import settings
+from apps.api.customers.registry import DEFAULT_CUSTOMER_ID
 from apps.api.logging_config import get_logger
 from apps.api.workflow.tools.mcp_client import McpClient
 
@@ -129,7 +130,7 @@ private_banking_mcp_client = McpClient(server_url=settings.mcp_knowledge_url)
 async def execute_private_banking_task(
     task: str,
     conversation_context: str,
-    customer_id: str = "C-011",
+   customer_id: str = DEFAULT_CUSTOMER_ID,
 ) -> str:
     """Execute a private banking task using the MCP-connected tools.
 

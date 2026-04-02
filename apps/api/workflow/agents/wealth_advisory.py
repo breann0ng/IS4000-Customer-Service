@@ -5,6 +5,7 @@ market insights, structured products, and investment strategy.
 """
 
 from apps.api.config import settings
+from apps.api.customers.registry import DEFAULT_CUSTOMER_ID
 from apps.api.logging_config import get_logger
 from apps.api.workflow.tools.mcp_client import McpClient
 
@@ -111,7 +112,7 @@ wealth_advisory_mcp_client = McpClient(server_url=settings.mcp_banking_ops_url)
 async def execute_wealth_advisory_task(
     task: str,
     conversation_context: str,
-    customer_id: str = "C-011",
+    customer_id: str = DEFAULT_CUSTOMER_ID,
 ) -> str:
     """Execute a wealth advisory task using the MCP-connected tools.
 

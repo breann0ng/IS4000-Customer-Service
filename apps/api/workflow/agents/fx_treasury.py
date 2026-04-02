@@ -5,6 +5,7 @@ multi-currency account management, and treasury products.
 """
 
 from apps.api.config import settings
+from apps.api.customers.registry import DEFAULT_CUSTOMER_ID
 from apps.api.logging_config import get_logger
 from apps.api.workflow.tools.mcp_client import McpClient
 
@@ -66,7 +67,7 @@ fx_treasury_mcp_client = McpClient(server_url=settings.mcp_service_workflow_url)
 async def execute_fx_treasury_task(
     task: str,
     conversation_context: str,
-    customer_id: str = "C-011",
+    customer_id: str = DEFAULT_CUSTOMER_ID,
 ) -> str:
     """Execute a foreign exchange or treasury task using the MCP-connected tools.
 

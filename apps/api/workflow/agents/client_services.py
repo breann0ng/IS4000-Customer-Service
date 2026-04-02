@@ -5,6 +5,7 @@ document requests, appointment scheduling, and service escalations.
 """
 
 from apps.api.config import settings
+from apps.api.customers.registry import DEFAULT_CUSTOMER_ID
 from apps.api.logging_config import get_logger
 from apps.api.workflow.tools.mcp_client import McpClient
 from apps.api.workflow.tools.rag_tool import retrieve_rag_chunks
@@ -70,7 +71,7 @@ client_services_mcp_client = McpClient(server_url=settings.mcp_service_workflow_
 async def execute_client_services_task(
     task: str,
     conversation_context: str,
-    customer_id: str = "C-011",
+    customer_id: str = DEFAULT_CUSTOMER_ID,
 ) -> str:
     """Execute a client services task using RAG and MCP tools.
 

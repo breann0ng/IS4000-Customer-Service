@@ -10,6 +10,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 
 from apps.api.config import settings
 from apps.api.customers.data_service import DataService
+from apps.api.customers.registry import DEFAULT_CUSTOMER_ID
 from mcp_servers.base import create_mock_mcp_app
 
 TOOL_DEFINITIONS = [
@@ -79,7 +80,7 @@ async def handle_private_banking(params: dict) -> dict:
     """
     task = params.get("task", "")
     context = params.get("context", "")
-    customer_id = params.get("customer_id", "C-011")
+    customer_id = params.get("customer_id", DEFAULT_CUSTOMER_ID)
     system_prompt = params.get("system_prompt", "")
 
     client_profile, accounts = DataService.get_banking_context(customer_id)
@@ -109,7 +110,7 @@ async def handle_private_banking(params: dict) -> dict:
             lombard = lending_context.get("lombard_facility", "Facility details not available")
             
             # Extract raw values for the gauge if possible
-            limit = 15000000 # Specific to John Smith C-011
+            limit = 15000000 # Specific to John Smith C-001
             drawn = 4200000
             
             return {
@@ -205,7 +206,7 @@ async def handle_compliance_tax(params: dict) -> dict:
     """
     task = params.get("task", "")
     context = params.get("context", "")
-    customer_id = params.get("customer_id", "C-011")
+    customer_id = params.get("customer_id", DEFAULT_CUSTOMER_ID)
     system_prompt = params.get("system_prompt", "")
 
     compliance_data = DataService.get_compliance_context(customer_id)

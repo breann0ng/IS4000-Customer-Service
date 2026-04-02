@@ -6,6 +6,8 @@ from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
 from pydantic import BaseModel, Field
 
+from apps.api.customers.registry import DEFAULT_CUSTOMER_ID
+
 
 class AgentStep(BaseModel):
     """A single planned step to be executed by a specialized agent."""
@@ -46,12 +48,11 @@ class SynthesizerOutput(BaseModel):
 
     response: str = Field(
         description=(
-            "The synthesized client-facing response in Markdown format. "
-            "MUST use ### section headers. Always include '### Summary', '### Next Steps', and '### Important Notes'. "
-            "Add '### Portfolio Overview', '### Market Context', '### Considerations' ONLY if the agent data contains "
-            "portfolio or financial metrics (AUM, YTD, allocation). "
+            "The synthesized client-facing response in Markdown or concise prose, dynamically shaped by query complexity. "
+            "For simple single-question asks, a short direct answer is allowed without section headers. "
+            "For multi-part/advisory asks, use relevant ### sections only (e.g., Summary, Next Steps, Important Notes). "
             "Add specialist sections (### Service Status, ### Credit & Lending Summary, etc.) only when relevant. "
-            "Do NOT write a single prose paragraph — every section must be separated by its ### heading. "
+            "Never include empty/placeholder sections. "
             "Bold key figures (AUM, YTD, amounts, dates) wherever they appear."
         )
     )
@@ -87,7 +88,7 @@ class WorkflowState(BaseModel):
     memory_context: list[dict] = Field(default_factory=list)
     session_id: str = Field(default="")
     user_id: str = Field(default="")
-    customer_id: str = Field(default="C-011")
+    customer_id: str = Field(default=DEFAULT_CUSTOMER_ID)
     plan: PlannerOutput | None = Field(default=None, description="The execution plan")
     current_step_index: int = Field(default=0, description="Index of the step being executed")
     agent_outputs: list[dict[str, Any]] = Field(

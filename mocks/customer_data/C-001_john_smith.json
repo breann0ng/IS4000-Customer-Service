@@ -1,9 +1,9 @@
 {
   "profile": {
-    "customer_id": "C-011",
+    "customer_id": "C-001",
     "full_name": "John Smith",
     "preferred_name": "John",
-    "date_of_birth": "1971-09-22",
+    "date_of_birth": "1986-09-22",
     "nationality": "Singaporean",
     "tax_residency": "Singapore",
     "segment": "UHNW",
@@ -26,7 +26,7 @@
     "trust_structure": true,
     "philanthropic_fund": false,
     "tax_profile": {
-      "tax_id": "S1234567A",
+      "tax_id": "S8623456D",
       "tax_loss_harvesting_available_sgd": 450000,
       "unrealized_gains_sgd": 12500000,
       "tax_slots": [
@@ -39,7 +39,7 @@
       "meeting_frequency": "Quarterly",
       "esg_intensity": "High",
       "excluded_sectors": ["Tobacco", "Controversial Weapons"],
-      "preferred_asset_classes": ["Private Equity", "Technology Equities"]
+      "preferred_asset_classes": ["Private Equity", "Technology Equities", "AI Software"]
     },
     "derived_flags": {
       "is_hnwi": true,
@@ -50,7 +50,7 @@
   },
   "accounts": [
     {
-      "account_id": "SGD-011-CA",
+      "account_id": "SGD-001-CA",
       "account_type": "Personal Current Account",
       "currency": "SGD",
       "balance": 1250800.0,
@@ -60,7 +60,7 @@
       "opened_date": "2012-03-01"
     },
     {
-      "account_id": "MCW-011-WA",
+      "account_id": "MCW-001-WA",
       "account_type": "Multi-Currency Wealth Account",
       "currency": "SGD/USD/EUR/CHF",
       "balances": {
@@ -74,7 +74,7 @@
       "opened_date": "2012-03-01"
     },
     {
-      "account_id": "ISA-011-SA",
+      "account_id": "ISA-001-SA",
       "account_type": "Investment Settlement Account",
       "currency": "SGD",
       "balance": 1940000.0,
@@ -83,7 +83,7 @@
       "opened_date": "2013-06-10"
     },
     {
-      "account_id": "LMA-011-LQ",
+      "account_id": "LMA-001-LQ",
       "account_type": "Liquidity Management Account",
       "currency": "SGD",
       "balance": 3300000.0,
@@ -93,7 +93,7 @@
     }
   ],
   "portfolio": {
-    "portfolio_id": "PORT-011",
+    "portfolio_id": "PORT-001",
     "total_value_sgd": 65000000,
     "currency": "SGD",
     "last_updated": "2026-03-29",
@@ -401,7 +401,7 @@
     },
     {
       "appointment_id": "APT-011-B",
-      "type": "Tax & Succession Planning (VCC Focus)",
+      "type": "Asset Allocation Strategy",
       "date": "2026-04-24",
       "time": "14:00",
       "rm": "Emma Clarke",
@@ -412,22 +412,22 @@
   "notifications": [
     {
       "id": "N-011-1",
+      "type": "Performance Alert",
+      "message": "Your portfolio valuation surged +4.7% in the last 2 weeks — specifically driven by NVIDIA earnings.",
+      "date": "2026-03-28",
+      "read": false
+    },
+    {
+      "id": "N-011-2",
       "type": "Action Required",
       "message": "Annual KYC review documentation due by 2026-06-01",
       "date": "2026-03-20",
       "read": false
     },
     {
-      "id": "N-011-2",
-      "type": "Market Alert",
-      "message": "DBS:SP position up 5.1% today — above your alert threshold",
-      "date": "2026-03-28",
-      "read": false
-    },
-    {
       "id": "N-011-3",
       "type": "Statement",
-      "message": "February 2026 portfolio statement available",
+      "message": "February 2026 portfolio summary & performance report available",
       "date": "2026-03-03",
       "read": true
     }
@@ -435,14 +435,14 @@
   "applications": [
     {
       "application_id": "APP-011-A",
-      "application_type": "Lombard Facility Limit Increase",
-      "description": "Requesting increase of Lombard facility from SGD 15M to SGD 20M to fund Asia Growth Buyout Fund VI commitment",
-      "status": "Pending Approval",
+      "application_type": "Automated Performance Alert Setup",
+      "description": "Requesting setup of daily automated stock summaries and sector performance alerts for AI/Tech holdings.",
+      "status": "Completed",
       "submitted_date": "2026-03-18",
-      "expected_completion": "2026-04-02",
-      "assigned_to": "Credit Team (cc: Emma Clarke)",
+      "expected_completion": "2026-03-20",
+      "assigned_to": "Digital Advisory Team",
       "documents_required": null,
-      "notes": "Portfolio LTV currently 31% — within approved limits. Credit committee review scheduled 2026-04-01."
+      "notes": "Enabled daily summaries via secure chat. Client is busy CEO with no time for research."
     },
     {
       "application_id": "APP-011-B",
@@ -452,7 +452,7 @@
       "submitted_date": "2026-03-12",
       "expected_completion": "2026-05-01",
       "assigned_to": "Compliance (cc: Emma Clarke)",
-      "documents_required": "Latest ACRA filing for Smith Capital SG Pte Ltd, NRIC/Passport copies",
+      "documents_required": "Latest ACRA filing for Smith Capital SG Pte Ltd",
       "notes": "KYC review triggered by annual cycle. Please upload documents via secure portal."
     }
   ],
@@ -460,7 +460,7 @@
     {
       "date": "2026-03-24",
       "merchant": "Eurokars Group (Rolls-Royce)",
-      "description": "Rolls-Royce Ghost Black Badge (Incl. Cat B COE & ARF) — Vehicle Purchase",
+      "description": "Rolls-Royce Ghost Black Badge — Vehicle Purchase",
       "amount": -1450000,
       "currency": "SGD",
       "category": "Automotive",
@@ -469,16 +469,16 @@
     {
       "date": "2026-03-18",
       "merchant": "Sentosa Golf Club",
-      "description": "Sentosa Golf Club — Membership Transfer & Joining Fee",
+      "description": "Membership Transfer & Joining Fee",
       "amount": -650000,
       "currency": "SGD",
       "category": "Lifestyle & Memberships",
-      "signals": ["concierge_services", "lifestyle_partnerships"]
+      "signals": ["concierge_services"]
     },
     {
       "date": "2026-03-12",
-      "merchant": "Art SG (Sotheby's)",
-      "description": "Zao Wou-Ki Painting — Fair Acquisition",
+      "merchant": "Art SG",
+      "description": "Zao Wou-Ki Painting Acquisition",
       "amount": -2200000,
       "currency": "SGD",
       "category": "Art & Collectibles",
@@ -487,25 +487,25 @@
     {
       "date": "2026-03-08",
       "merchant": "Niseko Realty",
-      "description": "Niseko Ski Chalet (Hokkaido) — Deposit payment",
+      "description": "Niseko Ski Chalet — Deposit",
       "amount": -580000,
       "currency": "SGD",
-      "category": "Real Estate (Japan)",
-      "signals": ["cross_border_finance", "tax_structuring"]
+      "category": "Real Estate",
+      "signals": ["cross_border_finance"]
     },
     {
       "date": "2026-02-28",
-      "merchant": "UBS Visa Infinite (SGD)",
-      "description": "Capella Singapore — Family Event Weekend Rental",
+      "merchant": "Capella Singapore",
+      "description": "Family Event Weekend Rental",
       "amount": -15000,
       "currency": "SGD",
-      "category": "Travel & Hospitality",
+      "category": "Hospitality",
       "signals": ["lifestyle_partnership"]
     },
     {
       "date": "2026-02-20",
       "merchant": "Patek Philippe Boutique",
-      "description": "Grand Complications 5270P-001 Collector Edition",
+      "description": "Grand Complications 5270P-001",
       "amount": -285000,
       "currency": "SGD",
       "category": "Luxury Goods",
@@ -514,11 +514,11 @@
     {
       "date": "2026-02-14",
       "merchant": "IRAS Singapore",
-      "description": "Personal Income Tax — YA2026 Final Settlement",
+      "description": "Personal Income TaxYA2026",
       "amount": -125000,
       "currency": "SGD",
       "category": "Tax & Compliance",
-      "signals": ["srs_contribution", "tax_optimisation"]
+      "signals": ["tax_optimisation"]
     },
     {
       "date": "2026-01-30",
@@ -531,129 +531,119 @@
     },
     {
       "date": "2026-01-15",
-      "merchant": "CHF Sub-Account",
-      "description": "Internal Transfer — Settling Swiss Watch acquisition",
+      "merchant": "Swiss Watch Store",
+      "description": "Watch Acquisition Settlement",
       "amount": -18500,
       "currency": "SGD",
-      "category": "Currency Management",
+      "category": "Luxury Goods",
       "signals": ["fx_rebalance"]
     }
   ],
   "insights_signals": [
     {
-      "id": "INS-001",
+      "id": "INS-011-1",
+      "priority": "high",
+      "category": "Portfolio & Performance",
+      "icon": "🚀",
+      "title": "Unprecedented Growth in Tech Sector",
+      "trigger": "Portfolio surged +4.7% (2 weeks) driven by NVIDIA (+21% in March)",
+      "summary": "As a busy CEO, you'll be pleased to see that your tech overweight strategy has paid off significantly. We've prepared a 30-second summary explaining this growth, which was primarily driven by NVIDIA's strong earnings beat.",
+      "suggested_actions": [
+        "View 30-second AI Performance Summary",
+        "Ask questions about the March valuation spike",
+        "Explore profit-taking opportunities in Technology"
+      ],
+      "rm_context": "Client is busy CEO. Values quick summaries. Significant growth in AI holdings offers demo point for performance querying.",
+      "tags": ["Performance", "AI Summary", "CEO Persona"]
+    },
+    {
+      "id": "INS-011-2",
       "priority": "high",
       "category": "Lifestyle & Protection",
       "icon": "🚗",
       "title": "New Vehicle Requires Insurance & COE Review",
-      "trigger": "Recent Rolls-Royce Ghost Black Badge purchase (SGD 1.45M on 24 Mar 2026)",
-      "summary": "Your recent luxury vehicle acquisition includes significant ARF and COE exposure. A bespoke private client motor insurance arrangement is recommended, alongside a review of your fleet's COE renewal schedule to manage future cash outflows.",
+      "trigger": "Recent Rolls-Royce Ghost Black Badge purchase (SGD 1.45M)",
+      "summary": "Your recent acquisition requires a bespoke private client motor insurance arrangement. We've prepared a summary of the options for you to review at a glance.",
       "suggested_actions": [
-        "Arrange agreed-value motor insurance for the Rolls-Royce Ghost (est. SGD 1.45M)",
-        "Review PARF/COE rebate status for existing vehicles in your fleet due for replacement",
-        "Explore UBS premium lifestyle partnership for bundled luxury asset cover including watch collections"
+        "Review motor insurance options (3-minute read)",
+        "Review PARF/COE rebate status for fleet replacement"
       ],
-      "rm_context": "Client acquired a Rolls-Royce Ghost (SGD 1.45M, 24 Mar 2026). Recommend motor insurance review and COE renewal management across his fleet.",
+      "rm_context": "Recommend motor insurance review for the new Rolls-Royce.",
       "tags": ["Insurance", "COE", "Vehicle"]
     },
     {
-      "id": "INS-002",
+      "id": "INS-011-3",
       "priority": "medium",
-      "category": "Lifestyle & Memberships",
-      "icon": "⛳",
-      "title": "Exclusive Concierge Services for Sentosa Membership",
-      "trigger": "Sentosa Golf Club membership joins (SGD 650k on 18 Mar 2026)",
-      "summary": "As a member of one of the world's premier clubs, you now have access to UBS's global lifestyle partnerships — including priority booking at Michelin-starred restaurants, private flight connections to regional courses, and custom club-fitting events.",
-      "suggested_actions": [
-        "Connect with UBS Lifestyle Services for private culinary experiences at Capella or Marina Bay Sands",
-        "Explore curated regional golf travel (Hokkaido, Danang, or Bali private courses)",
-        "Inquire about exclusive member events co-hosted by UBS at Sentosa for networking with regional C-suite peers",
-        "Explore premium equipment commissions through UBS retail partners for your new club membership"
-      ],
-      "rm_context": "Client joined Sentosa Golf Club (SGD 650k, 18 Mar 2026). Opportunity to introduce Singapore-based lifestyle concierge and networking events.",
-      "tags": ["Lifestyle", "Concierge", "Networking"]
-    },
-    {
-      "id": "INS-003",
-      "priority": "high",
       "category": "Art & Collectibles",
       "icon": "🎨",
-      "title": "Art Finance & Collection Management for Zao Wou-Ki Acquisition",
-      "trigger": "Zao Wou-Ki painting acquired via Art SG (SGD 2.2M on 12 Mar 2026)",
-      "summary": "Your recent acquisition of a material Zao Wou-Ki piece at Art SG represents a significant expansion of your collectible portfolio. UBS Art Advisory can assist with formal valuations, provenance management, and competitive art-backed lending facilities to release liquidity.",
+      "title": "Art Finance for Zao Wou-Ki Acquisition",
+      "trigger": "Zao Wou-Ki painting acquired (SGD 2.2M)",
+      "summary": "Your new acquisition at Art SG can be used for competitive art-backed lending to release liquidity. We've automated the valuation process for you.",
       "suggested_actions": [
-        "Arrange fine art insurance with agreed value coverage (suggest Chubb Fine Art or MSIG)",
-        "Explore art-backed lending through UBS Art Finance — unlocking liquidity at 40-60% LTV",
-        "Engage UBS Art Advisory for formal collection documentation and inventory management",
-        "Discuss provenance documentation and museum-grade storage arrangements in the Singapore FreePort"
+        "View Art Lending Facility Summary",
+        "Engage Art Advisory for documentation"
       ],
-      "rm_context": "Client purchased a Zao Wou-Ki (SGD 2.2M, 12 Mar 2026). Recommend art insurance, art-backed lending facility, and a conversation about collection management in the SG FreePort.",
-      "tags": ["Art Finance", "Insurance", "FreePort"]
+      "rm_context": "Recommend art-backed lending and provenance management.",
+      "tags": ["Art Finance", "Liquidity"]
     },
     {
-      "id": "INS-004",
+      "id": "INS-011-4",
       "priority": "medium",
       "category": "Currency & Liquidity",
       "icon": "💱",
-      "title": "SGD Liquidity Rebalancing Post-Acquisitions",
-      "trigger": "Material drawdown of SGD cash balances following car and art purchases (totaling SGD 3.65M over 2 weeks).",
-      "summary": "Recent high-value acquisitions have reduced your immediate SGD liquidity. Rather than direct FX conversion from USD/CHF holdings, you may wish to review your available Lombard facility or utilize our Liquidity Management Account (LMA) for near-term cash requirements.",
+      "title": "SGD Liquidity Rebalancing Required",
+      "trigger": "Material drawdown of SGD cash following car and art purchases.",
+      "summary": "Consistent with your preference for quick summaries, we recommend a simple Lombard rebalance to cover your immediate SGD needs without a meeting.",
       "suggested_actions": [
-        "Review SGD and USD allocation within your Multi-Currency Account",
-        "Consider drawing on your Lombard facility (USD 6.8M available at competitive rates) for SGD cash flow smoothing",
-        "Explore SGD-denominated money market funds via UBS Treasury for excess cash between capital calls",
-        "Assess optimal currency composition for upcoming Niseko property stage payments"
+        "Approve Lombard Rebalance (One-click)",
+        "Review SGD and USD allocation"
       ],
-      "rm_context": "Significant SGD drawdown due to recent lifestyle purchases. Recommend Lombard utilization or cash flow optimization discussion.",
-      "tags": ["Liquidity", "Lombard", "Cash Management"]
+      "rm_context": "Significant SGD drawdown. Recommend automated Lombard utilization.",
+      "tags": ["Liquidity", "Lombard"]
     },
     {
-      "id": "INS-005",
+      "id": "INS-011-5",
       "priority": "high",
-      "category": "Real Estate (Japan)",
+      "category": "Real Estate",
       "icon": "🏔️",
-      "title": "Niseko Chalet Acquisition — Cross-Border Financing",
-      "trigger": "Niseko Realty chalet deposit paid (SGD 580k on 8 Mar 2026)",
-      "summary": "The commencement of a Niseko property acquisition suggests a need for bespoke cross-border financing. UBS can provide JPY-denominated lending secured against your SG-based portfolio, as well as tax structuring advice for Japanese real estate holdings.",
+      "title": "Niseko Chalet Cross-Border Financing",
+      "trigger": "Niseko Realty chalet deposit paid (SGD 580k)",
+      "summary": "We've pre-assessed your eligibility for JPY-denominated lending for your new chalet. See the simplified terms below.",
       "suggested_actions": [
-        "Initiate a UBS cross-border mortgage pre-assessment for the Niseko acquisition (JPY financing)",
-        "Discuss holding structure options (direct ownership vs. Japanese Goudou Kaisha - GK - structure)",
-        "Review Japanese withholding tax and Singapore tax reporting requirements with UBS Tax team",
-        "Assess hedging JPY stage payments against SGD/USD volatility"
+        "View Pre-Assessment (1-minute read)",
+        "Discuss Japanese tax structure with tax team"
       ],
-      "rm_context": "Client engaged for Niseko chalet acquisition (SGD 580k deposit, 8 Mar 2026). Recommend JPY-based cross-border lending and tax structuring discussion.",
-      "tags": ["Real Estate", "JPY Financing", "Tax", "Structuring"]
+      "rm_context": "Recommend JPY-based cross-border lending for Japan property.",
+      "tags": ["Real Estate", "JPY Financing"]
     },
     {
-      "id": "INS-006",
+      "id": "INS-011-6",
       "priority": "medium",
       "category": "Income & Tax",
       "icon": "🇸🇬",
-      "title": "SRS & CPF Top-Up Opportunity for YA2027",
-      "trigger": "Recent SGD 850k dividend payment from Smith Capital SG Pte Ltd.",
-      "summary": "Following your dividend receipt, we recommend reviewing your tax relief strategies before the 31 December deadline. Maximizing your SRS (Supplementary Retirement Scheme) and CPF Cash Top-ups can provide immediate tax relief while enhancing your long-term retirement planning.",
+      "title": "SRS & CPF Top-Up Opportunity",
+      "trigger": "Recent SGD 850k dividend payment from Smith Capital.",
+      "summary": "You have a high surplus following your dividend. We recommend a quick automated top-up of your SRS to maximize tax relief.",
       "suggested_actions": [
-        "Consider maximum SRS contribution (SGD 15,300 for residents) before 31 Dec to reduce taxable income",
-        "Assess CPF Cash Top-up for you or your spouse for additional tax relief",
-        "Explore SRS-approved investment strategies to optimize returns on idle SRS balances",
-        "Review whether dividend funds should be deployed via the UBS Variable Capital Company (VCC) structure if established"
+        "View tax relief projections",
+        "Approve SRS top-up for YA2027"
       ],
-      "rm_context": "Client received SGD 850k dividend (30 Jan 2026). Recommend SRS/CPF top-up discussion and VCC utilization before year-end tax planning cycle.",
-      "tags": ["Tax", "SRS", "CPF", "Retirement"]
+      "rm_context": "Recommend SRS/CPF top-up following dividend receipt.",
+      "tags": ["Tax", "SRS", "CPF"]
     }
   ],
   "goals": [
     {
-      "goal_id": "G-001",
+      "goal_id": "G-011-1",
       "name": "Wealth Preservation & Transfer",
       "target_amount_sgd": 100000000,
       "current_amount_sgd": 65000000,
       "status": "On Track",
-      "deadline": "2040-12-31",
+      "deadline": "2050-12-31",
       "category": "Intergenerational"
     },
     {
-      "goal_id": "G-002",
+      "goal_id": "G-011-2",
       "name": "Niseko Property Acquisition",
       "target_amount_sgd": 5000000,
       "current_amount_sgd": 580000,
@@ -662,13 +652,13 @@
       "category": "Lifestyle"
     },
     {
-      "goal_id": "G-003",
-      "name": "Smith Family Foundation Endowment",
-      "target_amount_sgd": 10000000,
-      "current_amount_sgd": 2500000,
-      "status": "Delayed",
-      "deadline": "2030-01-01",
-      "category": "Philanthropy"
+      "goal_id": "G-011-3",
+      "name": "Retirement Lifestyle fund (Age 55)",
+      "target_amount_sgd": 20000000,
+      "current_amount_sgd": 5500000,
+      "status": "On Track",
+      "deadline": "2041-01-01",
+      "category": "Retirement"
     }
   ],
   "cashflow": {
@@ -677,27 +667,27 @@
     "net_monthly_surplus_sgd": 65000,
     "upcoming_large_commitments": [
       { "date": "2026-06-15", "description": "Asia Growth Buyout Fund VI - Capital Call", "amount_sgd": 1500000 },
-      { "date": "2026-09-01", "description": "Property Tax - GCB @ Nassim Road", "amount_sgd": 120000 }
+      { "date": "2026-09-01", "description": "Property Tax - Sentosa Cove", "amount_sgd": 120000 }
     ],
     "projected_liquidity_12m_sgd": 8500000
   },
   "system_triggers": [
     {
-      "trigger_id": "T-001",
-      "type": "Concentration",
-      "description": "Tech exposure at 48%, above 40% soft limit",
-      "severity": "Medium",
-      "status": "Active"
-    },
-    {
-      "trigger_id": "T-002",
+      "trigger_id": "T-011-1",
       "type": "Performance",
-      "description": "YTD Return 8.4% exceeds annual target (7%)",
+      "description": "Portfolio up +8.4% YTD vs target 7%",
       "severity": "Low",
       "status": "Informational"
     },
     {
-      "trigger_id": "T-003",
+      "trigger_id": "T-011-2",
+      "type": "Concentration",
+      "description": "NVIDIA concentration at 12% following recent surge",
+      "severity": "Medium",
+      "status": "Active"
+    },
+    {
+      "trigger_id": "T-011-3",
       "type": "Regulatory",
       "description": "KYC review cycle initiated",
       "severity": "High",

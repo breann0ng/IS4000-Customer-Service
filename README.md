@@ -47,6 +47,7 @@ Client (React) ──> FastAPI ──> LangGraph Workflow
                      │    └──────────────┬──────────────────┘
                      │                   │
                      │         MCP Servers (Streamable HTTP)
+                     │         ├── Customer Data  :9005 (SQLite wrapper)
                      │         ├── Banking Ops    :9001
                      │         ├── Knowledge      :9002 (uses Data Service)
                      │         ├── Service Wkflow :9003
@@ -54,8 +55,8 @@ Client (React) ──> FastAPI ──> LangGraph Workflow
                      │
               ┌──────┼──────────────────────────┐
            Postgres  Redis           Data Service   LangSmith
-        (sessions,   (mem0)          (Unified Mock  (tracing)
-        pgvector RAG)                 JSON Loader)
+        (sessions,   (mem0)          (MCP-normalized (tracing)
+        pgvector RAG)                 bundle formatter)
 ```
 
 **Escalation Check** inspects queries for high-distress or advisory intents (e.g., "What should I invest in?"), immediately bypassing the LLM workflow to return a static Relationship Manager response. All inputs are sanitized by the **Security Middleware**, which masks PII (NRIC, account numbers) and detects prompt injection attempts before they reach the LLM.
@@ -159,6 +160,23 @@ poe docker-up
 - Backend API: http://localhost:8000
 - Scalar API Docs: http://localhost:8000/docs
 
+### 5. Customer Data Access Mode (MCP-fronted SQLite)
+
+Customer context is now accessed via the customer-data MCP server by default:
+
+- Default mode: `mcp` (`/api/customers/me/*` calls `customer_get_360` on `:9005`)
+- Fallback mode: `direct` (backend reads SQLite repository directly)
+
+For production-like local testing, run:
+
+```bash
+docker compose up -d postgres
+uv run poe seed-customers
+uv run poe mock-mcp
+uv run poe dev-api
+uv run poe dev-ui
+```
+
 ## Development Tasks
 
 | Task                      | Description                                                       |
@@ -167,9 +185,10 @@ poe docker-up
 | `poe dev-ui`              | Start the React frontend dev server                               |
 | `poe generate-api-client` | Export OpenAPI schema and regenerate TypeScript client            |
 | `poe check`               | Format, lint, type-check Python code, and check for OpenAPI drift |
-| `poe mock-mcp`            | Start all 3 mock MCP servers (:9001, :9002, :9003)                |
+| `poe mock-mcp`            | Start all 5 mock MCP servers (:9001, :9002, :9003, :9004, :9005)   |
 | `poe rag-server`          | Start the RAG MCP server querying pgvector on port 9004           |
 | `poe rag-ingestion`       | Ingest documents from docs/ into pgvector                         |
+| `poe seed-customers`      | Rebuild local `data/customer_data.db` from approved demo profiles |
 
 ## Environment Variables
 
@@ -190,6 +209,8 @@ poe docker-up
 | `MCP_KNOWLEDGE_URL`       | `http://localhost:9002/mcp`     | Private banking & compliance MCP server               |
 | `MCP_SERVICE_WORKFLOW_URL`| `http://localhost:9003/mcp`     | Client services & FX treasury MCP server              |
 | `MCP_RAG_SERVER_URL`      | `http://localhost:9004/mcp`     | RAG retrieval MCP server                              |
+| `MCP_CUSTOMER_DATA_URL`   | `http://localhost:9005/mcp`     | SQLite-backed customer-data MCP server                |
+| `CUSTOMER_DATA_ACCESS_MODE` | `mcp`                         | Customer data mode: `mcp` (default) or `direct`      |
 | `TAVILY_API_KEY`          | —                               | Tavily API key for live market data (Wealth Advisory) |
 | `LOG_LEVEL`               | `INFO`                          | Log verbosity (DEBUG, INFO, WARNING, ERROR)           |
 
@@ -267,9 +288,9 @@ A proactive advisory section that analyzes the client's recent transaction histo
 - **Cross-Border Advisory** — Provides guidance on complex regional investments, such as **Niseko property acquisition** with JPY-denominated financing.
 - **Notify RM Flow** — A non-directive interaction model allowing users to send a pre-drafted, contextualized message to their Relationship Manager (Emma Clarke) for further discussion.
 
-### Data Coherence (Singapore HNW Profile)
+### Data Coherence (Approved Demo Profiles)
 
-The application utilizes a coherent Singapore-based High Net Worth (HNW) profile for **John Smith (C-011)**. All financial data is standardized to **SGD** (e.g., **SGD 125M Net Worth**, **SGD 65M AUM**), featuring iconic Singaporean properties such as a **Sentosa Cove Villa** and a **Nassim Road GCB**. This ensures that both the visual dashboard and the agentic AI workflow operate on a consistent, localized factual foundation.
+The application now uses a small approved Singapore-based demo set seeded into SQLite for **C-001**, **C-002**, and **C-003**. All customer-facing data is normalized through the shared customer data layer so the dashboard and agentic workflow stay consistent without relying on the older wider JSON demo set.
 
 ### Interactive Q&A
 
@@ -280,13 +301,13 @@ Clicking any data point on the charts (or an Insight signal) opens an inline **q
 
 ## Data Service Layer
 
-To ensure 100% data coherence between the visual dashboard and the agentic chatbot, a centralized **Data Service** (`apps/api/customers/data_service.py`) acts as the single source of truth for **all client-specific data**.
+To ensure 100% data coherence between the visual dashboard and agentic chatbot, customer data is now **MCP-fronted by default**.
 
-- **Unified Loading** — Locates and globs mock JSON files in `mocks/customer_data/` based on `customer_id`.
-- **SGD Defaulting** — All service layers and agent prompts are standardized to **SGD** (e.g., SGD 125M Net Worth, SGD 65M AUM) to ensure localized consistency for Singaporean HNWI clients.
-- **Domain-Specific Contexts** — Provides tailored methods for `get_risk_analysis()`, `get_financial_planning()`, and `get_compliance_context()` ensuring high-fidelity data injection into agent prompts.
-- **Dynamic Lending Context** — Combines real-time client limits with live market rates fetched via Tavily for personalized lending summaries.
-- **Consistency Guarantee** — Any update to the mock JSON files is immediately reflected across all dashboard charts and AI agent responses.
+- **Default production-like path** — API routes call `apps/api/customers/customer_data_client.py`, which fetches customer bundles from `mcp_servers/customer_data_server.py` (`customer_get_360` on port `9005`).
+- **SQLite source of truth** — The MCP customer-data server reads from `data/customer_data.db` and exposes normalized profile, portfolio, credit, transactions, and compliance context.
+- **Configurable mode** — `CUSTOMER_DATA_ACCESS_MODE=mcp|direct` allows fallback to direct repository reads for local troubleshooting.
+- **Approved profiles only** — The data layer is limited to seeded customer IDs `C-001`, `C-002`, and `C-003`.
+- **Consistency guarantee** — The same normalized customer bundle powers dashboard routes and workflow consumers.
 
 ## Sample Queries
 

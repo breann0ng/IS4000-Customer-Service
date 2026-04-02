@@ -1,0 +1,702 @@
+{
+  "profile": {
+    "customer_id": "C-003",
+    "full_name": "Marcus Tan Wei Jian",
+    "preferred_name": "Marcus",
+    "date_of_birth": "1991-03-14",
+    "nationality": "Singaporean",
+    "tax_residency": "Singapore",
+    "segment": "UHNW",
+    "tier": "UBS Private Banking",
+    "relationship_manager": "Sophia Lim",
+    "rm_email": "sophia.lim@ubs.com",
+    "rm_phone": "+65 6495 2201",
+    "onboarded_date": "2020-06-01",
+    "kyc_status": "Verified",
+    "kyc_last_reviewed": "2024-11-01",
+    "address": "Marina Bay Residences, 2 Bayfront Ave, #68-01, Singapore 018972",
+    "email": "marcus.tan@example.com",
+    "mobile": "+65 9123 4567",
+    "preferred_contact": "Secure chat",
+    "language": "English",
+    "risk_profile": "Aggressive Growth",
+    "net_worth_sgd": 25000000,
+    "aum_with_ubs_sgd": 18000000,
+    "family_office": null,
+    "trust_structure": false,
+    "philanthropic_fund": false,
+    "tax_profile": {
+      "tax_id": "S9123456C",
+      "tax_loss_harvesting_available_sgd": 85000,
+      "unrealized_gains_sgd": 1200000,
+      "tax_slots": [
+        { "asset": "NVIDIA Corp", "gain_sgd": 850000, "qualified": true },
+        { "asset": "CrowdStrike", "gain_sgd": 220000, "qualified": true }
+      ]
+    },
+    "preferences": {
+      "communication_channel": "WhatsApp / Secure Chat",
+      "meeting_frequency": "Monthly",
+      "esg_intensity": "High",
+      "excluded_sectors": ["Fossil Fuels", "Tobacco"],
+      "preferred_asset_classes": ["Tech Equities", "Venture Capital", "Crypto-Linked ETPs"]
+    },
+    "derived_flags": {
+      "is_hnwi": true,
+      "is_institutional_capable": true,
+      "has_complex_structures": false,
+      "cross_border_exposure": "High (SG/UK/US)"
+    }
+  },
+  "accounts": [
+    {
+      "account_id": "SGD-003-CA",
+      "account_type": "Personal Current Account",
+      "currency": "SGD",
+      "balance": 185000.0,
+      "available_balance": 172550.0,
+      "iban": "SG65UBS00001234567890",
+      "status": "Active",
+      "opened_date": "2020-06-01"
+    },
+    {
+      "account_id": "MCW-003-WA",
+      "account_type": "Multi-Currency Wealth Account",
+      "currency": "USD/EUR/SGD",
+      "balances": {
+        "USD": 450000.0,
+        "EUR": 120000.0,
+        "SGD": 5000000.0,
+        "CHF": 50000.0
+      },
+      "total_sgd_equivalent": 5850000.0,
+      "status": "Active",
+      "opened_date": "2020-06-01"
+    },
+    {
+      "account_id": "ISA-003-SA",
+      "account_type": "Investment Settlement Account",
+      "currency": "SGD",
+      "balance": 950000.0,
+      "available_balance": 950000.0,
+      "status": "Active",
+      "opened_date": "2020-07-10"
+    },
+    {
+      "account_id": "LMA-003-LQ",
+      "account_type": "Liquidity Management Account",
+      "currency": "SGD",
+      "balance": 1800000.0,
+      "available_balance": 1800000.0,
+      "status": "Active",
+      "opened_date": "2020-09-01"
+    }
+  ],
+  "portfolio": {
+    "portfolio_id": "PORT-003",
+    "total_value_sgd": 18000000,
+    "currency": "SGD",
+    "last_updated": "2026-03-31",
+    "mandate_type": "Advisory",
+    "allocation": {
+      "Public Equities": {
+        "pct": 60,
+        "value_sgd": 10800000
+      },
+      "Fixed Income": {
+        "pct": 10,
+        "value_sgd": 1800000
+      },
+      "Private Equity": {
+        "pct": 10,
+        "value_sgd": 1800000
+      },
+      "Hedge Funds": {
+        "pct": 5,
+        "value_sgd": 900000
+      },
+      "Structured Products": {
+        "pct": 5,
+        "value_sgd": 900000
+      },
+      "Venture Capital": {
+        "pct": 5,
+        "value_sgd": 900000
+      },
+      "Cash within Portfolio": {
+        "pct": 5,
+        "value_sgd": 900000
+      }
+    },
+    "top_equity_holdings": [
+      {
+        "name": "NVIDIA Corp",
+        "ticker": "NVDA",
+        "sector": "Semiconductors",
+        "value_sgd": 3200000,
+        "pnl_pct": 112.4
+      },
+      {
+        "name": "CrowdStrike",
+        "ticker": "CRWD",
+        "sector": "Cybersecurity",
+        "value_sgd": 1800000,
+        "pnl_pct": 45.2
+      },
+      {
+        "name": "Tesla Inc",
+        "ticker": "TSLA",
+        "sector": "Automotive/AI",
+        "value_sgd": 1500000,
+        "pnl_pct": -8.5
+      },
+      {
+        "name": "Advanced Micro Devices",
+        "ticker": "AMD",
+        "sector": "Semiconductors",
+        "value_sgd": 1200000,
+        "pnl_pct": 32.1
+      },
+      {
+        "name": "ServiceNow",
+        "ticker": "NOW",
+        "sector": "Software",
+        "value_sgd": 900000,
+        "pnl_pct": 21.4
+      }
+    ],
+    "private_markets": [
+      {
+        "fund": "Silicon Valley VC Fund IV",
+        "type": "Venture Capital",
+        "commitment_sgd": 2000000,
+        "nav_sgd": 2450000,
+        "vintage": 2022
+      },
+      {
+        "fund": "Global Growth Buyout X",
+        "type": "Private Equity",
+        "commitment_sgd": 1500000,
+        "nav_sgd": 1650000,
+        "vintage": 2021
+      },
+      {
+        "fund": "Late Stage Opportunity",
+        "type": "Private Equity",
+        "commitment_sgd": 1000000,
+        "nav_sgd": 1100000,
+        "vintage": 2023
+      }
+    ],
+    "structured_products": [
+      {
+        "name": "Equity Linked Note",
+        "underlying": "US Tech Giants",
+        "value_sgd": 1200000,
+        "maturity": "2026-12-15"
+      },
+      {
+        "name": "Reverse Convertible",
+        "underlying": "Global AI Basket",
+        "value_sgd": 900000,
+        "maturity": "2026-09-30"
+      },
+      {
+        "name": "Capital Protected Note",
+        "underlying": "S&P 500 Index",
+        "value_sgd": 650000,
+        "maturity": "2027-01-20"
+      }
+    ],
+    "ytd_return_pct": 12.8,
+    "one_year_return_pct": 24.5,
+    "risk_metrics": {
+      "sharpe_ratio": 1.65,
+      "volatility_pct": 18.5,
+      "beta_vs_msci_world": 1.35,
+      "var_95pct_sgd": 1250000,
+      "stress_tests": {
+        "Tech Selloff (-20%)": -14.2,
+        "Equity Market Correction (-10%)": -8.5,
+        "Interest Rate Hike (+100bps)": -1.2
+      }
+    },
+    "performance_attribution": {
+      "selection_effect_pct": 6.4,
+      "allocation_effect_pct": 5.2,
+      "currency_effect_pct": 1.2,
+      "top_contributors": [
+        { "name": "AI/Cloud Selection", "impact": 8.5 },
+        { "name": "Software Overweight", "impact": 3.2 }
+      ],
+      "top_detractors": [
+        { "name": "Cash Drag", "impact": -0.8 }
+      ]
+    },
+    "portfolio_history": [
+      { "month": "Apr-24", "value": 12000000 },
+      { "month": "May-24", "value": 12400000 },
+      { "month": "Jun-24", "value": 12850000 },
+      { "month": "Jul-24", "value": 13100000 },
+      { "month": "Aug-24", "value": 12800000 },
+      { "month": "Sep-24", "value": 13500000 },
+      { "month": "Oct-24", "value": 14100000 },
+      { "month": "Nov-24", "value": 14500000 },
+      { "month": "Dec-24", "value": 14800000 },
+      { "month": "Jan-25", "value": 15200000 },
+      { "month": "Feb-25", "value": 15500000 },
+      { "month": "Mar-25", "value": 15800000 },
+      { "month": "Apr-25", "value": 16100000 },
+      { "month": "May-25", "value": 16400000 },
+      { "month": "Jun-25", "value": 16800000 },
+      { "month": "Jul-25", "value": 15500000 },
+      { "month": "Aug-25", "value": 15800000 },
+      { "month": "Sep-25", "value": 16200000 },
+      { "month": "Oct-25", "value": 16500000 },
+      { "month": "Nov-25", "value": 16900000 },
+      { "month": "Dec-25", "value": 17200000 },
+      { "month": "Jan-26", "value": 17500000 },
+      { "month": "Feb-26", "value": 17800000 },
+      { "month": "Mar-26", "value": 18000000 }
+    ],
+    "monthly_returns": [
+      { "month": "Oct-25", "value": 2.4 },
+      { "month": "Nov-25", "value": 3.1 },
+      { "month": "Dec-25", "value": -1.8 },
+      { "month": "Jan-26", "value": 4.2 },
+      { "month": "Feb-26", "value": 3.7 },
+      { "month": "Mar-26", "value": 4.1 }
+    ],
+    "benchmark_comparison": [
+      { "month": "Oct-25", "portfolio": 2.4, "benchmark": 1.2 },
+      { "month": "Nov-25", "portfolio": 3.1, "benchmark": 1.5 },
+      { "month": "Dec-25", "portfolio": -1.8, "benchmark": -2.1 },
+      { "month": "Jan-26", "portfolio": 4.2, "benchmark": 2.8 },
+      { "month": "Feb-26", "portfolio": 3.7, "benchmark": 2.0 },
+      { "month": "Mar-26", "portfolio": 4.1, "benchmark": 2.2 }
+    ]
+  },
+  "credit": {
+    "lombard_facility": {
+      "product": "Lombard Credit Facility",
+      "limit_sgd": 5000000,
+      "drawn_sgd": 0,
+      "available_sgd": 5000000,
+      "collateral": "Securities portfolio",
+      "interest_rate_pct": 5.10,
+      "status": "Active"
+    },
+    "mortgage": {
+      "product": "Residential Mortgage",
+      "property": "Marina Bay Residences",
+      "outstanding_sgd": 3500000,
+      "original_amount_sgd": 5000000,
+      "interest_rate_pct": 3.85,
+      "monthly_repayment_sgd": 18400,
+      "maturity_date": "2045-06-01",
+      "status": "Active"
+    },
+    "credit_cards": [
+      {
+        "product": "UBS Visa Infinite",
+        "limit_sgd": 250000,
+        "outstanding_sgd": 12450,
+        "status": "Blocked"
+      },
+      {
+        "product": "UBS Mastercard World Elite",
+        "limit_sgd": 250000,
+        "outstanding_sgd": 0,
+        "status": "Active"
+      }
+    ]
+  },
+  "real_estate": [
+    {
+      "property": "Marina Bay Residences",
+      "location": "Singapore",
+      "value_sgd": 8500000,
+      "loan_sgd": 3500000
+    },
+    {
+      "property": "Tech Loft SF",
+      "location": "San Francisco, US",
+      "value_sgd": 2800000,
+      "loan_sgd": 0
+    },
+    {
+      "property": "Shoreditch Studio",
+      "location": "London, UK",
+      "value_sgd": 1400000,
+      "loan_sgd": 0
+    }
+  ],
+  "recent_transactions": [
+    {
+      "date": "2026-03-31",
+      "description": "MAYFAIR JEWELLERS LONDON (Potential Fraud)",
+      "amount": -12450.0,
+      "currency": "SGD",
+      "account": "SGD-011-CA"
+    },
+    {
+      "date": "2026-03-28",
+      "description": "GRAB TAXI SINGAPORE",
+      "amount": -32.50,
+      "currency": "SGD",
+      "account": "SGD-001-CA"
+    },
+    {
+      "date": "2026-03-25",
+      "description": "NVDA Stock Purchase / Settlement",
+      "amount": -125000.0,
+      "currency": "USD",
+      "account": "ISA-001-SA"
+    },
+    {
+      "date": "2026-03-20",
+      "description": "Apple Store Vision Pro Purchase",
+      "amount": -5800.0,
+      "currency": "SGD",
+      "account": "SGD-001-CA"
+    },
+    {
+      "date": "2026-03-15",
+      "description": "Mandarin Oriental London Payment",
+      "amount": -8500.0,
+      "currency": "SGD",
+      "account": "SGD-001-CA"
+    },
+    {
+      "date": "2026-03-10",
+      "description": "Lombard Interest Charge",
+      "amount": -450.0,
+      "currency": "SGD",
+      "account": "SGD-001-CA"
+    },
+    {
+      "date": "2026-03-05",
+      "description": "Monthly Salary / Bonus",
+      "amount": 95000.0,
+      "currency": "SGD",
+      "account": "SGD-001-CA"
+    },
+    {
+      "date": "2026-03-01",
+      "description": "Wire transfer — Venture Capital fund",
+      "amount": -250000.0,
+      "currency": "USD",
+      "account": "ISA-001-SA"
+    }
+  ],
+  "appointments": [
+    {
+      "appointment_id": "APT-001-A",
+      "type": "Venture Capital Review",
+      "date": "2026-04-10",
+      "time": "10:00",
+      "rm": "Sophia Lim",
+      "location": "Video call",
+      "status": "Confirmed"
+    },
+    {
+      "appointment_id": "APT-001-B",
+      "type": "Asset Allocation Strategy",
+      "date": "2026-04-20",
+      "time": "15:00",
+      "rm": "Sophia Lim",
+      "location": "One Raffles Quay",
+      "status": "Pending Confirmation"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "N-001-1",
+      "type": "Action Required",
+      "message": "URGENT: confirm a transaction for SGD 12,450.00 at MAYFAIR JEWELLERS LONDON",
+      "date": "2026-03-31",
+      "read": false
+    },
+    {
+      "id": "N-001-2",
+      "type": "Action Required",
+      "message": "Your UBS Visa Infinite has been temporarily blocked for security.",
+      "date": "2026-03-31",
+      "read": false
+    },
+    {
+      "id": "N-001-3",
+      "type": "Market Alert",
+      "message": "NVDA position has doubled in value YTD",
+      "date": "2026-03-25",
+      "read": true
+    }
+  ],
+  "applications": [
+    {
+      "application_id": "APP-001-1",
+      "application_type": "Credit Card Transaction Dispute",
+      "description": "Disputing transaction of SGD 12,450.00 at MAYFAIR JEWELLERS LONDON on 2026-03-31.",
+      "status": "Pending Documents",
+      "submitted_date": "2026-04-01",
+      "expected_completion": "2026-04-10",
+      "assigned_to": "Fraud Investigation Team",
+      "documents_required": "Screenshot of fraud alert SMS",
+      "notes": "Client requested digital submission. Please upload a screenshot of the alert."
+    },
+    {
+      "application_id": "APP-001-2",
+      "application_type": "Travel Notice Submission",
+      "description": "Upcoming business travel to London and New York in April.",
+      "status": "Completed",
+      "submitted_date": "2026-03-10",
+      "expected_completion": "2026-03-11",
+      "assigned_to": "Compliance (cc: Sophia Lim)",
+      "documents_required": "Copy of itinerary",
+      "notes": "System updated to allow cross-border transactions."
+    }
+  ],
+  "lifestyle_transactions": [
+    {
+      "date": "2026-03-31",
+      "merchant": "Mayfair Jewellers London",
+      "description": "Patek Philippe Watch (Fraudulent Transaction)",
+      "amount": -12450,
+      "currency": "SGD",
+      "category": "Luxury Goods",
+      "signals": ["fraud_detection", "insurance_review"]
+    },
+    {
+      "date": "2026-03-20",
+      "merchant": "Apple Store",
+      "description": "Vision Pro Acquisition",
+      "amount": -5800,
+      "currency": "SGD",
+      "category": "Technology",
+      "signals": ["lifestyle_partner"]
+    },
+    {
+      "date": "2026-03-15",
+      "merchant": "Mandarin Oriental",
+      "description": "Business Travel — London Luxury Suite",
+      "amount": -8500,
+      "currency": "SGD",
+      "category": "Travel",
+      "signals": ["concierge_service"]
+    },
+    {
+      "date": "2026-03-05",
+      "merchant": "Virgin Atlantic",
+      "description": "First Class — New York to London",
+      "amount": -14200,
+      "currency": "SGD",
+      "category": "Travel",
+      "signals": ["lounge_access"]
+    },
+    {
+      "date": "2026-02-28",
+      "merchant": "Club Zouk Singapore",
+      "description": "VIP Table & Hospitality",
+      "amount": -3500,
+      "currency": "SGD",
+      "category": "Entertainment",
+      "signals": ["lifestyle_partner"]
+    },
+    {
+      "date": "2026-02-14",
+      "merchant": "Marina Bay Sands (Snohetta)",
+      "description": "OMAKASE Private dinner",
+      "amount": -1800,
+      "currency": "SGD",
+      "category": "Hospitality",
+      "signals": ["lifestyle_partner"]
+    },
+    {
+      "date": "2026-01-31",
+      "merchant": "TechCrunch Disrupt",
+      "description": "VIP Conference Ticket",
+      "amount": -3500,
+      "currency": "USD",
+      "category": "Professional Services",
+      "signals": ["networking_event"]
+    },
+    {
+      "date": "2026-01-15",
+      "merchant": "Porsche Center Singapore",
+      "description": "Service Package — Taycan 4S",
+      "amount": -4200,
+      "currency": "SGD",
+      "category": "Automotive",
+      "signals": ["insurance_review"]
+    },
+    {
+      "date": "2026-01-05",
+      "merchant": "Peloton Digital",
+      "description": "Annual Premium Subscription",
+      "amount": -850,
+      "currency": "SGD",
+      "category": "Wellness",
+      "signals": ["lifestyle_partner"]
+    }
+  ],
+  "insights_signals": [
+    {
+      "id": "INS-001-1",
+      "priority": "high",
+      "category": "Security & Protection",
+      "icon": "⚠️",
+      "title": "Unusual Spending Pattern Detected",
+      "trigger": "Large transaction in London (SGD 12,450 at Mayfair Jewellers)",
+      "summary": "Your card has been temporarily blocked to prevent further unauthorized use. Please review this transaction to confirm its validity.",
+      "suggested_actions": [
+        "Review and Dispute Transaction",
+        "Request replacement card",
+        "Explore UBS premium lifestyle partnership for bundled luxury asset cover"
+      ],
+      "rm_context": "Client always traveling. Fraudulent transaction detected in London. Card blocked.",
+      "tags": ["Security", "Fraud Alert"]
+    },
+    {
+      "id": "INS-001-2",
+      "priority": "medium",
+      "category": "Portfolio & Performance",
+      "icon": "🚀",
+      "title": "NVIDIA Concentration Management",
+      "trigger": "NVDA position represents 18% of portfolio following major growth.",
+      "summary": "Your NVIDIA holdings have significantly outperformed. We recommend exploring tailored hedging strategies to protect your gains while maintaining long-term exposure.",
+      "suggested_actions": [
+        "Review tech concentration with Sophia Lim",
+        "Explore zero-cost collars for equity protection",
+        "Explore exclusive member events co-hosted by UBS at Sentosa"
+      ],
+      "rm_context": "High tech concentration due to outperformance. Opportunity for wealth protection product.",
+      "tags": ["Concentration", "Equity Protection"]
+    },
+    {
+      "id": "INS-001-3",
+      "priority": "high",
+      "category": "Lending & Credit",
+      "icon": "💳",
+      "title": "Expedited Credit Card Replacement",
+      "trigger": "Account blocked due to fraud incident (31 Mar 2026)",
+      "summary": "As you are currently traveling, we can courier a replacement Visa Infinite card to your location in London or New York within 24-48 hours.",
+      "suggested_actions": [
+        "Confirm current delivery address",
+        "Choose courier priority level",
+        "Discuss provenance documentation in the Singapore FreePort"
+      ],
+      "rm_context": "Active traveler needs card replacement quickly. Value-add service.",
+      "tags": ["Card replacement", "Travel"]
+    },
+    {
+      "id": "INS-001-4",
+      "priority": "medium",
+      "category": "Currency & Liquidity",
+      "icon": "💱",
+      "title": "USD Liquidity Optimization for VC Capital Call",
+      "trigger": "Upcoming capital call (15 Sep 2026)",
+      "summary": "With a large USD capital call expected later this year, we recommend locking in current FX rates or utilizing your USD credit limits to manage currency risk.",
+      "suggested_actions": [
+        "Review upcoming USD cash flows",
+        "Set FX limit order for SGD/USD conversion",
+        "Assess optimal currency composition for Upcoming VC call"
+      ],
+      "rm_context": "Capital call pending. Recommend risk management conversation.",
+      "tags": ["FX Risk", "Liquidity"]
+    },
+    {
+      "id": "INS-001-5",
+      "priority": "medium",
+      "category": "Lifestyle & Memberships",
+      "icon": "🏎️",
+      "title": "Exclusive Track Day Invitation",
+      "trigger": "Recent Porsche Taycan maintenance record.",
+      "summary": "UBS is hosting an exclusive track day at the Sepang Circuit for our automotive enthusiast clients. Experience the latest electric performance models.",
+      "suggested_actions": [
+        "Inquire about event availability",
+        "Registration for Sepang Track Day",
+        "Review Japanese withholding tax if considering Niseko"
+      ],
+      "rm_context": "Client is an automotive enthusiast. High engagement opportunity.",
+      "tags": ["Lifestyle", "Event"]
+    },
+    {
+      "id": "INS-001-6",
+      "priority": "low",
+      "category": "Portfolio & Performance",
+      "icon": "🤖",
+      "title": "AI Sector Market Insights Report",
+      "trigger": "High interest in AI and technology equities.",
+      "summary": "Our latest analyst report on 'The Future of Sovereign AI' is now available, featuring deep-dives into semiconductor supply chains.",
+      "suggested_actions": [
+        "Download AI Market Report",
+        "Schedule call with equity analyst",
+        "Assess optimal currency composition for Niseko"
+      ],
+      "rm_context": "Active investor in tech. Provide thought leadership.",
+      "tags": ["Research", "AI"]
+    }
+  ],
+  "goals": [
+    {
+      "goal_id": "G-001-1",
+      "name": "Early Retirement Target",
+      "target_amount_sgd": 50000000,
+      "current_amount_sgd": 25000000,
+      "status": "On Track",
+      "deadline": "2045-12-31",
+      "category": "Retirement"
+    },
+    {
+      "goal_id": "G-001-2",
+      "name": "SF Tech Loft Acquisition",
+      "target_amount_sgd": 4000000,
+      "current_amount_sgd": 2800000,
+      "status": "Completed",
+      "deadline": "2025-01-01",
+      "category": "Real Estate"
+    },
+    {
+      "goal_id": "G-001-3",
+      "name": "Venture Capital Commitment Target",
+      "target_amount_sgd": 10000000,
+      "current_amount_sgd": 5000000,
+      "status": "In Progress",
+      "deadline": "2030-12-31",
+      "category": "Investment"
+    }
+  ],
+  "cashflow": {
+    "monthly_inflow_sgd": 95000,
+    "monthly_outflow_sgd": 45000,
+    "net_monthly_surplus_sgd": 50000,
+    "upcoming_large_commitments": [
+      { "date": "2026-09-15", "description": "Venture Fund Capital Call", "amount_sgd": 150000 },
+      { "date": "2026-06-01", "description": "Annual Income Tax YA2026", "amount_sgd": 42000 }
+    ],
+    "projected_liquidity_12m_sgd": 2500000
+  },
+  "system_triggers": [
+    {
+      "trigger_id": "T-001-1",
+      "type": "Concentration",
+      "description": "NVIDIA concentration at 18%, above recommended 15%",
+      "severity": "Medium",
+      "status": "Active"
+    },
+    {
+      "trigger_id": "T-001-2",
+      "type": "Security",
+      "description": "Credit Card dispute in process",
+      "severity": "High",
+      "status": "Action Required"
+    },
+    {
+      "trigger_id": "T-001-3",
+      "type": "Performance",
+      "description": "YTD return of 12.8% significantly above benchmark",
+      "severity": "Low",
+      "status": "Informational"
+    }
+  ]
+}

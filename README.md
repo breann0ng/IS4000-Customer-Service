@@ -144,7 +144,7 @@ Edit `.env` and set your `GEMINI_API_KEY`. The project uses `gemini-3.1-pro-prev
 
 ### 3. Ingest RAG Documents
 
-Ensure Postgres is running (`docker compose up -d postgres`), then:
+Ensure Postgres and Redis are running (`docker compose up -d postgres redis`), then:
 
 ```bash
 poe rag-ingestion
@@ -170,7 +170,7 @@ Customer context is now accessed via the customer-data MCP server by default:
 For production-like local testing, run:
 
 ```bash
-docker compose up -d postgres
+docker compose up -d postgres redis
 uv run poe seed-customers
 uv run poe mock-mcp
 uv run poe dev-api

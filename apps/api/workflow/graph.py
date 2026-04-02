@@ -8,11 +8,19 @@ Implements a plan-and-execute pattern where:
 All LLM calls use Gemini with structured outputs via Pydantic models.
 """
 
+import json
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import END, StateGraph
 
-from apps.api.config import settings
+from tenacity import (
+    AsyncRetrying,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
+
+from apps.api.config import resiliency_manager, settings
 from apps.api.logging_config import get_logger
 from apps.api.workflow.escalation import check_escalation, escalation_node
 from apps.api.workflow.executor import executor_node
@@ -22,75 +30,46 @@ from apps.api.workflow.state import SynthesizerOutput, WorkflowState
 logger = get_logger(__name__)
 
 SYNTHESIZER_SYSTEM_PROMPT = """You are a private wealth management assistant for UBS, serving High Net Worth Individual (HNWI) clients.
-You receive structured JSON outputs from specialist agents who have analyzed the client's query.
+You receive structured analysis from specialist agents who have processed the client's query.
 
-Your job is to synthesize these JSON results into a single, polished, client-facing response.
+### GUIDELINES:
+1. **Response Structure**: Use strict Markdown formatting with `###` section headers. 
+   - ALWAYS include `### Summary`, `### Next Steps`, and `### Important Notes`.
+   - Add `### Portfolio Overview`, `### Market Context`, or `### Strategic Outlook` ONLY if relevant data (AUM, exposure, asset classes) is provided.
+2. **Executive Summary**: Start with a `### Summary` section (2-3 sentences) with bold key figures.
+3. **Actionable Next Steps**: Provide a `### Next Steps` numbered list.
+4. **Visuals**: If `raw_data` contains chart definitions, include them as JSON at the very end.
+5. **Human Escalation**: If any agent flags `requires_escalation`, mention that the RM has been notified.
 
----
+### CONTROLS:
+- **No Blocks**: Do NOT write a single prose paragraph; every section must be separated by its `###` heading.
+- **Bold Figures**: **Bold** all financial figures, dates, and percentages (e.g., **5.2%**, **USD 10M**, **April 2026**).
+- **No Hallucinations**: If an agent reports an error, apologize for the technical interruption. Do NOT use unrelated policy documents.
+- **Confidence Level**: Always provide a `confidence` level (high, medium, or low).
+- Do NOT expose internal agent names or technical JSON keys.
 
-## STEP 1 — Parse the Agent JSON
-
-Each specialist result is a JSON string. You MUST read and interpret every field in the JSON before writing your response.
-Do NOT treat the JSON as literal text to paste — extract the meaningful data from it.
-
----
-
-## STEP 2 — Choose Sections Based on Content
-
-You MUST structure your response using Markdown `###` section headers.
-Do NOT write a single block of prose. Each section must have its own `###` heading.
-
-### Always include:
-- `### Summary` — 2–3 sentence executive summary with bold key figures.
-- `### Next Steps` — Numbered list of actionable next steps for the client.
-- `### Important Notes` — Regulatory disclaimers, caveats, or escalation flags if present.
-
-### Include ONLY if the agent data contains portfolio or financial metrics (e.g., AUM, YTD return, asset allocation):
-- `### Portfolio Overview` — Reference actual figures: **AUM**, **YTD return**, allocation breakdown. Bold all key numbers.
-- `### Market Context` — Bullet points on relevant macro conditions, sector trends, or economic drivers.
-- `### Considerations` — Non-directive numbered list of portfolio implications for the client.
-
-### Include ONLY for lending/credit queries:
-- `### Credit & Lending Summary` — Facility type, borrowing capacity, LTV range, and key constraints.
-
-### Include ONLY for FX/treasury queries:
-- `### FX & Treasury Insights` — Relevant rates, hedging strategies, risk analysis.
-
-### Include ONLY for compliance/tax queries:
-- `### Compliance & Tax Guidance` — Regulatory obligations, required documents, jurisdiction.
-
-### Include ONLY for service/onboarding queries:
-- `### Service Status` — Request type, current status, required documents, assigned team, estimated timeline.
-
----
-
-## STEP 3 — Charts
-
-If any agent's JSON contains a `"charts"` array, include each chart object verbatim at the end of the response.
-Charts look like: `{ "type": "pie", "title": "...", "labels": [...], "values": [...] }`
-Include them as bare JSON objects (not in code fences) at the very end of your response text.
-
----
-
-## STEP 4 — Metrics Field
-
-Populate the `metrics` field ONLY when the agent data contains concrete financial figures such as AUM, YTD return,
-borrowing capacity, portfolio value, or account balances.
-Do NOT populate `metrics` for operational queries (status checks, document requests, appointments, compliance guidance)
-unless a specific monetary figure is directly relevant.
-
----
-
-## Rules
-
-- **DO NOT** collapse all content into one or two paragraphs.
-- **DO** bold all key figures (AUM, YTD, amounts, percentages, dates).
-- **DO** generate 3–5 relevant follow-up questions in `follow_up_suggestions`.
-- **DO** assess whether human RM escalation is needed based on `escalation_required` or `requires_rm_approval` flags in the JSON.
-- **DO** maintain a professional, discreet, and empathetic tone appropriate for HNWI clients.
-- **DO NOT** expose internal agent names, routing details, or raw JSON field names in the client-facing response.
-- **DO NOT** fabricate data — only use information present in the specialist JSON.
+Your job is to synthesize these results into a single, polished, and empathetic client-facing response.
 """
+
+
+METADATA_EXTRACTION_PROMPT = """Analyze the following assistant response and the background agent data.
+Extract structured metadata according to the schema:
+1. **Confidence**: High, Medium, or Low based on the agent findings.
+2. **Metrics**: Extract any key financial figures (AUM, USD values, rates, dates) as a list of metric items.
+3. **Suggestions**: Generate 2-3 logical follow-up questions the client might ask next based on their portfolio context.
+"""
+
+
+def format_agent_outputs(outputs: list[dict]) -> str:
+    """Helper to convert agent output list into a formatted string for the synthesizer."""
+    parts = []
+    for out in outputs:
+        agent = out.get("agent", "Specialist").replace("_", " ").title()
+        res = out.get("result")
+        # Handle Pydantic models or raw strings
+        res_text = res.response if hasattr(res, "response") else str(res)
+        parts.append(f"### {agent}\n{res_text}")
+    return "\n\n".join(parts)
 
 
 def _build_synthesizer_llm():  # noqa: ANN202
@@ -103,7 +82,8 @@ def _build_synthesizer_llm():  # noqa: ANN202
         model=settings.gemini_model,
         google_api_key=settings.gemini_api_key,
         temperature=0.3,
-        max_output_tokens=2000,
+        max_output_tokens=4000,
+        max_retries=0,  # Fail fast!
     )
     return llm.with_structured_output(SynthesizerOutput)
 
@@ -129,59 +109,155 @@ async def synthesizer_node(state: WorkflowState) -> dict:
             "Please try again or contact your relationship manager for assistance."
         }
 
+    # 1. Check Circuit Breaker
+    if resiliency_manager.is_circuit_breaker_tripped:
+        logger.warning("synthesizer_circuit_breaker_tripped_skipping_llm")
+        return _synthesizer_fallback(state, "Circuit breaker active - using raw data synthesis.")
+
+    # 2. Check Mock Mode
     if settings.is_llm_mock_mode:
-        combined = "\n".join(output["result"] for output in state.agent_outputs)
-        return {"final_response": f"[MOCK SYNTHESIS]\nBased on specialist input:\n{combined}"}
+        combined_parts = []
+        for output in state.agent_outputs:
+            agent_name = output.get('agent', 'Specialist').replace('_', ' ').title()
+            result = output.get('result')
+            # Extract response text if it's a model, otherwise use as string
+            res_text = result.response if hasattr(result, 'response') else str(result)
+            combined_parts.append(f"### {agent_name}\n{res_text}")
+        
+        combined = "\n\n".join(combined_parts)
+        return {"final_response": f"[MOCK SYNTHESIS]\nBased on specialist input:\n\n{combined}"}
+
 
     structured_llm = _build_synthesizer_llm()
 
     agent_results_text = "\n\n".join(
-        f"[{output.get('agent', f'Specialist {index + 1}')} JSON result]:\n{output['result']}"
-        for index, output in enumerate(state.agent_outputs)
+        f"[Agent: {output.get('agent', 'Specialist')}]\n{output['result'].model_dump_json(indent=2) if hasattr(output['result'], 'model_dump_json') else output['result']}"
+        for output in state.agent_outputs
     )
 
     prompt = (
-        f"Client's original query: {state.user_message}\n\n"
-        f"Specialist agent JSON outputs:\n{agent_results_text}\n\n"
-        f"Parse each JSON result and synthesize them into a single client-facing response "
-        f"following the output format instructions above."
+        f"Original query: {state.user_message}\n\n"
+        f"Specialist findings:\n{agent_results_text}\n\n"
+        f"Synthesize the findings into a premium response."
     )
 
     try:
-        result = await structured_llm.ainvoke(
-            [
-                SystemMessage(content=SYNTHESIZER_SYSTEM_PROMPT),
-                HumanMessage(content=prompt),
-            ]
+        # Check for empty results before starting
+        agent_outputs = state.agent_outputs
+        if not agent_outputs:
+            return {
+                "final_response": "I couldn't find any specific information related to your request. How else can I assist you?",
+                "final_metrics": [],
+                "final_suggestions": [],
+            }
+
+        # Fail fast! Only 1 attempt before falling back to manual raw-data synthesis
+        retryer = AsyncRetrying(
+            stop=stop_after_attempt(1),
+            retry=retry_if_exception_type(Exception),
+            reraise=True,
         )
 
-        response_text = result.response
+        # Step 1: Generate the full Markdown response (Standard LLM)
+        standard_llm = ChatGoogleGenerativeAI(
+            model=settings.gemini_model,
+            google_api_key=settings.gemini_api_key,
+            temperature=0.3,
+            max_output_tokens=4000,
+            max_retries=0,
+        )
 
-        if result.requires_human_escalation:
-            logger.info(
-                "synthesizer_escalation_flagged",
-                reason=result.escalation_reason,
-            )
+        agent_data_summary = format_agent_outputs(agent_outputs)
+        # raw_data is not in WorkflowState BaseModel, skipping or use empty dict
+        raw_data_json = json.dumps({})
+        
+        prompt_text = f"AGENT DATA:\n{agent_data_summary}\n\nRAW DATA:\n{raw_data_json}"
+
+        async for attempt in retryer:
+            with attempt:
+                # Step 1: Writing the Markdown Response
+                writing_result = await standard_llm.ainvoke(
+                    [
+                        SystemMessage(content=SYNTHESIZER_SYSTEM_PROMPT),
+                        HumanMessage(content=prompt_text),
+                    ]
+                )
+        
+        final_markdown = writing_result.content
+
+        # Step 2: Extract Structured Metadata (Structured LLM)
+        structured_llm = _build_synthesizer_llm()
+        
+        metadata_prompt = f"ASSISTANT RESPONSE:\n{final_markdown}\n\n{prompt_text}"
+
+        async for attempt in retryer:
+            with attempt:
+                metadata_result = await structured_llm.ainvoke(
+                    [
+                        SystemMessage(content=METADATA_EXTRACTION_PROMPT),
+                        HumanMessage(content=metadata_prompt),
+                    ]
+                )
+
+        resiliency_manager.record_success()
 
         logger.info(
-            "synthesizer_node_complete",
-            response_length=len(response_text),
-            confidence=result.confidence,
-            metrics_count=len(result.metrics),
+            "synthesizer_decomposed_complete",
+            response_length=len(final_markdown),
+            confidence=getattr(metadata_result, "confidence", "unknown"),
         )
+
         return {
-            "final_response": response_text,
-            "final_metrics": [m.model_dump() for m in result.metrics],
-            "final_suggestions": result.follow_up_suggestions,
+            "final_response": final_markdown,
+            "final_metrics": [m.model_dump() if hasattr(m, "model_dump") else m for m in getattr(metadata_result, "metrics", [])],
+            "final_suggestions": getattr(metadata_result, "follow_up_suggestions", []),
         }
 
-    except Exception:
-        logger.exception("synthesizer_node_failed")
-        return {
-            "final_response": "I apologize, but I am unable to provide a detailed summary at "
-            "this moment. Please rest assured that your request has been recorded, and you "
-            "can contact your dedicated relationship manager for further information."
-        }
+    except Exception as e:
+        resiliency_manager.record_failure(str(e))
+        logger.exception("synthesizer_decomposed_failed_using_fallback", error=str(e))
+        return _synthesizer_fallback(state, f"Synthesis error: {str(e)}")
+
+
+def _synthesizer_fallback(state: WorkflowState, error_msg: str) -> dict:
+    """Implement a manual summary from agent outputs as a robust fallback."""
+    fallback_parts = [
+        "### Summary (Resiliency Mode)", 
+        f"Our AI synthesis service is temporarily unavailable ({error_msg}). However, your requested data has been successfully retrieved from our core systems:"
+    ]
+    
+    # Track metrics for the UI
+    final_metrics = []
+
+    for output in state.agent_outputs:
+        result = output.get('result')
+        if not result:
+            continue
+
+        # If it's the new SpecialistAgentOutput model
+        if hasattr(result, 'response'):
+            agent_label = result.agent_name.replace('_', ' ').title()
+            fallback_parts.append(f"**[{agent_label}]**\n{result.response}")
+            
+            # Collect metrics
+            if hasattr(result, 'metrics') and result.metrics:
+                for m in result.metrics:
+                    final_metrics.append({"label": m.label, "value": m.value, "trend": m.trend})
+            
+            # Add next steps
+            if result.next_steps:
+                fallback_parts.append("**Recommended Next Steps:**")
+                for step in result.next_steps:
+                    fallback_parts.append(f"- {step}")
+
+    fallback_parts.append("\n### Important Notice\nYour relationship manager has been notified of this request. Please refresh in a moment for a more detailed analysis.")
+    
+    return {
+        "final_response": "\n\n".join(fallback_parts),
+        "final_metrics": final_metrics,
+        "final_suggestions": ["Why is this message appearing?", "Try again in 1 minute"]
+    }
+
 
 
 def should_continue_executing(state: WorkflowState) -> str:
@@ -312,6 +388,7 @@ async def run_workflow(
     memory_context: list[dict],
     session_id: str,
     user_id: str,
+    username: str,
 ) -> dict[str, str | dict | None]:
     """Execute the full agentic workflow for a user message.
 
@@ -329,6 +406,7 @@ async def run_workflow(
         "workflow_start",
         session_id=session_id,
         user_id=user_id,
+        username=username,
         message_length=len(user_message),
     )
 
@@ -338,32 +416,37 @@ async def run_workflow(
         memory_context=memory_context,
         session_id=session_id,
         user_id=user_id,
+        username=username,
     )
 
     try:
         final_state = await workflow_graph.ainvoke(initial_state)
 
-        # Handle either string or Pydantic model (SynthesizerOutput)
-        response = final_state["final_response"]
+        # Access attributes directly since final_state is a WorkflowState Pydantic model
+        response = getattr(final_state, "final_response", "No response generated.")
+        
+        plan_data = getattr(final_state, "plan", None)
+        if hasattr(plan_data, "model_dump"):
+            plan_data = plan_data.model_dump()
 
         trace_data = {
-            "plan": final_state["plan"].model_dump() if final_state["plan"] else None,
-            "agent_outputs": final_state["agent_outputs"],
+            "plan": plan_data,
+            "agent_outputs": getattr(final_state, "agent_outputs", []),
         }
 
         logger.info("workflow_complete", session_id=session_id)
 
         return {
             "response": response,
-            "metrics": final_state.final_metrics,
-            "suggestions": final_state.final_suggestions,
+            "metrics": getattr(final_state, "final_metrics", []),
+            "suggestions": getattr(final_state, "final_suggestions", []),
             "trace": trace_data,
         }
 
-    except Exception:
+    except Exception as e:
         logger.exception("workflow_failed", session_id=session_id)
+        # Return the actual error in the response for direct debugging by the user
         return {
-            "response": "I apologize, but I encountered an error while processing your request. "
-            "Please try again or contact your relationship manager.",
+            "response": f"DEBUG ERROR: {type(e).__name__} - {str(e)}\n\nPlease try one more time or report this specific error.",
             "trace": None,
         }

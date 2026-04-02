@@ -6,71 +6,31 @@ regulatory compliance, CRS/FATCA reporting, and documentation requirements.
 
 from apps.api.config import settings
 from apps.api.logging_config import get_logger
+from apps.api.workflow.state import SpecialistAgentOutput
 from apps.api.workflow.tools.mcp_client import McpClient
 from apps.api.workflow.tools.rag_tool import retrieve_rag_chunks
 
 logger = get_logger(__name__)
 
-COMPLIANCE_TAX_SYSTEM_PROMPT = """# ROLE AND SYSTEM BOUNDARIES
+COMPLIANCE_TAX_SYSTEM_PROMPT = """# ROLE
 You are a Compliance & Tax Specialist for UBS Wealth Management, serving High Net Worth Individual (HNWI) clients. 
-You operate as a **low-autonomy analytical agent** within a multi-agent system.
-
-Your role is to **interpret client compliance and tax-related queries** and produce **structured, factual insights in JSON format only**.
-
-You do NOT:
-- Provide binding personal tax advice  
-- Execute transactions or account changes  
-- Format responses for end-user readability (handled by the downstream synthesiser agent)  
-- Replace legal, tax, or regulatory authority review  
-
----
 
 # CORE RESPONSIBILITIES
+1. Tax Reporting & Documentation: CRS, FATCA, jurisdiction-specific reporting.
+2. Regulatory Compliance Guidance: AML, source-of-wealth, regulatory updates.
+3. Portfolio & Investment Compliance: Tax-efficient structuring guidance.
 
-1. Tax Reporting & Documentation
-   - Explain obligations under CRS, FATCA, and jurisdiction-specific regulations  
-   - Assist with cross-border tax documentation and withholding tax reclaim processes  
-   - Support KYC refresh and beneficial ownership documentation  
-
-2. Regulatory Compliance Guidance
-   - Provide updates on regulatory changes affecting accounts and investments  
-   - Clarify AML requirements and source-of-wealth documentation  
-   - Advise on estate and inheritance tax considerations across multiple jurisdictions  
-
-3. Portfolio & Investment Compliance
-   - Guide on tax-efficient investment structuring within regulatory boundaries  
-   - Highlight relevant policy frameworks and compliance constraints  
-
-4. Risk Identification
-   - Flag areas of potential non-compliance or missing documentation  
-   - Indicate need for further review by internal compliance or tax teams  
-
----
-
-# OUTPUT REQUIREMENTS
-
-- **Always return a JSON object** in the following schema:
-
-```json
-{
-  "query_type": "",                     // e.g., "Tax Reporting", "AML/KYC", "Cross-Border Documentation", "Estate/Inheritance"
-  "guidance_summary": ["string"],       // factual regulatory or tax guidance based on query
-  "required_documents": ["string"],     // list of documentation needed, if applicable
-  "risk_flags": ["string"],             // potential compliance or regulatory risks
-  "escalation_required": false,         // true if query needs internal compliance or tax review
-  "jurisdiction": "",                    // relevant country/region
-  "next_steps": ["string"],             // actionable steps for client or internal team
-  "notes": ""                           // optional references to policies, regulations, or knowledge base
-}
+# GUIDELINES
+- Provide structured, factual insights in JSON.
+- Flag areas of potential non-compliance or missing documentation.
+- Do NOT provide binding personal tax advice.
 """
-
-compliance_tax_mcp_client = McpClient(server_url=settings.mcp_knowledge_url)
-
 
 async def execute_compliance_tax_task(
     task: str,
     conversation_context: str,
-) -> str:
+    username: str,
+) -> SpecialistAgentOutput:
     """Execute a compliance or tax task using RAG and MCP tools.
 
     Retrieves relevant regulatory documents from the knowledge base and uses
@@ -79,11 +39,15 @@ async def execute_compliance_tax_task(
     Args:
         task: The specific compliance or tax task to perform.
         conversation_context: Relevant conversation context for the task.
+        username: The username of the authenticated persona.
 
     Returns:
-        The result of the compliance operation as a string.
+        The result of the compliance operation as a SpecialistAgentOutput.
     """
     logger.info("compliance_tax_agent_start", task=task)
+
+    # Initialize client inside handler to pick up latest environment settings
+    mcp_client = McpClient(server_url=settings.mcp_knowledge_url)
 
     rag_chunks = await retrieve_rag_chunks(query=task)
     retrieved_context = (
@@ -92,11 +56,12 @@ async def execute_compliance_tax_task(
         else "No relevant regulatory documents found."
     )
 
-    result = await compliance_tax_mcp_client.call_tool(
+    result = await mcp_client.call_tool(
         tool_name="compliance_tax",
         arguments={
             "task": task,
             "context": conversation_context,
+            "username": username,
             "retrieved_documents": retrieved_context,
             "system_prompt": COMPLIANCE_TAX_SYSTEM_PROMPT,
         },
@@ -104,8 +69,29 @@ async def execute_compliance_tax_task(
 
     if "error" in result:
         logger.error("compliance_tax_agent_error", error=result["error"])
-        return f"Compliance & tax encountered an issue: {result['error']}"
+        return SpecialistAgentOutput(
+            agent_name="compliance_tax",
+            response=f"Compliance & tax encountered an issue: {result['error']}",
+            status="ERROR",
+            next_steps=["Please try again or contact your RM."],
+        )
 
-    response = result.get("response", "No response from compliance & tax agent.")
-    logger.info("compliance_tax_agent_complete", response_length=len(response))
-    return response
+    # Handle both new structured dict and legacy string responses
+    if isinstance(result, str):
+        return SpecialistAgentOutput(
+            agent_name="compliance_tax",
+            response=result,
+            status="COMPLETED",
+        )
+
+    if isinstance(result, dict) and "response" in result:
+        # Ensure agent_name is present
+        if "agent_name" not in result:
+            result["agent_name"] = "compliance_tax"
+        return SpecialistAgentOutput(**result)
+
+    return SpecialistAgentOutput(
+        agent_name="compliance_tax",
+        response="No response from compliance & tax agent.",
+        status="ERROR",
+    )

@@ -11,8 +11,10 @@ logger = get_logger(__name__)
 class MemoryManager:
     """Manages short-term conversational memory using mem0 with Redis storage.
 
-    Uses a local HuggingFace sentence-transformers model for embeddings,
-    avoiding any external API dependency for the memory subsystem.
+    Embeddings use a local HuggingFace sentence-transformers model. The mem0 LLM
+    slot is configured for **Ollama only** (never Gemini/OpenAI), so conversational
+    memory does not bill cloud APIs. With ``mem0_infer=False`` (default), ``add()``
+    skips LLM fact extraction and only embeds raw messages.
     """
 
     def __init__(self) -> None:
@@ -41,22 +43,25 @@ class MemoryManager:
                         "model_kwargs": {"device": "cpu"},
                     },
                 },
-            }
-
-            if settings.gemini_api_key and settings.gemini_api_key != "your-gemini-api-key-here":
-                config["llm"] = {
-                    "provider": "gemini",
+                "llm": {
+                    "provider": "ollama",
                     "config": {
-                        "api_key": settings.gemini_api_key,
-                        "model": settings.gemini_model,
+                        "model": settings.mem0_ollama_model,
+                        "ollama_base_url": settings.mem0_ollama_base_url,
+                        "temperature": 0.1,
+                        "max_tokens": 2000,
                     },
-                }
+                },
+            }
 
             self._client = Memory.from_config(config)
             logger.info(
                 "mem0_client_initialized",
                 embedder="huggingface",
-                model=settings.embedding_model_name,
+                embedding_model=settings.embedding_model_name,
+                mem0_infer=settings.mem0_infer,
+                mem0_llm="ollama",
+                ollama_model=settings.mem0_ollama_model,
             )
         return self._client
 
@@ -73,8 +78,17 @@ class MemoryManager:
         """
         try:
             client = self._get_client()
-            client.add(messages=messages, user_id=user_id)
-            logger.info("memory_stored", user_id=user_id, message_count=len(messages))
+            client.add(
+                messages=messages,
+                user_id=user_id,
+                infer=settings.mem0_infer,
+            )
+            logger.info(
+                "memory_stored",
+                user_id=user_id,
+                message_count=len(messages),
+                infer=settings.mem0_infer,
+            )
         except Exception:
             logger.exception("memory_store_failed", user_id=user_id)
 

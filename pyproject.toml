@@ -17,6 +17,7 @@ dependencies = [
     "langchain-community>=0.3.0",
     "google-generativeai>=0.8.0",
     "mem0ai>=0.1.0",
+    "ollama>=0.4.0",
     "redis>=5.0.0",
     "chromadb>=0.5.0",
     "pgvector>=0.3.0",
@@ -36,6 +37,7 @@ dependencies = [
     "torch>=2.10.0",
     "psycopg2-binary>=2.9.11",
     "redisvl>=0.16.0",
+    "tenacity>=9.0.0",
 ]
 
 [[tool.uv.index]]

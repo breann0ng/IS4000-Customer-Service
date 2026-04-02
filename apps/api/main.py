@@ -10,6 +10,7 @@ from sqlalchemy import text
 
 from apps.api.auth.routes import router as auth_router
 from apps.api.chat.routes import router as chat_router
+from apps.api.portfolio.routes import router as portfolio_router
 from apps.api.config import settings
 from apps.api.database.connection import engine
 from apps.api.database.models import Base
@@ -70,6 +71,7 @@ app.add_middleware(
 
 app.include_router(auth_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
+app.include_router(portfolio_router, prefix="/api")
 
 
 @app.get("/api/health")

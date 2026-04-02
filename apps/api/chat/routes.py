@@ -5,6 +5,7 @@ import uuid
 from collections.abc import AsyncGenerator
 from datetime import datetime, timedelta, timezone
 
+from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from langchain_core.messages import HumanMessage
@@ -222,58 +223,67 @@ async def _generate_and_update_title(
             logger.error("rename_session_not_found", session_id=str(session_id))
             return
 
-        # Only rename if generic or a temporary greeting title
-        generic_markers = ["New Chat", "Account Performance Q&A", "Initial Consultation", "Greeting", "UBS Enquiry"]
-        is_generic = any(marker in session.title for marker in generic_markers)
-        
-        if not is_generic:
-            return
+        logger.info("attempting_title_regeneration", session_id=str(session_id), current_title=session.title)
 
-        new_theme = "UBS Enquiry"
+        new_theme = "UBS Consultation"
         if settings.is_llm_mock_mode:
-            new_theme = "Mock Analysis"
+            query = user_message.lower()
+            if any(w in query for w in ["lombard", "loan", "limit", "credit"]):
+                new_theme = "Credit Analysis"
+            elif any(w in query for w in ["portfolio", "performance", "invest", "allocation"]):
+                new_theme = "Portfolio Review"
+            elif any(w in query for w in ["cash", "balance", "account", "transfer"]):
+                new_theme = "Banking Summary"
+            elif any(w in query for w in ["tax", "compliance", "regulatory", "kyc"]):
+                new_theme = "Compliance Advisory"
+            else:
+                new_theme = "Wealth Advisory"
         else:
-            llm = ChatGoogleGenerativeAI(
-                model=settings.gemini_model,
-                google_api_key=settings.gemini_api_key,
-                temperature=0.0,
-                max_output_tokens=50,
-            )
-            prompt = (
-                "You are a professional UBS Wealth Management assistant. "
-                "Generate a highly professional, 2-4 word title for this conversation based on the user's enquiry. "
-                "Examples: 'Portfolio Risk Assessment', 'Market Insights', 'Lending Solutions', 'FX Strategy'. "
-                "If the message is just a greeting, use 'Initial Consultation'. "
-                "Produce only the title, no quotes or punctuation.\n\n"
-                f"User enquiry: {user_message}"
-            )
-            title_response = await llm.ainvoke([HumanMessage(content=prompt)])
-            
-            content_val = title_response.content
-            if isinstance(content_val, list):
-                content_val = " ".join(
-                    [part.get("text", "") if isinstance(part, dict) else str(part) for part in content_val]
+            try:
+                llm = ChatGoogleGenerativeAI(
+                    model=settings.gemini_model,
+                    google_api_key=settings.gemini_api_key,
+                    temperature=0.0,
+                    max_output_tokens=50,
                 )
-            
-            new_theme = str(content_val).strip().replace('"', '')
+                prompt = (
+                    "You are a professional UBS Wealth Management assistant. "
+                    "Generate a highly professional, 2-4 word title for this conversation based on the user's enquiry. "
+                    "Examples: 'Portfolio Risk Assessment', 'Market Insights', 'Lending Solutions', 'FX Strategy'. "
+                    "If the message is just a greeting, use 'Initial Consultation'. "
+                    "Produce only the title, no quotes or punctuation.\n\n"
+                    f"User enquiry: {user_message}"
+                )
+                title_response = await llm.ainvoke([HumanMessage(content=prompt)])
+                
+                content_val = title_response.content
+                if isinstance(content_val, list):
+                    content_val = " ".join(
+                        [part.get("text", "") if isinstance(part, dict) else str(part) for part in content_val]
+                    )
+                
+                new_theme = str(content_val).strip().replace('"', '')
+                if not new_theme or len(new_theme) < 2:
+                    new_theme = "UBS Enquiry"
+            except Exception as llm_error:
+                logger.warning("title_llm_failed_using_default", error=str(llm_error))
+                new_theme = "UBS Consultation"
 
         sg_tz = timezone(timedelta(hours=8))
-        # Format: 29 Mar 2026, 05:51 PM
         current_time_sg = datetime.now(sg_tz).strftime('%d %b %Y, %I:%M %p')
         full_title = f"{new_theme} - {current_time_sg}"
 
-        logger.info("updating_session_title", session_id=str(session_id), title=full_title)
+        logger.info("updating_session_title_to_db", session_id=str(session_id), title=full_title)
         
-        updated_session = await update_session(
+        await update_session(
             database_session,
             session_id,
             user_id,
             title=full_title,
         )
-        if updated_session:
-            logger.info("session_title_updated_successfully", session_id=str(session_id), title=full_title)
+        logger.info("session_title_updated_successfully", session_id=str(session_id), title=full_title)
     except Exception as e:
-        logger.exception("failed_to_generate_title", error=str(e))
+        logger.exception("failed_to_generate_title_node", error=str(e))
 
 
 @router.post("/sessions/{session_id}/messages", response_model=ChatCompletionResponse)
@@ -332,6 +342,7 @@ async def send_message(
         memory_context=memory_context,
         session_id=str(session_id),
         user_id=str(current_user.user_id),
+        username=current_user.username,
     )
 
     response_text = str(workflow_result["response"])
@@ -341,7 +352,8 @@ async def send_message(
         "suggestions": workflow_result.get("suggestions", []),
     }
 
-    full_context = trace_dict or {}
+    trace_data = workflow_result.get("trace", {})
+    full_context = trace_data or {}
     full_context["metadata"] = metadata
 
     assistant_message = await save_message(
@@ -373,8 +385,23 @@ async def send_message(
             context=assistant_message.context,
             created_at=assistant_message.created_at,
         ),
-        agent_trace=trace_dict,
+        agent_trace=trace_data,
     )
+
+
+def _serialize_for_json(obj: Any) -> Any:
+    """Recursively convert UUID, datetime, and Pydantic models to JSON-serializable types."""
+    if isinstance(obj, uuid.UUID):
+        return str(obj)
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    if hasattr(obj, "model_dump"):
+        return _serialize_for_json(obj.model_dump())
+    if isinstance(obj, dict):
+        return {k: _serialize_for_json(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_serialize_for_json(i) for i in obj]
+    return obj
 
 
 @router.post("/sessions/{session_id}/messages/stream")
@@ -432,6 +459,7 @@ async def send_message_stream(
         memory_context=memory_context,
         session_id=str(session_id),
         user_id=str(current_user.user_id),
+        username=current_user.username,
     )
 
     async def event_generator() -> AsyncGenerator[str, None]:
@@ -440,67 +468,94 @@ async def send_message_stream(
         trace_data: dict | None = None
 
         try:
-            async for event in workflow_graph.astream(initial_state, stream_mode="updates"):
-                for node_name, node_output in event.items():
-                    if node_name == "planner" and node_output.get("plan"):
-                        plan = node_output["plan"]
-                        steps = [{"agent": step.agent, "task": step.task} for step in plan.steps]
-                        yield _sse(
-                            "planning",
-                            {
-                                "reasoning": plan.reasoning,
-                                "steps": steps,
-                                "requires_agent": plan.requires_agent,
-                            },
-                        )
+            # Initialize trace data with empty structures
+            trace_data = {
+                "plan": None,
+                "agent_outputs": [],
+                "metadata": {
+                    "metrics": [],
+                    "suggestions": [],
+                }
+            }
 
-                    elif node_name == "executor" and node_output.get("agent_outputs"):
-                        outputs = node_output["agent_outputs"]
-                        if outputs:
-                            latest = outputs[-1]
-                            step_index = node_output.get("current_step_index", len(outputs))
-                            yield _sse(
-                                "agent_step",
-                                {
-                                    "agent": latest["agent"],
-                                    "result": latest["result"],
-                                    "step_index": step_index,
-                                },
-                            )
+            # Use a manual iterator to support heartbeats (Keep-Alive)
+            graph_gen = workflow_graph.astream(initial_state, stream_mode="updates").__aiter__()
+            
+            while True:
+                try:
+                    # Wait for next graph event with a 15s timeout for heartbeats
+                    event = await asyncio.wait_for(graph_gen.__anext__(), timeout=15.0)
+                    
+                    for node_name, node_output in event.items():
+                        # 1. Handle UI-specific streaming events
+                        if node_name == "planner":
+                            plan = node_output.get("plan") if isinstance(node_output, dict) else getattr(node_output, "plan", None)
+                            if plan:
+                                steps = [{"agent": step.agent, "task": step.task} for step in getattr(plan, "steps", [])]
+                                yield _sse(
+                                    "planning",
+                                    {
+                                        "reasoning": getattr(plan, "reasoning", ""),
+                                        "steps": steps,
+                                        "requires_agent": getattr(plan, "requires_agent", True),
+                                    },
+                                )
 
-                    elif node_name == "synthesizer" and node_output.get("final_response"):
-                        final_response = node_output["final_response"]
-                        # Store structural metadata from sanitizer output
-                        trace_data = trace_data or {}
-                        trace_data["metadata"] = {
-                            "metrics": node_output.get("final_metrics", []),
-                            "suggestions": node_output.get("final_suggestions", []),
-                        }
-                        yield _sse("synthesizing", {"status": "generating final response"})
+                        elif node_name == "executor":
+                            outputs = node_output.get("agent_outputs") if isinstance(node_output, dict) else getattr(node_output, "agent_outputs", [])
+                            if outputs:
+                                latest = outputs[-1]
+                                step_index = node_output.get("current_step_index") if isinstance(node_output, dict) else getattr(node_output, "current_step_index", len(outputs))
+                                
+                                res_val = latest.get("result", "")
+                                res_text = getattr(res_val, "response", str(res_val))
+                                
+                                yield _sse(
+                                    "agent_step",
+                                    {
+                                        "agent": latest.get("agent", "Specialist"),
+                                        "result": res_text,
+                                        "step_index": step_index,
+                                    },
+                                )
 
-                    elif node_name == "escalation" and node_output.get("final_response"):
-                        final_response = node_output["final_response"]
-                        yield _sse(
-                            "escalation",
-                            {
-                                "status": "escalated_to_rm",
-                                "response": final_response,
-                            },
-                        )
+                        elif node_name == "synthesizer":
+                            final_res = node_output.get("final_response") if isinstance(node_output, dict) else getattr(node_output, "final_response", None)
+                            if final_res:
+                                final_response = final_res
+                                trace_data["metadata"]["metrics"] = node_output.get("final_metrics") if isinstance(node_output, dict) else getattr(node_output, "final_metrics", [])
+                                trace_data["metadata"]["suggestions"] = node_output.get("final_suggestions") if isinstance(node_output, dict) else getattr(node_output, "final_suggestions", [])
+                                yield _sse("synthesizing", {"status": "generating final response"})
 
-                    elif node_name == "direct_response" and node_output.get("final_response"):
-                        final_response = node_output["final_response"]
-                        yield _sse("synthesizing", {"status": "generating final response"})
+                        elif node_name == "escalation":
+                            esc_res = node_output.get("final_response") if isinstance(node_output, dict) else getattr(node_output, "final_response", None)
+                            if esc_res:
+                                final_response = esc_res
+                                yield _sse("escalation", {"status": "escalated_to_rm", "response": final_response})
 
-                    # Build trace from latest state
-                    if isinstance(node_output, dict):
-                        if node_output.get("plan"):
-                            plan_obj = node_output["plan"]
-                            trace_data = trace_data or {}
-                            trace_data["plan"] = plan_obj.model_dump()
-                        if node_output.get("agent_outputs"):
-                            trace_data = trace_data or {}
-                            trace_data["agent_outputs"] = node_output["agent_outputs"]
+                        elif node_name == "direct_response":
+                            dr_res = node_output.get("final_response") if isinstance(node_output, dict) else getattr(node_output, "final_response", None)
+                            if dr_res:
+                                final_response = dr_res
+                                yield _sse("synthesizing", {"status": "generating final response"})
+
+                        # 2. Accumulate full trace data safely
+                        if hasattr(node_output, "plan") or (isinstance(node_output, dict) and "plan" in node_output):
+                            cur_plan = getattr(node_output, "plan", node_output.get("plan") if isinstance(node_output, dict) else None)
+                            if cur_plan:
+                                trace_data["plan"] = _serialize_for_json(cur_plan)
+                        
+                        if hasattr(node_output, "agent_outputs") or (isinstance(node_output, dict) and "agent_outputs" in node_output):
+                            cur_outputs = getattr(node_output, "agent_outputs", node_output.get("agent_outputs") if isinstance(node_output, dict) else None)
+                            if cur_outputs:
+                                trace_data["agent_outputs"] = _serialize_for_json(cur_outputs)
+
+                except asyncio.TimeoutError:
+                    # Connection keep-alive heartbeat
+                    yield _sse("heartbeat", {"status": "thinking"})
+                    continue
+                except StopAsyncIteration:
+                    break
 
         except Exception:
             logger.exception("stream_workflow_failed", session_id=str(session_id))
@@ -512,13 +567,15 @@ async def send_message_stream(
         if not final_response:
             final_response = "I'm sorry, I couldn't generate a response."
 
-        # Persist the assistant message
+        # Persist the assistant message (sanitize for JSON first)
+        trace_data_json = _serialize_for_json(trace_data)
+        
         assistant_message = await save_message(
             database_session,
             session_id,
             "assistant",
             final_response,
-            context=trace_data,
+            context=trace_data_json,
         )
 
         await memory_manager.store_memory(
@@ -530,7 +587,10 @@ async def send_message_stream(
         )
 
         if should_attempt_rename:
-            await _generate_and_update_title(database_session, session_id, current_user.user_id, sanitized_content)
+            try:
+                await _generate_and_update_title(database_session, session_id, current_user.user_id, sanitized_content)
+            except Exception:
+                logger.error("background_title_update_failed", session_id=str(session_id))
 
         yield _sse(
             "done",
@@ -540,9 +600,9 @@ async def send_message_stream(
                     "session_id": str(assistant_message.session_id),
                     "role": assistant_message.role,
                     "content": assistant_message.content,
-                    "metadata": trace_data.get("metadata") if trace_data else None,
+                    "metadata": trace_data["metadata"],
                     "context": assistant_message.context,
-                    "created_at": assistant_message.created_at.isoformat(),
+                    "created_at": assistant_message.created_at.isoformat() if assistant_message.created_at else None,
                 },
             },
         )
@@ -550,14 +610,27 @@ async def send_message_stream(
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
+
 def _sse(event: str, data: dict) -> str:
-    """Format a Server-Sent Event string.
+    """Format a Server-Sent Event string with safety checks and custom encoding."""
+    class SafeEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, uuid.UUID):
+                return str(obj)
+            if hasattr(obj, "isoformat"):
+                return obj.isoformat()
+            if hasattr(obj, "model_dump"):
+                return obj.model_dump()
+            if hasattr(obj, "dict"):
+                return obj.dict()
+            return str(obj) # Final fallback to string representation to avoid TypeError
 
-    Args:
-        event: The event type name.
-        data: The JSON-serializable payload.
+    try:
+        json_data = json.dumps(data, cls=SafeEncoder)
+        return f"event: {event}\ndata: {json_data}\n\n"
+    except (TypeError, ValueError) as e:
+        logger.error("sse_serialization_failed", event=event, error=str(e))
+        # Fallback to a safe error event if the payload fails to serialize
+        error_payload = json.dumps({"error": "Data serialization failed", "event": event})
+        return f"event: error\ndata: {error_payload}\n\n"
 
-    Returns:
-        A properly formatted SSE string.
-    """
-    return f"event: {event}\ndata: {json.dumps(data)}\n\n"

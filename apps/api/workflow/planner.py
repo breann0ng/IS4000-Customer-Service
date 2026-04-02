@@ -10,7 +10,14 @@ Uses Gemini structured output to guarantee a valid PlannerOutput schema.
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-from apps.api.config import settings
+from tenacity import (
+    AsyncRetrying,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
+
+from apps.api.config import resiliency_manager, settings
 from apps.api.logging_config import get_logger
 from apps.api.workflow.state import AgentStep, PlannerOutput, WorkflowState
 
@@ -76,6 +83,7 @@ def _build_planner_llm():  # noqa: ANN202
         google_api_key=settings.gemini_api_key,
         temperature=0.0,
         max_output_tokens=2048,
+        max_retries=0,  # Fail fast! Let our own resiliency logic handle fallbacks.
     )
     return llm.with_structured_output(PlannerOutput)
 
@@ -96,18 +104,15 @@ async def planner_node(state: WorkflowState) -> dict:
     """
     logger.info("planner_node_start", user_message=state.user_message[:100])
 
-    # Simple heuristic for very short greetings to save LLM tokens if possible
-    # but the prompt already handles it, so we let the structured LLM handle it
-    # to ensure the direct_response matches the UBS tone.
+    # 1. Check Circuit Breaker
+    if resiliency_manager.is_circuit_breaker_tripped:
+        logger.warning("planner_circuit_breaker_tripped_skipping_llm")
+        return _planner_fallback(state, "Circuit breaker active - using keyword fallback.")
 
+    # 2. Check Mock Mode
     if settings.is_llm_mock_mode:
-        logger.info("planner_mock_mode")
-        plan = PlannerOutput(
-            reasoning="Query requires client services support.",
-            steps=[AgentStep(agent="client_services", task=state.user_message)],
-            requires_agent=True,
-        )
-        return {"plan": plan, "current_step_index": 0}
+        logger.info("planner_mock_mode_routing")
+        return _planner_fallback(state, "Mock mode routing active.")
 
     structured_llm = _build_planner_llm()
 
@@ -138,25 +143,59 @@ async def planner_node(state: WorkflowState) -> dict:
     )
 
     try:
-        plan = await structured_llm.ainvoke(
-            [
-                SystemMessage(content=PLANNER_SYSTEM_PROMPT),
-                HumanMessage(content=user_prompt),
-            ]
+        # Fail fast! Only 1 attempt before falling back to manual routing
+        retryer = AsyncRetrying(
+            stop=stop_after_attempt(1),
+            retry=retry_if_exception_type(Exception),
+            reraise=True,
         )
 
+        async for attempt in retryer:
+            with attempt:
+                plan = await structured_llm.ainvoke(
+                    [
+                        SystemMessage(content=PLANNER_SYSTEM_PROMPT),
+                        HumanMessage(content=user_prompt),
+                    ]
+                )
+        
+        resiliency_manager.record_success()
         logger.info(
             "planner_node_complete",
             requires_agent=plan.requires_agent,
             step_count=len(plan.steps),
         )
+        return {"plan": plan, "current_step_index": 0}
 
     except Exception as error:
-        logger.exception("planner_structured_output_failed", error=str(error))
-        plan = PlannerOutput(
-            reasoning="Could not produce structured plan, routing to client services as default.",
-            steps=[AgentStep(agent="client_services", task=state.user_message)],
-            requires_agent=True,
-        )
+        resiliency_manager.record_failure(str(error))
+        logger.exception("planner_node_failed_using_fallback", error=str(error))
+        return _planner_fallback(state, f"Planner error: {str(error)}")
 
+
+def _planner_fallback(state: WorkflowState, reasoning: str) -> dict:
+    """Implement keyword-based routing as a robust fallback for the planner."""
+    query = state.user_message.lower()
+    
+    if any(w in query for w in ["lombard", "loan", "limit", "credit", "borrow"]):
+        agent = "lending_credit"
+        reasoning += " (Detected: lending/credit)"
+    elif any(w in query for w in ["portfolio", "performance", "invest", "allocation", "equity", "bond"]):
+        agent = "wealth_advisory"
+        reasoning += " (Detected: wealth advisory)"
+    elif any(w in query for w in ["cash", "balance", "account", "transfer", "transaction", "sgd", "usd", "eur", "chf"]):
+        agent = "private_banking"
+        reasoning += " (Detected: private banking)"
+    elif any(w in query for w in ["tax", "compliance", "regulatory", "kyc", "onboard"]):
+        agent = "client_services"
+        reasoning += " (Detected: client services)"
+    else:
+        agent = "client_services"
+        reasoning += " (Defaulted to client services)"
+
+    plan = PlannerOutput(
+        reasoning=reasoning,
+        steps=[AgentStep(agent=agent, task=state.user_message)],
+        requires_agent=True,
+    )
     return {"plan": plan, "current_step_index": 0}

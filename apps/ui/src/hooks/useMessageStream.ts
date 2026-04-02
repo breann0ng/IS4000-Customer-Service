@@ -66,32 +66,50 @@ export function useMessageStream() {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
+      let eventType = "";
 
       try {
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() ?? "";
-
-          let eventType = "";
-          for (const line of lines) {
-            if (line.startsWith("event: ")) {
-              eventType = line.slice(7).trim();
-            } else if (line.startsWith("data: ") && eventType) {
-              const data = JSON.parse(line.slice(6));
-              handleEvent(eventType, data, setThinking, callbacks);
-              eventType = "";
+          
+          if (value) {
+            buffer += decoder.decode(value, { stream: true });
+            
+            // Process complete lines from the buffer
+            let lineBreakIndex;
+            while ((lineBreakIndex = buffer.indexOf("\n")) !== -1) {
+              const line = buffer.slice(0, lineBreakIndex).trim();
+              buffer = buffer.slice(lineBreakIndex + 1);
+              
+              if (line.startsWith("event: ")) {
+                eventType = line.slice(7).trim();
+              } else if (line.startsWith("data: ")) {
+                try {
+                  const data = JSON.parse(line.slice(6).trim());
+                  handleEvent(eventType, data, setThinking, callbacks);
+                } catch (e) {
+                  console.error("Failed to parse SSE data:", line, e);
+                }
+                // Reset event type after processing data
+                eventType = "";
+              }
             }
+          }
+
+          if (done) {
+            // If the stream ended but we never reached the 'done' phase, 
+            // logic here could trigger a final refresh or internal onDone
+            break;
           }
         }
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
+          console.error("Stream reader error:", err);
           setThinking({ phase: "idle", completedSteps: [] });
           callbacks.onError();
         }
+      } finally {
+        reader.releaseLock();
       }
     },
     [],

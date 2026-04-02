@@ -30,7 +30,9 @@ RUN corepack enable pnpm
 WORKDIR /app
 
 COPY apps/ui/package.json apps/ui/pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+# Ensure devDependencies (typescript, vite) are installed
+ENV NODE_ENV=development
+RUN pnpm install
 
 COPY apps/ui/ .
 RUN pnpm run build

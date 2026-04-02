@@ -27,14 +27,14 @@ AGENT_DISPATCH_TABLE = {
 }
 
 
-async def _run_step(agent_name: str, task: str, conversation_context: str) -> dict:
+async def _run_step(agent_name: str, task: str, conversation_context: str, username: str) -> dict:
     """Run a single agent step, returning a result dict."""
     agent_function = AGENT_DISPATCH_TABLE.get(agent_name)
     if agent_function is None:
         logger.error("executor_unknown_agent", agent=agent_name)
         return {"agent": agent_name, "result": f"Unknown agent: {agent_name}"}
     try:
-        result = await agent_function(task=task, conversation_context=conversation_context)
+        result = await agent_function(task=task, conversation_context=conversation_context, username=username)
         return {"agent": agent_name, "result": result}
     except Exception as error:
         logger.exception("executor_agent_failed", agent=agent_name)
@@ -78,7 +78,10 @@ async def executor_node(state: WorkflowState) -> dict:
     )
 
     # Run all steps concurrently
-    tasks = [_run_step(step.agent, step.task, conversation_context) for step, _ in remaining_steps]
+    tasks = [
+        _run_step(step.agent, step.task, conversation_context, state.username) 
+        for step, _ in remaining_steps
+    ]
     results = await asyncio.gather(*tasks)
 
     new_outputs = list(state.agent_outputs) + list(results)

@@ -7,15 +7,6 @@ from langgraph.graph.message import add_messages
 from pydantic import BaseModel, Field
 
 
-class AgentStep(BaseModel):
-    """A single planned step to be executed by a specialized agent."""
-
-    agent: str = Field(description="The agent responsible for this step")
-    task: str = Field(description="The specific task for the agent to perform")
-    completed: bool = Field(default=False, description="Whether this step has been executed")
-    result: str | None = Field(default=None, description="The result after execution")
-
-
 class MetricItem(BaseModel):
     """A key-value pair representing a financial metric."""
 
@@ -24,6 +15,38 @@ class MetricItem(BaseModel):
     trend: str | None = Field(
         default=None, description="Optional trend indicator: up, down, or neutral"
     )
+
+
+class SpecialistAgentOutput(BaseModel):
+    """Base model for all specialized agent outputs to ensure structured synthesis."""
+
+    agent_name: str = Field(description="The name of the specialist agent")
+    response: str = Field(description="The primary text response from the agent")
+    status: str = Field(description="Operational status: COMPLETED, IN_PROGRESS, etc.")
+    next_steps: list[str] = Field(
+        default_factory=list, description="Actionable next steps for the client or RM"
+    )
+    metrics: list[MetricItem] = Field(
+        default_factory=list, description="Key metrics identified by this agent"
+    )
+    requires_escalation: bool = Field(
+        default=False, description="True if a human RM must intervene"
+    )
+    raw_data: dict[str, Any] = Field(
+        default_factory=dict, description="Structured technical/numeric data if available"
+    )
+
+
+class AgentStep(BaseModel):
+    """A single planned step to be executed by a specialized agent."""
+
+    agent: str = Field(description="The agent responsible for this step")
+    task: str = Field(description="The specific task for the agent to perform")
+    completed: bool = Field(default=False, description="Whether this step has been executed")
+    result: SpecialistAgentOutput | str | None = Field(
+        default=None, description="The result after execution"
+    )
+
 
 
 class PlannerOutput(BaseModel):
@@ -45,17 +68,12 @@ class SynthesizerOutput(BaseModel):
     """The structured output from the synthesizer node."""
 
     response: str = Field(
-        description=(
-            "The synthesized client-facing response in Markdown format. "
-            "MUST use ### section headers. Always include '### Summary', '### Next Steps', and '### Important Notes'. "
-            "Add '### Portfolio Overview', '### Market Context', '### Considerations' ONLY if the agent data contains "
-            "portfolio or financial metrics (AUM, YTD, allocation). "
-            "Add specialist sections (### Service Status, ### Credit & Lending Summary, etc.) only when relevant. "
-            "Do NOT write a single prose paragraph — every section must be separated by its ### heading. "
-            "Bold key figures (AUM, YTD, amounts, dates) wherever they appear."
-        )
+        description="The synthesized client-facing response in Markdown format. High-quality and professional."
     )
-    confidence: str = Field(description="Confidence level in the response: high, medium, or low")
+    confidence: str = Field(
+        default="high",
+        description="Confidence level in the response: high, medium, or low",
+    )
     metrics: list[MetricItem] = Field(
         default_factory=list,
         description="Key metrics extracted from specialist analysis",
@@ -87,6 +105,7 @@ class WorkflowState(BaseModel):
     memory_context: list[dict] = Field(default_factory=list)
     session_id: str = Field(default="")
     user_id: str = Field(default="")
+    username: str = Field(default="", description="The username of the authenticated persona")
     plan: PlannerOutput | None = Field(default=None, description="The execution plan")
     current_step_index: int = Field(default=0, description="Index of the step being executed")
     agent_outputs: list[dict[str, Any]] = Field(

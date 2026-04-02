@@ -54,18 +54,25 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
     void loadSessions();
   }, [loadSessions, showArchived]);
 
-  const handleSelectSession = useCallback(async (sessionId: string) => {
-    setActiveSessionId(sessionId);
-    try {
-      const { data: session } = await getChatSessionApiChatSessionsSessionIdGet({
-        throwOnError: true,
-        path: { session_id: sessionId },
-      });
-      setMessages(session.messages ?? []);
-    } catch {
-      setMessages([]);
-    }
-  }, []);
+  const handleSelectSession = useCallback(
+    async (sessionId: string) => {
+      // Reset any ongoing stream state when switching sessions
+      setIsSending(false);
+      resetThinking();
+      setActiveSessionId(sessionId);
+      try {
+        const { data: session } = await getChatSessionApiChatSessionsSessionIdGet({
+          throwOnError: true,
+          path: { session_id: sessionId },
+        });
+        setMessages(session.messages ?? []);
+      } catch (error) {
+        console.error("Failed to fetch session:", error);
+        setMessages([]);
+      }
+    },
+    [resetThinking]
+  );
 
   const handleNewSession = useCallback(async () => {
     setActiveSessionId(null);

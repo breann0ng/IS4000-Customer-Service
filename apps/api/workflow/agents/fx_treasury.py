@@ -6,91 +6,80 @@ multi-currency account management, and treasury products.
 
 from apps.api.config import settings
 from apps.api.logging_config import get_logger
+from apps.api.workflow.state import SpecialistAgentOutput
 from apps.api.workflow.tools.mcp_client import McpClient
 
 logger = get_logger(__name__)
 
-FX_TREASURY_SYSTEM_PROMPT = """
-# ROLE AND SYSTEM BOUNDARIES
+FX_TREASURY_SYSTEM_PROMPT = """# ROLE
 You are a Foreign Exchange (FX) & Treasury Specialist for UBS Wealth Management, serving High Net Worth Individual (HNWI) clients. 
-You operate as a **low-autonomy analytical agent** within a multi-agent system.
-
-Your role is to **interpret client FX and treasury-related data** to produce structured, factual insights in **JSON format only**.
-
-You do NOT:
-- Execute FX transactions or access client accounts
-- Provide unsolicited advice or personal investment opinions
-- Format responses for end-user readability (handled by a downstream synthesiser agent)
-- Replace legal, compliance, or risk management review
-
----
 
 # CORE RESPONSIBILITIES
+1. Market Insights: FX trends, rate forecasts, and risk analysis.
+2. Currency Hedging: Forwards, options, and exposure management.
+3. Treasury Optimization: Multi-currency liquidity and cash pooling.
 
-1. Market Insights
-   - Provide FX market trends, rate forecasts, and currency risk analysis
-   - Highlight macroeconomic drivers, geopolitical impacts, and liquidity conditions
-
-2. Currency Hedging & Structuring
-   - Advise on hedging strategies using forwards, options, and FX derivatives
-   - Identify potential currency exposure and optimal allocation
-   - Highlight constraints or internal limits for derivative structures
-
-3. Multi-Currency Treasury Optimization
-   - Analyse multi-currency account structures and currency allocation
-   - Provide guidance on cash pooling, liquidity management, and cross-currency settlements
-
-4. Execution Considerations (Advisory Only)
-   - Suggest timing or staging strategies for large FX transactions
-   - Identify potential market impact or liquidity risk
-   - Do NOT execute or simulate trades
-
----
-
-# OUTPUT REQUIREMENTS
-
-- **Always return a JSON object** in the following schema:
-
-```json
-{
-  "recommendations": ["string - key actionable points or strategies"],
-  "risk_analysis": ["string - key market/hedging risks"],
-  "execution_advice": ["string - suggested timing or staging of transactions, if relevant"],
-  "market_insights": ["string - relevant FX market trends or forecasts"]
-}
+# GUIDELINES
+- Provide structured, factual insights in JSON.
+- Identify potential currency exposure and optimal allocation.
+- Do NOT provide unsolicited advice or personal investment opinions.
 """
-
-fx_treasury_mcp_client = McpClient(server_url=settings.mcp_service_workflow_url)
-
 
 async def execute_fx_treasury_task(
     task: str,
     conversation_context: str,
-) -> str:
+    username: str,
+) -> SpecialistAgentOutput:
     """Execute a foreign exchange or treasury task using the MCP-connected tools.
 
     Args:
         task: The specific FX or treasury task to perform.
         conversation_context: Relevant conversation context for the task.
+        username: The username of the authenticated persona.
 
     Returns:
-        The result of the FX/treasury operation as a string.
+        The result of the FX/treasury operation as a SpecialistAgentOutput.
     """
     logger.info("fx_treasury_agent_start", task=task)
 
-    result = await fx_treasury_mcp_client.call_tool(
+    # Initialize client inside handler to pick up latest environment settings
+    mcp_client = McpClient(server_url=settings.mcp_service_workflow_url)
+
+    result = await mcp_client.call_tool(
         tool_name="fx_treasury",
         arguments={
             "task": task,
             "context": conversation_context,
+            "username": username,
             "system_prompt": FX_TREASURY_SYSTEM_PROMPT,
         },
     )
 
     if "error" in result:
         logger.error("fx_treasury_agent_error", error=result["error"])
-        return f"FX & treasury encountered an issue: {result['error']}"
+        return SpecialistAgentOutput(
+            agent_name="fx_treasury",
+            response=f"FX & treasury encountered an issue: {result['error']}",
+            status="ERROR",
+            next_steps=["Please try again or contact your RM."],
+        )
 
-    response = result.get("response", "No response from FX & treasury agent.")
-    logger.info("fx_treasury_agent_complete", response_length=len(response))
-    return response
+    # Handle both new structured dict and legacy string responses
+    if isinstance(result, str):
+        return SpecialistAgentOutput(
+            agent_name="fx_treasury",
+            response=result,
+            status="COMPLETED",
+        )
+
+    if isinstance(result, dict) and "response" in result:
+        # Ensure agent_name is present
+        if "agent_name" not in result:
+            result["agent_name"] = "fx_treasury"
+        return SpecialistAgentOutput(**result)
+
+    return SpecialistAgentOutput(
+        agent_name="fx_treasury",
+        response="No response from FX & treasury agent.",
+        status="ERROR",
+    )

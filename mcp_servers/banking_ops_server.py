@@ -9,36 +9,20 @@ Run standalone:
 import asyncio
 
 import httpx
-from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_community.tools.tavily_search import TavilySearchResults
+from tenacity import (
+    AsyncRetrying,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
-from apps.api.config import settings
-from mcp_servers.base import create_mock_mcp_app
+from apps.api.config import resiliency_manager, settings
+from mcp_servers.base import create_mock_mcp_app, get_persona_data
 
-MOCK_PORTFOLIO: dict[str, str | dict[str, str]] = {
-    "customer_id": "C-011",
-    "customer_name": "John Smith",
-    "relationship_manager": "Emma Clarke",
-    "total_aum": "USD 42,000,000",
-    "net_worth": "USD 68,000,000",
-    "risk_profile": "Growth",
-    "asset_allocation": {
-        "Public Equities": "48% (USD 20,160,000)",
-        "Fixed Income": "20% (USD 8,400,000)",
-        "Private Equity": "14% (USD 5,880,000)",
-        "Hedge Funds": "8% (USD 3,360,000)",
-        "Structured Products": "6% (USD 2,520,000)",
-        "Real Asset Funds": "2% (USD 840,000)",
-        "Cash within Portfolio": "2% (USD 840,000)",
-    },
-    "ytd_performance": "+8.4%",
-    "one_year_return": "+16.7%",
-    "benchmark_comparison": "+2.1% vs. MSCI World benchmark",
-    "lombard_facility": "USD 10,000,000 limit / USD 3,200,000 drawn / USD 6,800,000 available @ 5.10% p.a.",
-    "mortgage": "GBP 4,200,000 outstanding (One Hyde Park, London) @ 4.25% p.a.",
-    "liquid_accounts": "USD 5,940,000 across GBP current, multi-currency, ISA, and liquidity accounts",
-}
+# Removed static MOCK_PORTFOLIO - now using SQLite via get_persona_data
 
 TOOL_DEFINITIONS = [
     {
@@ -49,6 +33,7 @@ TOOL_DEFINITIONS = [
             "properties": {
                 "task": {"type": "string"},
                 "context": {"type": "string"},
+                "username": {"type": "string"},
                 "system_prompt": {"type": "string"},
             },
         },
@@ -61,6 +46,7 @@ TOOL_DEFINITIONS = [
             "properties": {
                 "task": {"type": "string"},
                 "context": {"type": "string"},
+                "username": {"type": "string"},
                 "system_prompt": {"type": "string"},
             },
         },
@@ -73,6 +59,7 @@ TOOL_DEFINITIONS = [
             "properties": {
                 "task": {"type": "string"},
                 "context": {"type": "string"},
+                "username": {"type": "string"},
                 "system_prompt": {"type": "string"},
             },
         },
@@ -137,20 +124,42 @@ async def handle_wealth_advisory(params: dict) -> dict:
     # Fetch RAG docs and live market data in parallel
     retrieved_docs, tavily_data = await asyncio.gather(_fetch_rag(), _fetch_tavily())
 
-    # 3. Check for mock mode
-    if settings.is_llm_mock_mode:
-        portfolio = MOCK_PORTFOLIO
+    persona_data = get_persona_data(username) or {}
+    profile = persona_data.get("profile", {})
+    portfolio = persona_data.get("portfolio", {})
+    real_estate = persona_data.get("real_estate", [])
+    
+    aum_str = f"USD {profile.get('aum_usd', 0):,.0f}"
+    perf_str = f"{portfolio.get('ytd_return_pct', 0):+.1f}%"
+    
+    # Format real estate details for the prompt
+    re_summary = "No real estate records found."
+    if real_estate:
+        re_summary = "\n".join([f"- {re.get('property')} in {re.get('location')}: USD {re.get('value_local', 0):,.0f}" for re in real_estate])
+
+    # 3. Check for mock mode or circuit breaker
+    if settings.is_llm_mock_mode or resiliency_manager.is_circuit_breaker_tripped:
         return {
-            "response": (
-                f"[SMART MOCK ADVISORY]\n\n"
-                f"Based on your AUM of {portfolio['total_aum']} and the query about '{task[:50]}', "
-                f"I have consulted our recent market research and live market data.\n\n"
-                f"RAG Context:\n{retrieved_docs[:200]}...\n\n"
-                f"Tavily Context:\n{tavily_data[:200]}...\n\n"
-                f"Our stance remains moderately constructive. Please contact your RM to discuss "
-                f"how this outlook impacts your specific allocation."
-            )
+            "agent_name": "wealth_advisory",
+            "response": f"Strategic wealth advisory assessment generated for: {task[:60]}...",
+            "status": "COMPLETED",
+            "next_steps": [
+                "Schedule a detailed portfolio review with your RM",
+                "Review the suggested asset allocation adjustments"
+            ],
+            "metrics": [
+                {"label": "AUM", "value": aum_str},
+                {"label": "YTD Return", "value": perf_str, "trend": "up" if "+" in perf_str else "down"}
+            ],
+            "requires_escalation": False,
+            "raw_data": {
+                "profile": profile,
+                "portfolio": portfolio,
+                "market_data_preview": tavily_data[:200],
+                "research_preview": retrieved_docs[:200]
+            }
         }
+
 
     # 4. Call Gemini for real synthesis
     llm = ChatGoogleGenerativeAI(
@@ -158,11 +167,13 @@ async def handle_wealth_advisory(params: dict) -> dict:
         google_api_key=settings.gemini_api_key,
         temperature=0.2,
         max_output_tokens=1500,
+        max_retries=0,  # Fail fast!
     )
 
     prompt = (
-        f"Client Account Summary:\nTotal AUM: {MOCK_PORTFOLIO['total_aum']}\n"
-        f"Performance: {MOCK_PORTFOLIO['ytd_performance']}\n\n"
+        f"Client Account Summary:\nTotal AUM: {aum_str}\n"
+        f"Performance: {perf_str}\n\n"
+        f"Real Estate Portfolio:\n{re_summary}\n\n"
         f"Client Question: {task}\n\n"
         f"Conversation Context: {context}\n\n"
         f"Internal Research (RAG):\n{retrieved_docs}\n\n"
@@ -171,20 +182,67 @@ async def handle_wealth_advisory(params: dict) -> dict:
     )
 
     try:
-        response = await llm.ainvoke(
-            [
-                SystemMessage(content=system_prompt),
-                HumanMessage(content=prompt),
-            ]
+        # Define retry logic with exponential backoff
+        retryer = AsyncRetrying(
+            stop=stop_after_attempt(settings.llm_max_retries),
+            wait=wait_exponential(
+                multiplier=1, 
+                min=settings.llm_retry_min_wait, 
+                max=settings.llm_retry_max_wait
+            ),
+            retry=retry_if_exception_type(Exception),
+            reraise=True,
         )
+
+        async for attempt in retryer:
+            with attempt:
+                response = await llm.ainvoke(
+                    [
+                        SystemMessage(content=system_prompt),
+                        HumanMessage(content=prompt),
+                    ]
+                )
+
+        resiliency_manager.record_success()
         content = response.content
         if isinstance(content, list):
             content = " ".join(
                 part.get("text", "") if isinstance(part, dict) else str(part) for part in content
             )
-        return {"response": str(content)}
+        
+        # Note: In a real implementation, we would use with_structured_output(SpecialistAgentOutput)
+        # here. For now, we wrap the LLM response in the expected structure.
+        return {
+            "agent_name": "wealth_advisory",
+            "response": str(content),
+            "status": "COMPLETED",
+            "next_steps": ["Discuss these insights with your advisor"],
+            "metrics": [
+                {"label": "AUM", "value": aum_str},
+                {"label": "YTD Return", "value": perf_str}
+            ],
+            "requires_escalation": False,
+            "raw_data": {
+                "aum": aum_str,
+                "ytd_return": perf_str
+            }
+        }
     except Exception as e:
-        return {"response": f"Wealth advisory processing failed: {str(e)}", "error": str(e)}
+        resiliency_manager.record_failure(str(e))
+        return {
+            "agent_name": "wealth_advisory",
+            "response": f"Advisory service temporarily limited (LLM Error).",
+            "status": "ERROR",
+            "next_steps": ["Retry in 60 seconds"],
+            "metrics": [],
+            "requires_escalation": True,
+            "raw_data": {
+                "error": str(e),
+                "aum": aum_str,
+                "ytd_return": perf_str
+            }
+        }
+
 
 
 def handle_lending_credit(params: dict) -> dict:
@@ -197,25 +255,45 @@ def handle_lending_credit(params: dict) -> dict:
         A dictionary with the mock response.
     """
     task = params.get("task", "")
+    username = params.get("username", "jsmith")
+    persona_data = get_persona_data(username) or {}
+    credit = persona_data.get("credit", {})
+    profile = persona_data.get("profile", {})
+    real_estate = persona_data.get("real_estate", [])
+    
+    aum_str = f"USD {profile.get('aum_usd', 0):,.0f}"
+    lombard_limit = credit.get("lombard_limit", 0)
+    mortgage_sgd = credit.get("mortgage_outstanding", 0)
+
     return {
-        "response": (
-            f"Lending Assessment for your inquiry: {task[:120]}\n\n"
-            f"Based on your portfolio valuation of {MOCK_PORTFOLIO['total_aum']}, "
-            f"the following credit facilities are available:\n\n"
-            f"Lombard Credit Line:\n"
-            f"  - Maximum facility: CHF 8,715,000 (70% LTV on diversified portfolio)\n"
-            f"  - Indicative rate: SARON + 0.85% p.a.\n"
-            f"  - Arrangement fee: 0.10% (waived for existing premium clients)\n"
-            f"  - Flexible drawdown and repayment, no fixed maturity\n\n"
-            f"Mortgage Financing:\n"
-            f"  - Fixed 5-year: 1.35% p.a.\n"
-            f"  - Fixed 10-year: 1.45% p.a.\n"
-            f"  - Variable (SARON-linked): SARON + 0.65% p.a.\n"
-            f"  - Maximum LTV: 80% (residential), 65% (commercial)\n\n"
-            f"A detailed credit proposal can be prepared within 48 hours. "
-            f"Please confirm if you would like to proceed."
-        )
+        "agent_name": "lending_credit",
+        "response": f"Lending and credit facility assessment for: {task[:60]}...",
+        "status": "COMPLETED",
+        "next_steps": [
+            "Confirm interest in the SARON-indexed Lombard facility",
+            "Provide updated property valuation for mortgage refinancing"
+        ],
+        "metrics": [
+            {"label": "Lombard Limit", "value": f"USD {lombard_limit:,.0f}"},
+            {"label": "Mortgage", "value": f"SGD {mortgage_sgd:,.0f}"}
+        ],
+        "requires_escalation": False,
+        "raw_data": {
+            "aum": aum_str,
+            "credit_facilities": {
+                "lombard": {
+                    "limit": lombard_limit,
+                    "rate": "SARON + 0.85%"
+                },
+                "mortgage": {
+                    "outstanding": mortgage_sgd,
+                    "rate": "1.35% fixed"
+                }
+            },
+            "real_estate": real_estate
+        }
     }
+
 
 
 def handle_banking_operation(params: dict) -> dict:
@@ -229,13 +307,21 @@ def handle_banking_operation(params: dict) -> dict:
     """
     task = params.get("task", "")
     return {
-        "response": (
-            f"Banking operation processed for: {task[:120]}\n\n"
-            f"The requested operation has been queued for processing. "
-            f"Standard operations are completed within the same business day. "
-            f"Cross-border transactions may require 1-2 additional business days."
-        )
+        "agent_name": "banking_operation",
+        "response": f"Banking operation request for {task[:60]}... has been queued.",
+        "status": "IN_PROGRESS",
+        "next_steps": [
+            "Await same business day completion for standard requests",
+            "Cross-border verification may take 1-2 additional days"
+        ],
+        "metrics": [],
+        "requires_escalation": False,
+        "raw_data": {
+            "operation": task[:120],
+            "processing_priority": "standard"
+        }
     }
+
 
 
 TOOL_HANDLERS = {

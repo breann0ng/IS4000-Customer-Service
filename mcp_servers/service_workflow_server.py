@@ -8,7 +8,7 @@ Run standalone:
 
 import random
 
-from mcp_servers.base import create_mock_mcp_app
+from mcp_servers.base import create_mock_mcp_app, get_persona_data
 
 MOCK_FX_RATES = {
     "EUR/CHF": {"bid": "0.9412", "ask": "0.9418", "change": "-0.15%"},
@@ -28,6 +28,7 @@ TOOL_DEFINITIONS = [
             "properties": {
                 "task": {"type": "string"},
                 "context": {"type": "string"},
+                "username": {"type": "string"},
                 "retrieved_documents": {"type": "string"},
                 "system_prompt": {"type": "string"},
             },
@@ -41,6 +42,7 @@ TOOL_DEFINITIONS = [
             "properties": {
                 "task": {"type": "string"},
                 "context": {"type": "string"},
+                "username": {"type": "string"},
                 "system_prompt": {"type": "string"},
             },
         },
@@ -53,6 +55,7 @@ TOOL_DEFINITIONS = [
             "properties": {
                 "task": {"type": "string"},
                 "context": {"type": "string"},
+                "username": {"type": "string"},
                 "system_prompt": {"type": "string"},
             },
         },
@@ -70,49 +73,57 @@ def handle_client_services(params: dict) -> dict:
         A dictionary with the mock response.
     """
     task = params.get("task", "")
+    username = params.get("username", "jsmith")
+    persona_data = get_persona_data(username) or {}
+    profile = persona_data.get("profile", {})
+    full_name = profile.get("full_name", "Valued Client")
+    rm_name = profile.get("relationship_manager", "your Relationship Manager")
 
     # Check if this is a greeting task
     if any(greet in task.lower() for greet in ["greeting", "welcome", "hello", "hi"]):
         return {
+            "agent_name": "client_services",
             "response": (
-                "Good day. It is a pleasure to assist you. As your premium wealth management "
-                "assistant, I am dedicated to providing you with seamless access to our global "
-                "capabilities.\n\n"
-                "I can assist you with a wide range of services today, including:\n\n"
-                "1. **Portfolio Performance & Insights**: A comprehensive review of your current "
-                "asset allocation and YTD performance.\n"
-                "2. **Account Balances & Transactions**: Securely check your multi-currency "
-                "positions or manage global transfers.\n"
-                "3. **Lending & Credit Options**: Explore bespoke Lombard lending solutions "
-                "designed to optimize your liquidity.\n\n"
-                "How may I be of service to you today?"
-            )
+                f"Good day, {full_name}. It is a pleasure to assist you. As your premium wealth management "
+                "assistant at UBS, I am dedicated to providing you with seamless access to our global "
+                "capabilities."
+            ),
+            "status": "COMPLETED",
+            "next_steps": [
+                "Portfolio Performance & Insights Review",
+                "Account Balances & Transactions Support",
+                "Lending & Credit Consultations"
+            ],
+            "metrics": [],
+            "requires_escalation": False,
+            "raw_data": {"profile": profile}
         }
 
     reference_number = f"CS-{random.randint(100000, 999999)}"
     retrieved = params.get("retrieved_documents", "")
     policy_note = ""
     if retrieved and retrieved != "No relevant policy documents found.":
-        policy_note = "\n\nRelevant internal policies have been reviewed for this request."
+        policy_note = "Internal policies reviewed."
+
     return {
-        "response": (
-            f"Service Request Registered: {reference_number}\n\n"
-            f"Request: {task[:120]}\n\n"
-            f"Status: IN PROGRESS\n"
-            f"Estimated completion: 2-3 business days\n\n"
-            f"Next steps:\n"
-            f"  1. Your relationship manager has been notified\n"
-            f"  2. Required documentation (if any) will be communicated via secure channel\n"
-            f"  3. You will receive status updates at each milestone\n\n"
-            f"For onboarding requests, please have the following ready:\n"
-            f"  - Valid passport or national ID\n"
-            f"  - Proof of address (dated within 3 months)\n"
-            f"  - Source of wealth declaration\n\n"
-            f"For urgent matters, contact your relationship manager directly or "
-            f"call our priority service line."
-            f"{policy_note}"
-        )
+        "agent_name": "client_services",
+        "response": f"Service Request {reference_number} has been registered for: {task[:60]}...",
+        "status": "IN_PROGRESS",
+        "next_steps": [
+            f"{rm_name} will review your request",
+            "Documentation requirements will be shared via secure message",
+            "You will receive status updates at each milestone"
+        ],
+        "metrics": [],
+        "requires_escalation": False,
+        "raw_data": {
+            "reference_number": reference_number,
+            "assigned_to": rm_name,
+            "estimated_completion": "2-3 business days",
+            "policy_reviewed": policy_note != ""
+        }
     }
+
 
 
 def handle_fx_treasury(params: dict) -> dict:
@@ -125,26 +136,25 @@ def handle_fx_treasury(params: dict) -> dict:
         A dictionary with the mock response.
     """
     task = params.get("task", "")
-    rate_lines = "\n".join(
-        f"  - {pair}: Bid {data['bid']} / Ask {data['ask']} ({data['change']})"
-        for pair, data in MOCK_FX_RATES.items()
-    )
     return {
-        "response": (
-            f"FX & Treasury Report\n\n"
-            f"Current Indicative Rates (as of last refresh):\n{rate_lines}\n\n"
-            f"Regarding: {task[:120]}\n\n"
-            f"Execution Guidelines:\n"
-            f"  - Transactions up to USD 500,000: Automatic best execution\n"
-            f"  - USD 500,000 - 2,000,000: Preferential desk pricing available\n"
-            f"  - Above USD 2,000,000: Staged execution recommended\n\n"
-            f"Hedging Options:\n"
-            f"  - Forward contracts: Available for 1M to 24M tenors\n"
-            f"  - Vanilla options: Premium quoted on request\n"
-            f"  - Zero-cost collars: Structured to client specifications\n\n"
-            f"Contact your FX advisor for a tailored hedging proposal."
-        )
+        "agent_name": "fx_treasury",
+        "response": f"Indicative foreign exchange and treasury report generated for: {task[:60]}...",
+        "status": "COMPLETED",
+        "next_steps": [
+            "Contact your FX advisor for a tailored hedging proposal",
+            "Review transaction execution guidelines for staged execution"
+        ],
+        "metrics": [],
+        "requires_escalation": False,
+        "raw_data": {
+            "indicative_rates": MOCK_FX_RATES,
+            "execution_thresholds": {
+                "auto": 500000,
+                "preferential": 2000000
+            }
+        }
     }
+
 
 
 def handle_service_workflow(params: dict) -> dict:
@@ -159,14 +169,21 @@ def handle_service_workflow(params: dict) -> dict:
     task = params.get("task", "")
     reference_number = f"SW-{random.randint(100000, 999999)}"
     return {
-        "response": (
-            f"Workflow Reference: {reference_number}\n\n"
-            f"Request: {task[:120]}\n\n"
-            f"The service workflow has been initiated. Your request is being "
-            f"routed to the appropriate team for processing. You will receive "
-            f"confirmation and next steps within 1 business day."
-        )
+        "agent_name": "service_workflow",
+        "response": f"General service workflow {reference_number} has been initiated.",
+        "status": "IN_PROGRESS",
+        "next_steps": [
+            "Routing to appropriate team for processing",
+            "Await confirmation within 1 business day"
+        ],
+        "metrics": [],
+        "requires_escalation": False,
+        "raw_data": {
+            "reference_number": reference_number,
+            "task_preview": task[:120]
+        }
     }
+
 
 
 TOOL_HANDLERS = {

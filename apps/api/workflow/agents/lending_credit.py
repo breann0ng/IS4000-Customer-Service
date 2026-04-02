@@ -6,104 +6,80 @@ credit lines, structured lending solutions, and margin facilities.
 
 from apps.api.config import settings
 from apps.api.logging_config import get_logger
+from apps.api.workflow.state import SpecialistAgentOutput
 from apps.api.workflow.tools.mcp_client import McpClient
 
 logger = get_logger(__name__)
 
-LENDING_CREDIT_SYSTEM_PROMPT = """# ROLE AND SYSTEM BOUNDARIES
+LENDING_CREDIT_SYSTEM_PROMPT = """# ROLE
 You are a Lending & Credit Specialist for UBS Wealth Management, serving High Net Worth Individual (HNWI) clients. 
-You operate as a **low-autonomy analytical agent** within a multi-agent system.
-
-Your role is to **interpret client data, portfolio details, and credit facility information** to produce structured, factual insights in **JSON format only**.
-
-You do NOT:
-- Execute transactions or approve facilities
-- Provide unsolicited advice or personal opinions
-- Format responses for end-user readability (handled by the downstream synthesiser agent)
-- Replace legal, compliance, or credit committee review
-
----
 
 # CORE RESPONSIBILITIES
+1. Evaluate lending capacity: Lombard lending, mortgages, credit lines.
+2. Credit structuring: LTV estimates, collateral haircuts, eligibility.
+3. Facility monitoring: Risk identification, margin calls, and over-leverage.
 
-1. Evaluate lending capacity:
-   - Lombard lending against investment portfolios
-   - Mortgage eligibility for residential/commercial properties
-   - Revolving credit lines, overdrafts, and margin facilities
-
-2. Analytical credit structuring:
-   - Identify possible facility structures based on asset types, liquidity, and risk concentration
-   - Highlight internal constraints (concentration limits, collateral haircuts, eligibility rules)
-
-3. Facility monitoring:
-   - Detect potential risks such as covenant breaches, margin call triggers, and over-leverage
-
-4. Risk identification:
-   - Explicitly flag leverage risks, margin calls, interest rate sensitivity, and liquidity risks
-
----
-
-# OUTPUT REQUIREMENTS
-
-- **Always return a JSON object** in the following schema:
-
-```json
-{
-  "facility_type": "",
-  "client_portfolio_summary": {
-    "total_value": 0.0,
-    "liquid_assets": 0.0,
-    "illiquid_assets": 0.0
-  },
-  "borrowing_capacity_estimate": 0.0,
-  "ltv_range": {
-    "minimum": 0.0,
-    "maximum": 0.0
-  },
-  "collateral_requirements": [
-    {
-      "asset_type": "",
-      "haircut_percentage": 0.0
-    }
-  ],
-  "key_constraints": [],
-  "risk_flags": [],
-  "requires_escalation": false,
-  "notes": ""
-}
+# GUIDELINES
+- Provide structured, factual insights in JSON.
+- Flag leverage risks, margin calls, and interest rate sensitivity.
+- Do NOT provide unsolicited advice or personal opinions.
 """
-
-lending_credit_mcp_client = McpClient(server_url=settings.mcp_banking_ops_url)
-
 
 async def execute_lending_credit_task(
     task: str,
     conversation_context: str,
-) -> str:
+    username: str,
+) -> SpecialistAgentOutput:
     """Execute a lending and credit task using the MCP-connected tools.
 
     Args:
         task: The specific lending or credit task to perform.
         conversation_context: Relevant conversation context for the task.
+        username: The username of the authenticated persona.
 
     Returns:
-        The result of the lending operation as a string.
+        The result of the lending operation as a SpecialistAgentOutput.
     """
     logger.info("lending_credit_agent_start", task=task)
 
-    result = await lending_credit_mcp_client.call_tool(
+    # Initialize client inside handler to pick up latest environment settings
+    mcp_client = McpClient(server_url=settings.mcp_banking_ops_url)
+
+    result = await mcp_client.call_tool(
         tool_name="lending_credit",
         arguments={
             "task": task,
             "context": conversation_context,
+            "username": username,
             "system_prompt": LENDING_CREDIT_SYSTEM_PROMPT,
         },
     )
 
     if "error" in result:
         logger.error("lending_credit_agent_error", error=result["error"])
-        return f"Lending & credit encountered an issue: {result['error']}"
+        return SpecialistAgentOutput(
+            agent_name="lending_credit",
+            response=f"Lending & credit encountered an issue: {result['error']}",
+            status="ERROR",
+            next_steps=["Please try again or contact your RM."],
+        )
 
-    response = result.get("response", "No response from lending & credit agent.")
-    logger.info("lending_credit_agent_complete", response_length=len(response))
-    return response
+    # Handle both new structured dict and legacy string responses
+    if isinstance(result, str):
+        return SpecialistAgentOutput(
+            agent_name="lending_credit",
+            response=result,
+            status="COMPLETED",
+        )
+
+    if isinstance(result, dict) and "response" in result:
+        # Ensure agent_name is present
+        if "agent_name" not in result:
+            result["agent_name"] = "lending_credit"
+        return SpecialistAgentOutput(**result)
+
+    return SpecialistAgentOutput(
+        agent_name="lending_credit",
+        response="No response from lending & credit agent.",
+        status="ERROR",
+    )

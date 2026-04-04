@@ -7,11 +7,14 @@ import {
   FileTextIcon,
   CardStackIcon,
   QuestionMarkCircledIcon,
-  ExitIcon
+  ExitIcon,
+  UploadIcon,
+  Cross2Icon,
 } from "@radix-ui/react-icons";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import type { ChatMessageResponse, UserProfile } from "@/api/generated";
 import type { ThinkingState } from "@/hooks/useMessageStream";
+import type { FileAttachment } from "@/hooks/useFileUpload";
 import { MessageBubble } from "@/components/MessageBubble";
 import { ThinkingIndicator } from "@/components/ThinkingIndicator";
 import styles from "./ChatWindow.module.css";
@@ -22,9 +25,22 @@ interface ChatWindowProps {
   thinking: ThinkingState;
   sidebarOpen: boolean;
   user: UserProfile;
+  attachment: FileAttachment | null;
   onLogout: () => void;
-  onSendMessage: (content: string) => void;
+  onSendMessage: (content: string, fileData?: { fileContext?: string; fileName?: string; imageBase64?: string | null; fileType?: string }) => void;
   onToggleSidebar: () => void;
+  onFileSelect: (file: File) => void;
+  onClearAttachment: () => void;
+}
+
+const ACCEPTED_FILE_TYPES = ".pdf,.docx,.xlsx,.xls,.png,.jpg,.jpeg,.gif,.webp";
+
+function getFileIcon(fileType: string) {
+  if (["png", "jpg", "jpeg", "gif", "webp"].includes(fileType)) return "IMG";
+  if (fileType === "pdf") return "PDF";
+  if (fileType === "docx") return "DOC";
+  if (["xlsx", "xls"].includes(fileType)) return "XLS";
+  return "FILE";
 }
 
 export function ChatWindow({
@@ -33,13 +49,17 @@ export function ChatWindow({
   thinking,
   sidebarOpen,
   user,
+  attachment,
   onLogout,
   onSendMessage,
   onToggleSidebar,
+  onFileSelect,
+  onClearAttachment,
 }: ChatWindowProps) {
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -55,7 +75,19 @@ export function ChatWindow({
   function handleSend() {
     const trimmed = inputValue.trim();
     if (!trimmed || isSending) return;
-    onSendMessage(trimmed);
+    if (attachment && attachment.isUploading) return;
+
+    if (attachment && !attachment.error) {
+      onSendMessage(trimmed, {
+        fileContext: attachment.extractedText || undefined,
+        fileName: attachment.filename,
+        imageBase64: attachment.imageBase64,
+        fileType: attachment.fileType,
+      });
+      onClearAttachment();
+    } else {
+      onSendMessage(trimmed);
+    }
     setInputValue("");
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
@@ -65,6 +97,19 @@ export function ChatWindow({
   function handlePromptClick(text: string) {
     if (isSending) return;
     onSendMessage(text);
+  }
+
+  function handleFileButtonClick() {
+    fileInputRef.current?.click();
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      onFileSelect(file);
+    }
+    // Reset so the same file can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -160,7 +205,49 @@ export function ChatWindow({
       )}
 
       <div className={styles.inputWrapper}>
+        {attachment && (
+          <div className={styles.attachmentPreview}>
+            <div className={styles.attachmentChip}>
+              <span className={styles.attachmentIcon}>{getFileIcon(attachment.fileType)}</span>
+              <span className={styles.attachmentName}>{attachment.filename}</span>
+              {attachment.isUploading && <span className={styles.attachmentStatus}>Parsing...</span>}
+              {attachment.error && <span className={styles.attachmentError}>{attachment.error}</span>}
+              <button
+                className={styles.attachmentRemove}
+                onClick={onClearAttachment}
+                aria-label="Remove attachment"
+              >
+                <Cross2Icon width={12} height={12} />
+              </button>
+            </div>
+          </div>
+        )}
         <div className={styles.inputContainer}>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={ACCEPTED_FILE_TYPES}
+            onChange={handleFileChange}
+            className={styles.hiddenFileInput}
+            aria-label="Upload file"
+          />
+          <Tooltip.Provider delayDuration={300}>
+            <Tooltip.Root>
+              <Tooltip.Trigger asChild>
+                <button
+                  className={styles.attachButton}
+                  onClick={handleFileButtonClick}
+                  disabled={isSending || !!attachment}
+                  aria-label="Attach file"
+                >
+                  <UploadIcon width={16} height={16} />
+                </button>
+              </Tooltip.Trigger>
+              <Tooltip.Content className={styles.tooltip} side="top" sideOffset={4}>
+                Attach a file (PDF, DOCX, Excel, Image)
+              </Tooltip.Content>
+            </Tooltip.Root>
+          </Tooltip.Provider>
           <textarea
             ref={textareaRef}
             className={styles.textarea}
@@ -175,7 +262,7 @@ export function ChatWindow({
           <button
             className={styles.sendButton}
             onClick={handleSend}
-            disabled={isSending || !inputValue.trim()}
+            disabled={isSending || !inputValue.trim() || (!!attachment && attachment.isUploading)}
             aria-label="Send message"
           >
             <PaperPlaneIcon width={16} height={16} />

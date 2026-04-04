@@ -5,7 +5,6 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from apps.api.auth.routes import get_current_user
-from apps.api.config import settings
 from apps.api.customers.registry import USERNAME_TO_CUSTOMER_ID
 from apps.api.customers.sqlite_repository import repository
 from apps.api.database.models import User
@@ -15,7 +14,7 @@ router = APIRouter(prefix="/performance", tags=["performance"])
 CUSTOMER_ID_BY_USERNAME: dict[str, str] = USERNAME_TO_CUSTOMER_ID
 
 
-def _to_float(value: Any) -> float:
+def _to_float(value: object) -> float:
     try:
         if value is None:
             return 0.0
@@ -58,7 +57,9 @@ async def get_performance_overview(
 
     result = repository.build_customer_bundle(customer_id)
     if not result:
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Unable to fetch customer data")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY, detail="Unable to fetch customer data"
+        )
 
     customer = result.get("profile") or {}
     accounts = result.get("accounts") or []
@@ -70,7 +71,9 @@ async def get_performance_overview(
     if portfolio_value_usd <= 0:
         portfolio_value_usd = _to_float(customer.get("aum_with_ubs_usd"))
     if portfolio_value_usd <= 0:
-        portfolio_value_usd = _to_float((portfolio.get("summary") or {}).get("total_holdings_value_usd"))
+        portfolio_value_usd = _to_float(
+            (portfolio.get("summary") or {}).get("total_holdings_value_usd")
+        )
 
     return {
         "customer_id": customer_id,
@@ -150,12 +153,13 @@ async def get_benchmark_comparison(
         )
 
     portfolio = result.get("portfolio") or {}
-    benchmark_rows = portfolio.get("benchmark_comparison") or result.get("benchmark_comparison") or []
+    benchmark_rows = (
+        portfolio.get("benchmark_comparison") or result.get("benchmark_comparison") or []
+    )
 
     monthly_returns = portfolio.get("monthly_returns") or []
     monthly_by_month = {
-        str(entry.get("month") or ""): _to_float(entry.get("value"))
-        for entry in monthly_returns
+        str(entry.get("month") or ""): _to_float(entry.get("value")) for entry in monthly_returns
     }
 
     if not benchmark_rows:
@@ -224,7 +228,9 @@ async def get_performance_insights(
                 "icon": "💡",
                 "title": "Portfolio review available",
                 "trigger": "Seeded customer profile loaded successfully",
-                "summary": "This customer profile includes performance and wealth data for the dashboard.",
+                "summary": (
+                    "This customer profile includes performance and wealth data for the dashboard."
+                ),
                 "suggested_actions": ["Review portfolio allocation", "Open monthly returns"],
                 "rm_context": "Fallback insight created because no custom signal rows were found.",
                 "tags": ["Fallback"],

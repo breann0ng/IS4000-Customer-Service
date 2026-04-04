@@ -28,7 +28,9 @@ AGENT_DISPATCH_TABLE = {
 }
 
 
-async def _run_step(agent_name: str, task: str, conversation_context: str, customer_id: str = DEFAULT_CUSTOMER_ID) -> dict:
+async def _run_step(
+    agent_name: str, task: str, conversation_context: str, customer_id: str = DEFAULT_CUSTOMER_ID
+) -> dict:
     """Run a single agent step, returning a result dict."""
     agent_function = AGENT_DISPATCH_TABLE.get(agent_name)
     if agent_function is None:
@@ -36,9 +38,7 @@ async def _run_step(agent_name: str, task: str, conversation_context: str, custo
         return {"agent": agent_name, "result": f"Unknown agent: {agent_name}"}
     try:
         result = await agent_function(
-            task=task,
-            conversation_context=conversation_context,
-            customer_id=customer_id
+            task=task, conversation_context=conversation_context, customer_id=customer_id
         )
         return {"agent": agent_name, "result": result}
     except Exception as error:
@@ -84,7 +84,7 @@ async def executor_node(state: WorkflowState) -> dict:
 
     # Run all steps concurrently
     tasks = [
-        _run_step(step.agent, step.task, conversation_context, state.customer_id) 
+        _run_step(step.agent, step.task, conversation_context, state.customer_id)
         for step, _ in remaining_steps
     ]
     results = await asyncio.gather(*tasks)
@@ -93,7 +93,7 @@ async def executor_node(state: WorkflowState) -> dict:
 
     # Mark all steps complete in the plan copy
     new_plan = state.plan.model_copy(deep=True)
-    for (step, idx), result in zip(remaining_steps, results):
+    for (_step, idx), result in zip(remaining_steps, results, strict=False):
         new_plan.steps[idx].completed = True
         new_plan.steps[idx].result = result["result"]
 

@@ -22,7 +22,8 @@ from apps.api.workflow.state import SynthesizerOutput, WorkflowState
 
 logger = get_logger(__name__)
 
-SYNTHESIZER_SYSTEM_PROMPT = """You are a private wealth management assistant for UBS, serving High Net Worth Individual (HNWI) clients.
+SYNTHESIZER_SYSTEM_PROMPT = """You are a private wealth management assistant for UBS, serving
+High Net Worth Individual (HNWI) clients.
 You receive structured JSON outputs from specialist agents who have analyzed the client's query.
 
 Your job is to synthesize these JSON results into a single, polished, client-facing response.
@@ -31,7 +32,8 @@ Your job is to synthesize these JSON results into a single, polished, client-fac
 
 ## STEP 1 — Parse the Agent JSON
 
-Each specialist result is a JSON string. You MUST read and interpret every field in the JSON before writing your response.
+Each specialist result is a JSON string. You MUST read and interpret every field in the JSON
+before writing your response.
 Do NOT treat the JSON as literal text to paste — extract the meaningful data from it.
 
 ---
@@ -55,13 +57,18 @@ Choose the response format based on query complexity and agent data richness.
 - `### Next Steps` — actionable items when there are genuine actions.
 - `### Important Notes` — caveats/disclaimers only when applicable.
 
-### Include ONLY if the agent data contains portfolio or financial metrics (e.g., AUM, YTD return, asset allocation):
-- `### Portfolio Overview` — Reference actual figures: **AUM**, **YTD return**, allocation breakdown. Bold all key numbers.
-- `### Market Context` — Bullet points on relevant macro conditions, sector trends, or economic drivers.
+### Include ONLY if the agent data contains portfolio or financial metrics
+### (e.g., AUM, YTD return, asset allocation):
+- `### Portfolio Overview` — Reference EXACT figures from the agent JSON: **AUM**, **YTD return**,
+  allocation breakdown. Bold all key numbers. Do NOT invent or estimate values — copy them
+  verbatim from the agent data.
+- `### Market Context` — Bullet points on relevant macro conditions, sector trends, or economic
+  drivers.
 - `### Considerations` — Non-directive numbered list of portfolio implications for the client.
 
 ### Include ONLY for lending/credit queries:
-- `### Credit & Lending Summary` — Facility type, borrowing capacity, LTV range, and key constraints.
+- `### Credit & Lending Summary` — Facility type, borrowing capacity, LTV range, and key
+  constraints.
 
 ### Include ONLY for FX/treasury queries:
 - `### FX & Treasury Insights` — Relevant rates, hedging strategies, risk analysis.
@@ -70,13 +77,15 @@ Choose the response format based on query complexity and agent data richness.
 - `### Compliance & Tax Guidance` — Regulatory obligations, required documents, jurisdiction.
 
 ### Include ONLY for service/onboarding queries:
-- `### Service Status` — Request type, current status, required documents, assigned team, estimated timeline.
+- `### Service Status` — Request type, current status, required documents, assigned team,
+  estimated timeline.
 
 ---
 
 ## STEP 3 — Charts
 
-If any agent's JSON contains a `"charts"` array, include each chart object verbatim at the end of the response.
+If any agent's JSON contains a `"charts"` array, include each chart object verbatim at the end
+of the response.
 Charts look like: `{ "type": "pie", "title": "...", "labels": [...], "values": [...] }`
 Include them as bare JSON objects (not in code fences) at the very end of your response text.
 
@@ -84,10 +93,10 @@ Include them as bare JSON objects (not in code fences) at the very end of your r
 
 ## STEP 4 — Metrics Field
 
-Populate the `metrics` field ONLY when the agent data contains concrete financial figures such as AUM, YTD return,
-borrowing capacity, portfolio value, or account balances.
-Do NOT populate `metrics` for operational queries (status checks, document requests, appointments, compliance guidance)
-unless a specific monetary figure is directly relevant.
+Populate the `metrics` field ONLY when the agent data contains concrete financial figures such as
+AUM, YTD return, borrowing capacity, portfolio value, or account balances.
+Do NOT populate `metrics` for operational queries (status checks, document requests, appointments,
+compliance guidance) unless a specific monetary figure is directly relevant.
 
 ---
 
@@ -96,10 +105,18 @@ unless a specific monetary figure is directly relevant.
 - **DO** adapt structure and length to the question complexity.
 - **DO** bold all key figures (AUM, YTD, amounts, percentages, dates).
 - **DO** generate 3–5 relevant follow-up questions in `follow_up_suggestions`.
-- **DO** assess whether human RM escalation is needed based on `escalation_required` or `requires_rm_approval` flags in the JSON.
+- **DO** assess whether human RM escalation is needed based on `escalation_required` or
+  `requires_rm_approval` flags in the JSON.
 - **DO** maintain a professional, discreet, and empathetic tone appropriate for HNWI clients.
-- **DO NOT** expose internal agent names, routing details, or raw JSON field names in the client-facing response.
+- **DO NOT** expose internal agent names, routing details, or raw JSON field names in the
+  client-facing response.
 - **DO NOT** fabricate data — only use information present in the specialist JSON.
+- **CRITICAL — DATA ACCURACY**: You MUST use the EXACT numerical values from the specialist agent
+  JSON outputs for AUM, YTD return, allocation percentages, dollar amounts, and all other
+  financial figures. NEVER estimate, round differently, or generate your own figures. If the agent
+  JSON says total_value_sgd is 65000000, report exactly SGD 65,000,000 — do not invent a different
+  number like 87.1M. Every financial figure in your response must be directly traceable to the
+  agent JSON data.
 """
 
 
@@ -150,9 +167,43 @@ async def synthesizer_node(state: WorkflowState) -> dict:
         for index, output in enumerate(state.agent_outputs)
     )
 
+    # Extract verified financial data from agent outputs to create a binding constraint
+    import json as _json
+
+    verified_facts = []
+    for output in state.agent_outputs:
+        try:
+            parsed = _json.loads(output.get("result", ""))
+            if isinstance(parsed, dict):
+                pa = parsed.get("portfolio_assessment", {})
+                if pa.get("total_value_sgd"):
+                    verified_facts.append(
+                        f"Total Portfolio Value: SGD {pa['total_value_sgd']:,.0f}"
+                    )
+                if pa.get("ytd_performance_pct") is not None:
+                    verified_facts.append(f"YTD Return: {pa['ytd_performance_pct']}%")
+                for item in pa.get("allocation_breakdown", []):
+                    verified_facts.append(
+                        f"{item['asset_class']}: {item['allocation_pct']}%"
+                        f" (SGD {item['value_sgd']:,.0f})"
+                    )
+        except (ValueError, TypeError, KeyError):
+            pass
+
+    verified_section = ""
+    if verified_facts:
+        verified_section = (
+            "\n\n=== VERIFIED FINANCIAL DATA (USE THESE EXACT NUMBERS) ===\n"
+            + "\n".join(verified_facts)
+            + "\n=== END VERIFIED DATA ===\n"
+            "You MUST use the exact figures above. Do NOT use any other numbers for these"
+            " metrics.\n"
+        )
+
     prompt = (
         f"Client's original query: {state.user_message}\n\n"
         f"Specialist agent JSON outputs:\n{agent_results_text}\n\n"
+        f"{verified_section}"
         f"Parse each JSON result and synthesize them into a single client-facing response "
         f"following the output format instructions above."
     )
@@ -257,13 +308,17 @@ async def escalation_check_node(state: WorkflowState) -> dict:
 def should_escalate(state: WorkflowState) -> str:
     """Determine whether the query should be escalated to a human RM.
 
+    Uses escalation_text (raw user input without file context) so that
+    attached document content does not trigger false escalations.
+
     Args:
         state: The current workflow state.
 
     Returns:
         The name of the next node: 'escalation' or 'planner'.
     """
-    if check_escalation(state.user_message):
+    text = state.escalation_text or state.user_message
+    if check_escalation(text):
         return "escalation"
     return "planner"
 
@@ -323,15 +378,18 @@ async def run_workflow(
     session_id: str,
     user_id: str,
     customer_id: str = DEFAULT_CUSTOMER_ID,
+    escalation_text: str = "",
 ) -> dict[str, str | dict | None]:
     """Execute the full agentic workflow for a user message.
 
     Args:
-        user_message: The user's input message.
+        user_message: The user's input message (may include file context).
         conversation_history: Previous messages in the conversation.
         memory_context: Retrieved mem0 memory entries for context.
         session_id: The current chat session identifier.
         user_id: The authenticated user's identifier.
+        customer_id: The customer profile identifier.
+        escalation_text: Raw user text for escalation checks (excludes file content).
 
     Returns:
         A dictionary with 'response' (the final text) and optional 'trace' data.
@@ -345,6 +403,7 @@ async def run_workflow(
 
     initial_state = WorkflowState(
         user_message=user_message,
+        escalation_text=escalation_text or user_message,
         conversation_history=conversation_history,
         memory_context=memory_context,
         session_id=session_id,

@@ -22,6 +22,7 @@ class CustomerDataRepository:
     """Read-only repository for customer data stored in SQLite."""
 
     def __init__(self, db_path: Path | str = DEFAULT_CUSTOMER_DATA_DB) -> None:
+        """Initialise the repository with the path to the SQLite database."""
         self.db_path = Path(db_path)
 
     def _connect(self) -> sqlite3.Connection:
@@ -242,7 +243,8 @@ class CustomerDataRepository:
         """Return all real estate properties for a customer."""
         rows = self._fetch_all(
             """
-            SELECT property_id, customer_id, property_name as property, location, value_sgd, loan_sgd
+            SELECT property_id, customer_id, property_name as property,
+                   location, value_sgd, loan_sgd
             FROM real_estate
             WHERE customer_id = ?
             ORDER BY property_id
@@ -294,7 +296,9 @@ class CustomerDataRepository:
             )
         return signals
 
-    def build_customer_bundle(self, customer_id: str, transaction_limit: int = 10) -> dict[str, Any]:
+    def build_customer_bundle(
+        self, customer_id: str, transaction_limit: int = 10
+    ) -> dict[str, Any]:
         """Build a normalized customer context bundle from SQLite tables."""
         if customer_id not in ALLOWED_CUSTOMER_IDS:
             return {}
@@ -317,7 +321,9 @@ class CustomerDataRepository:
         appointments = self.get_appointments(customer_id)
         kyc_review = self.get_kyc_review(customer_id) or {}
 
-        total_holdings_value = sum(float(holding.get("current_value_usd") or 0) for holding in holdings)
+        total_holdings_value = sum(
+            float(holding.get("current_value_usd") or 0) for holding in holdings
+        )
         total_account_value = sum(float(account.get("balance_usd") or 0) for account in accounts)
         total_lombard_drawn = sum(
             float(facility.get("drawn_amount_usd") or 0)
@@ -334,10 +340,9 @@ class CustomerDataRepository:
             for facility in credit_facilities
             if (facility.get("facility_type") or "").lower() == "lombard"
         )
-        total_card_limit = sum(float(card.get("credit_limit_usd") or 0) for card in cards)
-        total_card_outstanding = sum(float(card.get("outstanding_balance_usd") or 0) for card in cards)
-
-        portfolio_value = float(portfolio_snapshot.get("total_portfolio_value_usd") or total_holdings_value)
+        portfolio_value = float(
+            portfolio_snapshot.get("total_portfolio_value_usd") or total_holdings_value
+        )
         snapshot_ytd = portfolio_snapshot.get("ytd_performance_percent")
         ytd_return = (
             round(float(snapshot_ytd), 1)
@@ -364,7 +369,8 @@ class CustomerDataRepository:
             "structured_products_percent": portfolio_snapshot.get("structured_products_percent"),
             "cash_percent": portfolio_snapshot.get("cash_percent"),
             "other_percent": portfolio_snapshot.get("other_percent"),
-            "total_portfolio_value_usd": portfolio_snapshot.get("total_portfolio_value_usd") or portfolio_value,
+            "total_portfolio_value_usd": portfolio_snapshot.get("total_portfolio_value_usd")
+            or portfolio_value,
             "ytd_performance_percent": ytd_return,
             "one_year_performance_percent": one_year_return,
         }
@@ -415,13 +421,17 @@ class CustomerDataRepository:
             "other_effect_pct": round(ytd_return * 0.12, 1),
         }
         tax_profile = self._build_tax_profile(customer)
-        derived_flags = self._build_derived_flags(customer, accounts, holdings, kyc_review, credit_facilities)
+        derived_flags = self._build_derived_flags(
+            customer, accounts, holdings, kyc_review, credit_facilities
+        )
         goals = self._build_goals(applications)
         cashflow = self._build_cashflow(transactions)
         system_triggers = self._build_system_triggers(holdings, kyc_review, credit_facilities)
         insights = self.get_insights_signals(customer_id)
         if not insights:
-            insights = self._build_insights(customer, portfolio_value, ytd_return, holdings, credit_facilities)
+            insights = self._build_insights(
+                customer, portfolio_value, ytd_return, holdings, credit_facilities
+            )
 
         profile = {
             **customer,
@@ -516,7 +526,9 @@ class CustomerDataRepository:
             largest = max(float(holding.get("current_value_usd") or 0) for holding in holdings)
             if total > 0:
                 concentration_penalty = (largest / total) * 2.0
-        estimate = 1.8 + equities * 0.06 + private_equity * 0.05 - cash * 0.04 - concentration_penalty
+        estimate = (
+            1.8 + equities * 0.06 + private_equity * 0.05 - cash * 0.04 - concentration_penalty
+        )
         return round(max(estimate, -10.0), 1)
 
     @staticmethod
@@ -549,9 +561,19 @@ class CustomerDataRepository:
 
     @staticmethod
     def _build_monthly_returns(ytd_return: float) -> list[dict[str, float]]:
-        base = [ytd_return - 1.8, ytd_return - 0.6, ytd_return - 2.1, ytd_return + 0.7, ytd_return - 0.3, ytd_return]
+        base = [
+            ytd_return - 1.8,
+            ytd_return - 0.6,
+            ytd_return - 2.1,
+            ytd_return + 0.7,
+            ytd_return - 0.3,
+            ytd_return,
+        ]
         months = ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar"]
-        return [{"month": month, "value": round(value, 1)} for month, value in zip(months, base, strict=True)]
+        return [
+            {"month": month, "value": round(value, 1)}
+            for month, value in zip(months, base, strict=True)
+        ]
 
     @staticmethod
     def _build_portfolio_history(
@@ -561,7 +583,9 @@ class CustomerDataRepository:
         current = portfolio_value
         history: list[dict[str, float]] = []
         for entry in reversed(monthly_returns):
-            current = current / (1.0 + (entry["value"] / 100.0)) if entry["value"] > -99 else current
+            current = (
+                current / (1.0 + (entry["value"] / 100.0)) if entry["value"] > -99 else current
+            )
             history.append({"month": entry["month"], "value": round(current, 2)})
         return list(reversed(history))
 
@@ -581,8 +605,12 @@ class CustomerDataRepository:
     ) -> dict[str, float]:
         equities = float(allocation_snapshot.get("equities_percent") or 0)
         private_equity = float(allocation_snapshot.get("private_equity_percent") or 0)
-        total_holdings = sum(float(holding.get("current_value_usd") or 0) for holding in holdings) or 1.0
-        largest_holding = max((float(holding.get("current_value_usd") or 0) for holding in holdings), default=0.0)
+        total_holdings = (
+            sum(float(holding.get("current_value_usd") or 0) for holding in holdings) or 1.0
+        )
+        largest_holding = max(
+            (float(holding.get("current_value_usd") or 0) for holding in holdings), default=0.0
+        )
         concentration = round((largest_holding / total_holdings) * 100.0, 1)
         volatility = round(5.5 + equities * 0.05 + private_equity * 0.04 + concentration * 0.03, 1)
         sharpe = round(ytd_return / volatility if volatility else 0.0, 2)
@@ -610,13 +638,28 @@ class CustomerDataRepository:
         kyc_review: dict[str, Any],
         credit_facilities: list[dict[str, Any]],
     ) -> dict[str, Any]:
-        total_holdings = sum(float(holding.get("current_value_usd") or 0) for holding in holdings) or 1.0
-        largest_holding = max((float(holding.get("current_value_usd") or 0) for holding in holdings), default=0.0)
+        total_holdings = (
+            sum(float(holding.get("current_value_usd") or 0) for holding in holdings) or 1.0
+        )
+        largest_holding = max(
+            (float(holding.get("current_value_usd") or 0) for holding in holdings), default=0.0
+        )
         concentration_pct = round((largest_holding / total_holdings) * 100.0, 1)
-        cross_border = "High" if len({account.get("currency") for account in accounts if account.get("currency")}) > 1 else "Moderate"
-        if customer.get("tax_residency") and customer.get("nationality") and customer.get("tax_residency") != customer.get("nationality"):
+        cross_border = (
+            "High"
+            if len({account.get("currency") for account in accounts if account.get("currency")}) > 1
+            else "Moderate"
+        )
+        if (
+            customer.get("tax_residency")
+            and customer.get("nationality")
+            and customer.get("tax_residency") != customer.get("nationality")
+        ):
             cross_border = "High"
-        if any((facility.get("facility_type") or "").lower() == "lombard" for facility in credit_facilities):
+        if any(
+            (facility.get("facility_type") or "").lower() == "lombard"
+            for facility in credit_facilities
+        ):
             lending = "Active"
         else:
             lending = "None"
@@ -640,12 +683,20 @@ class CustomerDataRepository:
 
     @staticmethod
     def _build_cashflow(transactions: list[dict[str, Any]]) -> dict[str, Any]:
-        credits = sum(float(txn.get("amount_usd") or 0) for txn in transactions if float(txn.get("amount_usd") or 0) > 0)
-        debits = sum(abs(float(txn.get("amount_usd") or 0)) for txn in transactions if float(txn.get("amount_usd") or 0) < 0)
+        credit_inflows = sum(
+            float(txn.get("amount_usd") or 0)
+            for txn in transactions
+            if float(txn.get("amount_usd") or 0) > 0
+        )
+        debits = sum(
+            abs(float(txn.get("amount_usd") or 0))
+            for txn in transactions
+            if float(txn.get("amount_usd") or 0) < 0
+        )
         return {
-            "recent_credits_usd": round(credits, 2),
+            "recent_credits_usd": round(credit_inflows, 2),
             "recent_debits_usd": round(debits, 2),
-            "net_flow_usd": round(credits - debits, 2),
+            "net_flow_usd": round(credit_inflows - debits, 2),
         }
 
     @staticmethod
@@ -655,16 +706,23 @@ class CustomerDataRepository:
         credit_facilities: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
         triggers: list[dict[str, Any]] = []
-        total_holdings = sum(float(holding.get("current_value_usd") or 0) for holding in holdings) or 1.0
+        total_holdings = (
+            sum(float(holding.get("current_value_usd") or 0) for holding in holdings) or 1.0
+        )
         if holdings:
-            largest = max(holdings, key=lambda holding: float(holding.get("current_value_usd") or 0))
+            largest = max(
+                holdings, key=lambda holding: float(holding.get("current_value_usd") or 0)
+            )
             largest_pct = (float(largest.get("current_value_usd") or 0) / total_holdings) * 100.0
             if largest_pct >= 25:
                 triggers.append(
                     {
                         "type": "Concentration",
                         "severity": "high",
-                        "message": f"{largest.get('security_name')} represents {largest_pct:.1f}% of tracked holdings.",
+                        "message": (
+                            f"{largest.get('security_name')} represents "
+                            f"{largest_pct:.1f}% of tracked holdings."
+                        ),
                     }
                 )
         if (kyc_review.get("kyc_status") or "").lower() != "verified":
@@ -680,7 +738,10 @@ class CustomerDataRepository:
                 {
                     "type": "Performance",
                     "severity": "medium",
-                    "message": "Lombard activity is active and should be reviewed alongside portfolio performance.",
+                    "message": (
+                        "Lombard activity is active and should be reviewed "
+                        "alongside portfolio performance."
+                    ),
                 }
             )
         return triggers
@@ -693,7 +754,9 @@ class CustomerDataRepository:
         holdings: list[dict[str, Any]],
         credit_facilities: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
-        top_holding = max(holdings, key=lambda holding: float(holding.get("current_value_usd") or 0), default=None)
+        top_holding = max(
+            holdings, key=lambda holding: float(holding.get("current_value_usd") or 0), default=None
+        )
         insights: list[dict[str, Any]] = []
         if top_holding is not None:
             insights.append(
@@ -702,7 +765,10 @@ class CustomerDataRepository:
                     "priority": "high",
                     "category": "Portfolio Concentration",
                     "title": f"Review exposure to {top_holding.get('security_name')}",
-                    "summary": f"{top_holding.get('security_name')} is the largest holding against a portfolio value of USD {portfolio_value:,.0f}.",
+                    "summary": (
+                        f"{top_holding.get('security_name')} is the largest holding "
+                        f"against a portfolio value of USD {portfolio_value:,.0f}."
+                    ),
                     "suggested_actions": [
                         "Review concentration limits with the relationship manager",
                         "Stress-test downside scenarios",
@@ -710,14 +776,20 @@ class CustomerDataRepository:
                     ],
                 }
             )
-        if any((facility.get("facility_type") or "").lower() == "lombard" for facility in credit_facilities):
+        if any(
+            (facility.get("facility_type") or "").lower() == "lombard"
+            for facility in credit_facilities
+        ):
             insights.append(
                 {
                     "id": "INS-002",
                     "priority": "medium",
                     "category": "Credit Utilisation",
                     "title": "Monitor Lombard utilisation",
-                    "summary": f"The customer has active lending facilities while YTD performance is estimated at {ytd_return:.1f}%.",
+                    "summary": (
+                        "The customer has active lending facilities while "
+                        f"YTD performance is estimated at {ytd_return:.1f}%."
+                    ),
                     "suggested_actions": [
                         "Check available lending headroom",
                         "Compare borrowing cost with expected portfolio return",

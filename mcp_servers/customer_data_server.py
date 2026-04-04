@@ -14,7 +14,10 @@ from mcp_servers.base import create_mock_mcp_app
 TOOL_DEFINITIONS = [
     {
         "name": "customer_get_360",
-        "description": "Return a full customer context bundle including profile, accounts, portfolio, lending, and compliance data.",
+        "description": (
+            "Return a full customer context bundle including profile, accounts, "
+            "portfolio, lending, and compliance data."
+        ),
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -80,9 +83,15 @@ def _build_mcp_lending(bundle: dict[str, Any]) -> dict[str, Any]:
         "summary": {
             "total_limit_usd": sum(float(f.get("principal_usd") or 0) for f in facilities),
             "total_drawn_usd": sum(float(f.get("drawn_amount_usd") or 0) for f in facilities),
-            "total_available_usd": sum(float(f.get("available_amount_usd") or 0) for f in facilities),
-            "total_card_limit_usd": sum(float(card.get("credit_limit_usd") or 0) for card in bundle.get("cards", [])),
-            "total_card_outstanding_usd": sum(float(card.get("outstanding_balance_usd") or 0) for card in bundle.get("cards", [])),
+            "total_available_usd": sum(
+                float(f.get("available_amount_usd") or 0) for f in facilities
+            ),
+            "total_card_limit_usd": sum(
+                float(card.get("credit_limit_usd") or 0) for card in bundle.get("cards", [])
+            ),
+            "total_card_outstanding_usd": sum(
+                float(card.get("outstanding_balance_usd") or 0) for card in bundle.get("cards", [])
+            ),
         },
         "facilities": facilities,
         "cards": bundle.get("cards") or credit.get("credit_cards") or [],

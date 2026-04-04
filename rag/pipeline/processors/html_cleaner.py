@@ -20,10 +20,10 @@ Returns a dict:
 }
 """
 
-import re
-from urllib.parse import urlparse
-from bs4 import BeautifulSoup, Tag
+import re  # noqa: E402
+from urllib.parse import urlparse  # noqa: E402
 
+from bs4 import BeautifulSoup, Tag  # noqa: E402
 
 # CSS selectors / tag names we always strip before parsing
 _NOISE_SELECTORS = [
@@ -96,8 +96,8 @@ def _clean_text(text: str) -> str:
     """Normalise whitespace and strip noise patterns."""
     text = re.sub(r"\n{3,}", "\n\n", text)
     text = re.sub(r" {2,}", " ", text)
-    lines = [l.strip() for l in text.splitlines()]
-    lines = [l for l in lines if l and not _NOISE_RE.search(l)]
+    lines = [line.strip() for line in text.splitlines()]
+    lines = [line for line in lines if line and not _NOISE_RE.search(line)]
     return "\n".join(lines).strip()
 
 

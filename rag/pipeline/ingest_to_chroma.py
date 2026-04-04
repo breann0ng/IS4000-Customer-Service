@@ -18,16 +18,16 @@ Environment variables (optional):
     COLLECTION_NAME  - ChromaDB collection name (default: ubs_knowledge_base)
 """
 
-import os
-import sys
-import argparse
-import logging
-from pathlib import Path
+import argparse  # noqa: E402
+import logging  # noqa: E402
+import os  # noqa: E402
+import sys  # noqa: E402
+from pathlib import Path  # noqa: E402
 
-import jsonlines
-import chromadb
-from chromadb.utils import embedding_functions
-from tqdm import tqdm
+import chromadb  # noqa: E402
+import jsonlines  # noqa: E402
+from chromadb.utils import embedding_functions  # noqa: E402
+from tqdm import tqdm  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,
@@ -46,7 +46,7 @@ DEFAULT_CHUNKS_FILE = Path(__file__).parent / "output" / "chunks" / "all_chunks.
 BATCH_SIZE = 100
 
 
-def build_embedding_fn(model_name: str):
+def build_embedding_fn(model_name: str) -> embedding_functions.SentenceTransformerEmbeddingFunction:
     """Return a ChromaDB-compatible SentenceTransformer embedding function."""
     logger.info(f"Loading embedding model: {model_name}")
     return embedding_functions.SentenceTransformerEmbeddingFunction(
@@ -56,7 +56,11 @@ def build_embedding_fn(model_name: str):
     )
 
 
-def get_or_create_collection(client: chromadb.Client, name: str, embed_fn):
+def get_or_create_collection(
+    client: chromadb.ClientAPI,
+    name: str,
+    embed_fn: embedding_functions.SentenceTransformerEmbeddingFunction,
+) -> chromadb.Collection:
     """Get existing collection or create it with the given embedding function."""
     try:
         collection = client.get_collection(name=name, embedding_function=embed_fn)
@@ -90,8 +94,8 @@ def ingest(
     chroma_port: int = CHROMA_PORT,
     skip_existing: bool = True,
 ) -> int:
-    """
-    Ingest chunks into ChromaDB.
+    """Ingest chunks into ChromaDB.
+
     Returns the total number of documents in the collection after ingestion.
     """
     if not chunks_file.exists():
@@ -124,9 +128,8 @@ def ingest(
 
     # Filter to new chunks only
     new_chunks = [c for c in chunks if c["id"] not in existing_ids]
-    logger.info(
-        f"Ingesting {len(new_chunks)} new chunks (skipping {len(chunks) - len(new_chunks)} existing)"
-    )
+    skipped = len(chunks) - len(new_chunks)
+    logger.info(f"Ingesting {len(new_chunks)} new chunks (skipping {skipped} existing)")
 
     if not new_chunks:
         logger.info("Nothing to ingest.")
@@ -178,10 +181,14 @@ def query_test(
             include=["documents", "metadatas", "distances"],
         )
         print(f"\nQ: {q}")
+        docs = results["documents"] or [[]]
+        metas = results["metadatas"] or [[]]
+        dists = results["distances"] or [[]]
         for doc, meta, dist in zip(
-            results["documents"][0],
-            results["metadatas"][0],
-            results["distances"][0],
+            docs[0],
+            metas[0],
+            dists[0],
+            strict=False,
         ):
             print(f"  [{dist:.3f}] {meta['source_url']}")
             print(f"  {doc[:150]}...")

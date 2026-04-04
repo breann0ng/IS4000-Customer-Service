@@ -19,14 +19,13 @@ Usage:
     python run_all.py --services-only    # only product pages
 """
 
-import sys
-import os
+import os  # noqa: E402
+import sys  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import argparse
-import logging
-import sys
-from pathlib import Path
+import argparse  # noqa: E402
+import logging  # noqa: E402
+from pathlib import Path  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,
@@ -35,7 +34,8 @@ logging.basicConfig(
 logger = logging.getLogger("run_all")
 
 
-def main():
+def main() -> None:
+    """Run the full UBS knowledge base pipeline."""
     parser = argparse.ArgumentParser(description="UBS Knowledge Base Pipeline")
     parser.add_argument(
         "--skip-scrape",
@@ -67,7 +67,7 @@ def main():
     logger.info("=" * 60)
     logger.info("Step 1: Checking robots.txt")
     logger.info("=" * 60)
-    from utils.robots_checker import get_crawl_delay, _get_robots
+    from utils.robots_checker import _get_robots, get_crawl_delay  # ty: ignore[unresolved-import]
 
     robots = _get_robots("https://www.ubs.com")
     if robots:
@@ -130,7 +130,7 @@ def main():
         logger.info("=" * 60)
         from ingest_to_chroma import ingest, query_test
 
-        final_count = ingest()
+        ingest()
 
         if args.test_query:
             query_test()

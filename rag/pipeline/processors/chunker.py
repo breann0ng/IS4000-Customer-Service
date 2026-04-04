@@ -14,10 +14,11 @@ Strategy:
 Target: 350 tokens per chunk, max 500, overlap 50 tokens.
 """
 
-import re
-import hashlib
-from datetime import datetime, timezone
-import tiktoken
+import hashlib  # noqa: E402
+import re  # noqa: E402
+from datetime import UTC, datetime  # noqa: E402
+
+import tiktoken  # noqa: E402
 
 TARGET_TOKENS = 350
 MAX_TOKENS = 500
@@ -38,8 +39,8 @@ def _split_sentences(text: str) -> list[str]:
 
 
 def _chunk_text(text: str, overlap_tokens: int = OVERLAP_TOKENS) -> list[str]:
-    """
-    Split text into chunks of ~TARGET_TOKENS each.
+    """Split text into chunks of ~TARGET_TOKENS each.
+
     Uses a sliding window with overlap so context isn't lost at boundaries.
     """
     sentences = _split_sentences(text)
@@ -95,9 +96,7 @@ def _make_chunk_id(url: str, chunk_index: int) -> str:
 
 
 def chunk_document(doc: dict, doc_type: str = "help_faq") -> list[dict]:
-    """
-    Take a cleaned document dict and return a list of chunk dicts
-    ready for ChromaDB ingestion.
+    """Take a cleaned document dict and return a list of chunk dicts ready for ChromaDB ingestion.
 
     Each chunk:
     {
@@ -117,7 +116,7 @@ def chunk_document(doc: dict, doc_type: str = "help_faq") -> list[dict]:
     }
     """
     url = doc["url"]
-    scraped_at = datetime.now(timezone.utc).isoformat()
+    scraped_at = datetime.now(UTC).isoformat()
     raw_chunks: list[str] = []
 
     # Try section-level chunking first
@@ -143,7 +142,7 @@ def chunk_document(doc: dict, doc_type: str = "help_faq") -> list[dict]:
     seen: set[str] = set()
     deduped: list[str] = []
     for c in raw_chunks:
-        key = hashlib.md5(c.encode()).hexdigest()
+        key = hashlib.md5(c.encode(), usedforsecurity=False).hexdigest()
         if key not in seen:
             seen.add(key)
             deduped.append(c)

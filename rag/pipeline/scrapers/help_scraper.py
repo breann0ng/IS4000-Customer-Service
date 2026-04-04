@@ -16,24 +16,31 @@ Behaviour:
 - Saves cleaned JSON to output/processed/
 """
 
-import os
-import sys
-import json
-import logging
-import hashlib
-from pathlib import Path
-from urllib.parse import urljoin, urlparse
+import json  # noqa: E402
+import logging  # noqa: E402
+import sys  # noqa: E402
+from pathlib import Path  # noqa: E402
+from urllib.parse import urljoin, urlparse  # noqa: E402
 
-import requests
-from bs4 import BeautifulSoup
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+import requests  # noqa: E402
+from bs4 import BeautifulSoup  # noqa: E402
+from tenacity import (  # noqa: E402
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 # Allow running directly from scrapers/ or from project root
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from utils.robots_checker import is_allowed, get_crawl_delay, USER_AGENT
-from utils.rate_limiter import polite_wait
-from processors.html_cleaner import clean_html
+from processors.html_cleaner import clean_html  # noqa: E402
+from utils.rate_limiter import polite_wait  # noqa: E402  # ty: ignore[unresolved-import]
+from utils.robots_checker import (  # noqa: E402  # ty: ignore[unresolved-import]
+    USER_AGENT,
+    get_crawl_delay,
+    is_allowed,
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -103,9 +110,9 @@ def _fetch(url: str) -> requests.Response:
 
 
 def _discover_child_links(html: str, base_url: str) -> list[str]:
-    """
-    Find all links on the page that are within /ch/en/help/ and are
-    leaf article pages (i.e. contain a third path segment after /help/).
+    """Find all links on the page that are within /ch/en/help/ and are leaf article pages.
+
+    Leaf article pages contain a third path segment after /help/.
     """
     soup = BeautifulSoup(html, "lxml")
     links: set[str] = set()
@@ -170,8 +177,8 @@ def scrape_page(url: str) -> dict | None:
 
 
 def run_help_scraper(max_pages: int = 500) -> list[dict]:
-    """
-    Full crawl of the UBS help centre.
+    """Full crawl of the UBS help centre.
+
     Returns list of all successfully cleaned doc dicts.
     """
     visited: set[str] = set()
@@ -195,7 +202,7 @@ def run_help_scraper(max_pages: int = 500) -> list[dict]:
             raw_path = OUTPUT_RAW / f"{_url_to_filename(url)}.html"
             if raw_path.exists():
                 child_links = _discover_child_links(raw_path.read_text(encoding="utf-8"), url)
-                new_links = [l for l in child_links if l not in visited]
+                new_links = [link for link in child_links if link not in visited]
                 logger.info(f"  Discovered {len(new_links)} new links from {url}")
                 queue.extend(new_links)
 

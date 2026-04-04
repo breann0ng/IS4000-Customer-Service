@@ -319,6 +319,53 @@
         }
       }
     },
+    "/api/chat/upload": {
+      "post": {
+        "tags": [
+          "chat"
+        ],
+        "summary": "Upload File",
+        "description": "Upload and parse a file for use in chat messages.\n\nSupports PDF, DOCX, Excel (xlsx/xls), and image files (png, jpg, jpeg, gif, webp).\nReturns extracted text content that can be sent with a chat message.\n\nArgs:\n    file: The uploaded file.\n    current_user: The authenticated user.\n\nReturns:\n    The parsed file content and metadata.",
+        "operationId": "upload_file_api_chat_upload_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_file_api_chat_upload_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/chat/sessions/{session_id}/messages": {
       "post": {
         "tags": [
@@ -435,6 +482,180 @@
         }
       }
     },
+    "/api/customers/me/performance": {
+      "get": {
+        "tags": [
+          "customers"
+        ],
+        "summary": "Get My Performance",
+        "description": "Return performance data for the currently authenticated user's customer profile.\n\nReturns:\n    A dictionary containing portfolio history, allocation, and returns.",
+        "operationId": "get_my_performance_api_customers_me_performance_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get My Performance Api Customers Me Performance Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/customers/me/summary": {
+      "get": {
+        "tags": [
+          "customers"
+        ],
+        "summary": "Get My Summary",
+        "description": "Return a high-level summary of the customer's profile and accounts.",
+        "operationId": "get_my_summary_api_customers_me_summary_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get My Summary Api Customers Me Summary Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/performance/overview": {
+      "get": {
+        "tags": [
+          "performance"
+        ],
+        "summary": "Get Performance Overview",
+        "description": "Return live account-performance overview data for the logged-in demo user.",
+        "operationId": "get_performance_overview_api_performance_overview_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Performance Overview Api Performance Overview Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/performance/monthly-returns": {
+      "get": {
+        "tags": [
+          "performance"
+        ],
+        "summary": "Get Monthly Returns",
+        "description": "Return monthly returns data for the logged-in customer.",
+        "operationId": "get_monthly_returns_api_performance_monthly_returns_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Monthly Returns Api Performance Monthly Returns Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/performance/benchmark-comparison": {
+      "get": {
+        "tags": [
+          "performance"
+        ],
+        "summary": "Get Benchmark Comparison",
+        "description": "Return portfolio vs benchmark comparison for the logged-in customer.",
+        "operationId": "get_benchmark_comparison_api_performance_benchmark_comparison_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Benchmark Comparison Api Performance Benchmark Comparison Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/performance/insights": {
+      "get": {
+        "tags": [
+          "performance"
+        ],
+        "summary": "Get Performance Insights",
+        "description": "Return curated insights and opportunities for the customer.",
+        "operationId": "get_performance_insights_api_performance_insights_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Performance Insights Api Performance Insights Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/health": {
       "get": {
         "summary": "Health Check",
@@ -461,6 +682,20 @@
   },
   "components": {
     "schemas": {
+      "Body_upload_file_api_chat_upload_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_file_api_chat_upload_post"
+      },
       "ChatCompletionResponse": {
         "properties": {
           "message": {
@@ -495,6 +730,57 @@
             "minLength": 1,
             "title": "Content",
             "description": "The user's message text"
+          },
+          "file_context": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Context",
+            "description": "Extracted text from an uploaded file"
+          },
+          "file_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Name",
+            "description": "Original filename of the uploaded file"
+          },
+          "file_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Type",
+            "description": "File extension (e.g. pdf, png, docx)"
+          },
+          "image_base64": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Base64",
+            "description": "Base64-encoded image data for display in chat"
           }
         },
         "type": "object",
@@ -702,6 +988,46 @@
         "title": "ChatSessionUpdate",
         "description": "Request body for updating a chat session's metadata."
       },
+      "FileUploadResponse": {
+        "properties": {
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "file_type": {
+            "type": "string",
+            "title": "File Type"
+          },
+          "extracted_text": {
+            "type": "string",
+            "title": "Extracted Text"
+          },
+          "is_image": {
+            "type": "boolean",
+            "title": "Is Image"
+          },
+          "image_base64": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Base64"
+          }
+        },
+        "type": "object",
+        "required": [
+          "filename",
+          "file_type",
+          "extracted_text",
+          "is_image"
+        ],
+        "title": "FileUploadResponse",
+        "description": "Response after a file has been parsed successfully."
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -777,6 +1103,17 @@
           "display_name": {
             "type": "string",
             "title": "Display Name"
+          },
+          "customer_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Id"
           },
           "created_at": {
             "type": "string",

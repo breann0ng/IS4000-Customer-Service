@@ -12,9 +12,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from apps.api.auth.ldap import authenticate_ldap_user
 from apps.api.auth.models import LoginRequest, TokenResponse, UserProfile
 from apps.api.config import settings
+from apps.api.customers.registry import get_customer_id_for_username
 from apps.api.database.connection import get_database_session
 from apps.api.database.models import User
-from apps.api.customers.registry import get_customer_id_for_username
 from apps.api.logging_config import get_logger
 
 logger = get_logger(__name__)

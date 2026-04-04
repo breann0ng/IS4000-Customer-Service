@@ -1,34 +1,35 @@
 """Centralized data service for customer profile and performance data."""
 
 from datetime import UTC, datetime
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
-from apps.api.logging_config import get_logger
 from apps.api.customers.sqlite_repository import repository
+from apps.api.logging_config import get_logger
 
 logger = get_logger(__name__)
 
+
 class DataService:
     """Service to load and prepare customer data from SQLite."""
-    
+
     @staticmethod
-    def _load_raw_json(customer_id: str) -> Dict[str, Any]:
+    def _load_raw_json(customer_id: str) -> dict[str, Any]:
         """Load the normalized customer bundle for a customer ID."""
         try:
             return repository.build_customer_bundle(customer_id)
         except Exception as e:
             logger.error("failed_to_load_customer_data", customer_id=customer_id, error=str(e))
-        
+
         return {}
 
     @classmethod
-    def get_customer_performance(cls, customer_id: str) -> Dict[str, Any]:
+    def get_customer_performance(cls, customer_id: str) -> dict[str, Any]:
         """Prepare performance data structured for the dashboard frontend."""
         data = cls._load_raw_json(customer_id)
         return cls.get_customer_performance_from_bundle(customer_id, data)
 
     @staticmethod
-    def _compound_return_percent(returns: List[Dict[str, Any]]) -> float:
+    def _compound_return_percent(returns: list[dict[str, Any]]) -> float:
         """Compound a sequence of monthly percent returns into a single percent return."""
         growth = 1.0
         for entry in returns:
@@ -40,7 +41,9 @@ class DataService:
         return (growth - 1.0) * 100.0
 
     @staticmethod
-    def get_customer_performance_from_bundle(customer_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    def get_customer_performance_from_bundle(
+        customer_id: str, data: dict[str, Any]
+    ) -> dict[str, Any]:
         """Prepare performance payload from a pre-fetched customer bundle."""
         if not data:
             return {}
@@ -60,7 +63,9 @@ class DataService:
         )
 
         monthly_returns = portfolio.get("monthly_returns", [])
-        six_month_return_pct = DataService._compound_return_percent(monthly_returns[-6:]) if monthly_returns else 0.0
+        six_month_return_pct = (
+            DataService._compound_return_percent(monthly_returns[-6:]) if monthly_returns else 0.0
+        )
         benchmark_raw = portfolio.get("benchmark_comparison", [])
         monthly_by_month = {
             str(entry.get("month")): float(entry.get("value", 0) or 0)
@@ -120,7 +125,9 @@ class DataService:
             "risk_metrics": {
                 "risk_profile": profile.get("risk_profile") or "N/A",
                 "sharpe_ratio": float(portfolio.get("risk_metrics", {}).get("sharpe_ratio") or 0),
-                "volatility_pct": float(portfolio.get("risk_metrics", {}).get("volatility_pct") or 0),
+                "volatility_pct": float(
+                    portfolio.get("risk_metrics", {}).get("volatility_pct") or 0
+                ),
             },
             "benchmark_name": portfolio.get("benchmark") or "Benchmark",
             "relationship_manager": {
@@ -153,11 +160,20 @@ class DataService:
                     "otherAssets": [],
                 },
                 "liabilities": [
-                    {"label": "Lombard Facility", "value": -credit.get("lombard_facility", {}).get("drawn_sgd", 0)},
-                    {"label": "Mortgage", "value": -credit.get("mortgage", {}).get("outstanding_sgd", 0)},
+                    {
+                        "label": "Lombard Facility",
+                        "value": -credit.get("lombard_facility", {}).get("drawn_sgd", 0),
+                    },
+                    {
+                        "label": "Mortgage",
+                        "value": -credit.get("mortgage", {}).get("outstanding_sgd", 0),
+                    },
                 ]
                 + [
-                    {"label": card.get("product", "Credit Card"), "value": -card.get("outstanding_sgd", 0)}
+                    {
+                        "label": card.get("product", "Credit Card"),
+                        "value": -card.get("outstanding_sgd", 0),
+                    }
                     for card in credit.get("credit_cards", [])
                 ],
             },
@@ -165,19 +181,19 @@ class DataService:
         }
 
     @classmethod
-    def get_customer_summary(cls, customer_id: str) -> Dict[str, Any]:
+    def get_customer_summary(cls, customer_id: str) -> dict[str, Any]:
         """Prepare a high-level summary of the customer's profile and accounts."""
         data = cls._load_raw_json(customer_id)
         return cls.get_customer_summary_from_bundle(data)
 
     @staticmethod
-    def get_customer_summary_from_bundle(data: Dict[str, Any]) -> Dict[str, Any]:
+    def get_customer_summary_from_bundle(data: dict[str, Any]) -> dict[str, Any]:
         """Prepare customer summary payload from a pre-fetched customer bundle."""
         if not data:
             return {}
-            
+
         portfolio = data.get("portfolio", {})
-        
+
         return {
             "profile": data.get("profile"),
             "accounts": data.get("accounts"),
@@ -185,23 +201,33 @@ class DataService:
                 "total_value": portfolio.get("total_value_sgd"),
                 "currency": portfolio.get("currency"),
                 "ytd_return": portfolio.get("ytd_return_pct"),
-            }
+            },
         }
 
     @classmethod
-    def get_banking_context(cls, customer_id: str) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+    def get_banking_context(cls, customer_id: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
         """Prepare context specifically for the Private Banking chatbot agent."""
         data = cls._load_raw_json(customer_id)
-        
+
         if not data:
             return {}, []
 
         profile = data.get("profile", {})
         portfolio = data.get("portfolio", {})
-        
+
         # Robustly handle different currency suffixes or generic keys
-        aum = profile.get("aum_with_ubs_sgd") or profile.get("aum_with_ubs_usd") or profile.get("aum") or 0
-        net_worth = profile.get("net_worth_sgd") or profile.get("net_worth_usd") or profile.get("net_worth") or 0
+        aum = (
+            profile.get("aum_with_ubs_sgd")
+            or profile.get("aum_with_ubs_usd")
+            or profile.get("aum")
+            or 0
+        )
+        net_worth = (
+            profile.get("net_worth_sgd")
+            or profile.get("net_worth_usd")
+            or profile.get("net_worth")
+            or 0
+        )
 
         client = {
             "customer_id": profile.get("customer_id"),
@@ -213,23 +239,26 @@ class DataService:
             "ytd_return_pct": portfolio.get("ytd_return_pct"),
             "one_year_return_pct": portfolio.get("one_year_return_pct"),
             "preferences": profile.get("preferences", {}),
-            "derived_flags": profile.get("derived_flags", {})
+            "derived_flags": profile.get("derived_flags", {}),
         }
-        
-        accounts = [
-            {
-                "account_id": acc.get("account_id"),
-                "type": acc.get("account_type"),
-                "currency": acc.get("currency"),
-                "balance": f"{acc.get('balance', acc.get('total_sgd_equivalent', acc.get('total_usd_equivalent', 0))):,.2f}"
-            }
-            for acc in data.get("accounts", [])
-        ]
-        
+
+        accounts = []
+        for acc in data.get("accounts", []):
+            bal_fallback = acc.get("total_sgd_equivalent", acc.get("total_usd_equivalent", 0))
+            bal = acc.get("balance", bal_fallback)
+            accounts.append(
+                {
+                    "account_id": acc.get("account_id"),
+                    "type": acc.get("account_type"),
+                    "currency": acc.get("currency"),
+                    "balance": f"{bal:,.2f}",
+                }
+            )
+
         return client, accounts
 
     @classmethod
-    def get_advisory_context(cls, customer_id: str) -> Dict[str, Any]:
+    def get_advisory_context(cls, customer_id: str) -> dict[str, Any]:
         """Prepare structured context for the Wealth Advisory agent."""
         data = cls._load_raw_json(customer_id)
         if not data:
@@ -238,8 +267,26 @@ class DataService:
         profile = data.get("profile", {})
         portfolio = data.get("portfolio", {})
         currency = portfolio.get("currency", "SGD")
-        aum = portfolio.get("total_value_sgd") or portfolio.get("total_value_usd") or portfolio.get("total_value") or 0
-        net_worth = profile.get("net_worth_sgd") or profile.get("net_worth_usd") or profile.get("net_worth") or 0
+        aum = (
+            portfolio.get("total_value_sgd")
+            or portfolio.get("total_value_usd")
+            or portfolio.get("total_value")
+            or 0
+        )
+        net_worth = (
+            profile.get("net_worth_sgd")
+            or profile.get("net_worth_usd")
+            or profile.get("net_worth")
+            or 0
+        )
+
+        asset_allocation = {}
+        for k, v in portfolio.get("allocation", {}).items():
+            alloc_val = v.get("value_sgd", v.get("value_usd", v.get("value", 0)))
+            asset_allocation[k] = f"{v['pct']}% ({currency} {alloc_val:,})"
+        ytd_pct = portfolio.get("ytd_return_pct", 0)
+        benchmark = portfolio.get("benchmark", "MSCI World benchmark")
+        benchmark_comparison = f"{ytd_pct}% vs. {benchmark}"
 
         return {
             "customer_id": customer_id,
@@ -247,19 +294,16 @@ class DataService:
             "total_aum": f"{currency} {aum:,}",
             "net_worth": f"{currency} {net_worth:,}",
             "risk_profile": profile.get("risk_profile"),
-            "asset_allocation": {
-                k: f"{v['pct']}% ({currency} {v.get('value_sgd', v.get('value_usd', v.get('value', 0))):,})"
-                for k, v in portfolio.get("allocation", {}).items()
-            },
+            "asset_allocation": asset_allocation,
             "ytd_performance": f"+{portfolio.get('ytd_return_pct', 0)}%",
             "one_year_return": f"+{portfolio.get('one_year_return_pct', 0)}%",
             "risk_metrics": portfolio.get("risk_metrics", {}),
             "performance_attribution": portfolio.get("performance_attribution", {}),
-            "benchmark_comparison": f"{portfolio.get('ytd_return_pct', 0)}% vs. {portfolio.get('benchmark', 'MSCI World benchmark')}"
+            "benchmark_comparison": benchmark_comparison,
         }
 
     @classmethod
-    def get_lending_context(cls, customer_id: str) -> Dict[str, Any]:
+    def get_lending_context(cls, customer_id: str) -> dict[str, Any]:
         """Prepare structured context for the Lending & Credit agent."""
         data = cls._load_raw_json(customer_id)
         if not data:
@@ -269,13 +313,28 @@ class DataService:
         credit = data.get("credit", {})
         lombard = credit.get("lombard_facility", {})
         currency = portfolio.get("currency", "SGD")
-        aum = portfolio.get("total_value_sgd") or portfolio.get("total_value_usd") or portfolio.get("total_value") or 0
-        
-        l_limit = lombard.get('limit_sgd') or lombard.get('limit_usd') or lombard.get('limit') or 0
-        l_drawn = lombard.get('drawn_sgd') or lombard.get('drawn_usd') or lombard.get('drawn') or 0
-        l_avail = lombard.get('available_sgd') or lombard.get('available_usd') or lombard.get('available') or 0
+        aum = (
+            portfolio.get("total_value_sgd")
+            or portfolio.get("total_value_usd")
+            or portfolio.get("total_value")
+            or 0
+        )
 
-        m_out = credit.get('mortgage', {}).get('outstanding_sgd') or credit.get('mortgage', {}).get('outstanding_usd') or credit.get('mortgage', {}).get('outstanding') or 0
+        l_limit = lombard.get("limit_sgd") or lombard.get("limit_usd") or lombard.get("limit") or 0
+        l_drawn = lombard.get("drawn_sgd") or lombard.get("drawn_usd") or lombard.get("drawn") or 0
+        l_avail = (
+            lombard.get("available_sgd")
+            or lombard.get("available_usd")
+            or lombard.get("available")
+            or 0
+        )
+
+        m_out = (
+            credit.get("mortgage", {}).get("outstanding_sgd")
+            or credit.get("mortgage", {}).get("outstanding_usd")
+            or credit.get("mortgage", {}).get("outstanding")
+            or 0
+        )
 
         return {
             "total_aum": f"{currency} {aum:,}",
@@ -287,33 +346,38 @@ class DataService:
             ),
             "mortgage": (
                 f"{currency} {m_out:,} outstanding "
-                f"({credit.get('mortgage', {}).get('property', 'N/A')}) @ {credit.get('mortgage', {}).get('interest_rate_pct', 0)}% p.a."
-            )
+                f"({credit.get('mortgage', {}).get('property', 'N/A')}) @ "
+                f"{credit.get('mortgage', {}).get('interest_rate_pct', 0)}% p.a."
+            ),
         }
 
     @classmethod
-    def get_risk_analysis(cls, customer_id: str) -> Dict[str, Any]:
+    def get_risk_analysis(cls, customer_id: str) -> dict[str, Any]:
         """Fetch dedicated risk metrics for a customer."""
         data = cls._load_raw_json(customer_id)
         portfolio = data.get("portfolio", {})
         return {
             "risk_profile": data.get("profile", {}).get("risk_profile"),
             "metrics": portfolio.get("risk_metrics", {}),
-            "system_triggers": [t for t in data.get("system_triggers", []) if t["type"] in ["Concentration", "Performance"]]
+            "system_triggers": [
+                t
+                for t in data.get("system_triggers", [])
+                if t["type"] in ["Concentration", "Performance"]
+            ],
         }
 
     @classmethod
-    def get_financial_planning(cls, customer_id: str) -> Dict[str, Any]:
+    def get_financial_planning(cls, customer_id: str) -> dict[str, Any]:
         """Fetch goals, cashflow, and planning data."""
         data = cls._load_raw_json(customer_id)
         return {
             "goals": data.get("goals", []),
             "cashflow": data.get("cashflow", {}),
-            "preferences": data.get("profile", {}).get("preferences", {})
+            "preferences": data.get("profile", {}).get("preferences", {}),
         }
 
     @classmethod
-    def get_compliance_context(cls, customer_id: str) -> Dict[str, Any]:
+    def get_compliance_context(cls, customer_id: str) -> dict[str, Any]:
         """Fetch tax and regulatory context."""
         data = cls._load_raw_json(customer_id)
         profile = data.get("profile", {})
@@ -321,5 +385,7 @@ class DataService:
             "tax_profile": profile.get("tax_profile", {}),
             "kyc_status": profile.get("kyc_status"),
             "kyc_last_reviewed": profile.get("kyc_last_reviewed"),
-            "system_triggers": [t for t in data.get("system_triggers", []) if t["type"] == "Regulatory"]
+            "system_triggers": [
+                t for t in data.get("system_triggers", []) if t["type"] == "Regulatory"
+            ],
         }

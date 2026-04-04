@@ -31,11 +31,22 @@ dependencies = [
     "opentelemetry-api>=1.27.0",
     "opentelemetry-sdk>=1.27.0",
     "structlog>=24.4.0",
-    "poethepoet>=0.29.0",
-    "ruff>=0.7.0",
     "torch>=2.10.0",
     "psycopg2-binary>=2.9.11",
     "redisvl>=0.16.0",
+    "openpyxl>=3.1.0",
+    "jsonlines>=4.0.0",
+    "tiktoken>=0.12.0",
+    "beautifulsoup4>=4.14.3",
+    "pdfminer-six>=20260107",
+]
+
+[dependency-groups]
+dev = [
+    "lefthook>=2.1.4",
+    "poethepoet>=0.29.0",
+    "ruff>=0.7.0",
+    "ty>=0.0.1a0",
 ]
 
 [[tool.uv.index]]
@@ -60,8 +71,24 @@ help = "Start the React frontend dev server on port 5173"
 shell = "PYTHONPATH=. uv run python scripts/export_openapi.py && cd apps/ui && pnpm run generate:api"
 help = "Export OpenAPI schema from FastAPI and regenerate the TypeScript client"
 
+[tool.poe.tasks.format]
+cmd = "ruff format apps/ rag/ mcp_servers/ tests/"
+help = "Format all Python code with Ruff"
+
+[tool.poe.tasks.lint]
+cmd = "ruff check apps/ rag/ mcp_servers/ tests/"
+help = "Lint all Python code with Ruff"
+
+[tool.poe.tasks.lint-fix]
+cmd = "ruff check --fix apps/ rag/ mcp_servers/ tests/"
+help = "Lint and auto-fix all Python code with Ruff"
+
+[tool.poe.tasks.typecheck]
+cmd = "ty check apps/api/ rag/ mcp_servers/ tests/"
+help = "Type-check Python code with ty"
+
 [tool.poe.tasks.check]
-shell = "uvx ruff format apps/ rag/ mcp_servers/ tests/ && uvx ruff check apps/ rag/ mcp_servers/ tests/ && uvx ty check apps/api/ rag/ mcp_servers/ && PYTHONPATH=. uv run python scripts/check_openapi_drift.py"
+shell = "ruff format apps/ rag/ mcp_servers/ tests/ && ruff check apps/ rag/ mcp_servers/ tests/ && ty check apps/api/ rag/ mcp_servers/ tests/ && PYTHONPATH=. uv run python scripts/check_openapi_drift.py"
 help = "Format, lint, type-check all Python code, and check for OpenAPI drift"
 
 [tool.poe.tasks.mock-mcp]
@@ -104,6 +131,9 @@ ignore = ["D100", "D104", "S101", "B008"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.ty.src]
+include = ["rag/pipeline"]
 
 [tool.ty.rules]
 invalid-argument-type = "ignore"

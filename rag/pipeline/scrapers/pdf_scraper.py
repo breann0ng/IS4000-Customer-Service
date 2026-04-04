@@ -15,22 +15,31 @@ Strategy:
   as html_cleaner.py output, so chunker.py handles them identically
 """
 
-import sys
-import re
-import json
-import logging
-from pathlib import Path
-from urllib.parse import urljoin, urlparse
-from datetime import datetime, timezone
+import json  # noqa: E402
+import logging  # noqa: E402
+import re  # noqa: E402
+import sys  # noqa: E402
+from datetime import UTC, datetime  # noqa: E402
+from pathlib import Path  # noqa: E402
+from urllib.parse import urljoin, urlparse  # noqa: E402
 
-import requests
-from bs4 import BeautifulSoup
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+import requests  # noqa: E402
+from bs4 import BeautifulSoup  # noqa: E402
+from tenacity import (  # noqa: E402
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from utils.robots_checker import is_allowed, get_crawl_delay, USER_AGENT
-from utils.rate_limiter import polite_wait
+from utils.rate_limiter import polite_wait  # noqa: E402  # ty: ignore[unresolved-import]
+from utils.robots_checker import (  # noqa: E402  # ty: ignore[unresolved-import]
+    USER_AGENT,
+    get_crawl_delay,
+    is_allowed,
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -142,14 +151,14 @@ def _url_to_pdf_filename(url: str) -> str:
 
 
 def _extract_pdf_text(pdf_path: Path) -> list[dict]:
-    """
-    Extract text from a PDF file using pdfminer.six.
+    """Extract text from a PDF file using pdfminer.six.
+
     Returns a list of {heading, body} section dicts.
     Falls back to empty list if extraction fails.
     """
     try:
         from pdfminer.high_level import extract_pages
-        from pdfminer.layout import LTTextContainer, LTChar, LTAnno
+        from pdfminer.layout import LTChar, LTTextContainer
     except ImportError:
         logger.error("pdfminer.six not installed. Run: pip install pdfminer.six")
         return []
@@ -170,8 +179,8 @@ def _extract_pdf_text(pdf_path: Path) -> list[dict]:
                 # Heuristic: detect headings by font size
                 # Get dominant font size for this text block
                 font_sizes: list[float] = []
-                for text_line in element:
-                    for char in text_line:
+                for text_line in element:  # type: ignore[union-attr]
+                    for char in text_line:  # ty: ignore[not-iterable]
                         if isinstance(char, LTChar):
                             font_sizes.append(char.size)
 
@@ -301,7 +310,7 @@ def download_and_process_pdf(pdf_url: str) -> dict | None:
         "doc_type": "pdf_brochure",
         "sections": sections,
         "full_text": full_text,
-        "scraped_at": datetime.now(timezone.utc).isoformat(),
+        "scraped_at": datetime.now(UTC).isoformat(),
         "file_size_kb": file_size_kb,
     }
 
@@ -313,8 +322,8 @@ def download_and_process_pdf(pdf_url: str) -> dict | None:
 
 
 def run_pdf_scraper() -> list[dict]:
-    """
-    Discover PDFs by scanning all successfully scraped HTML files in output/raw/.
+    """Discover PDFs by scanning all successfully scraped HTML files in output/raw/.
+
     This is more robust than a static list of URLs as it finds PDFs linked
     from anywhere in the help centre or product pages.
     """
@@ -337,7 +346,7 @@ def run_pdf_scraper() -> list[dict]:
             # but discovery_pdf_links also fetches the page. We don't want to re-fetch.
             # So I'll refactor discovery_pdf_links or create a local version.
 
-            with open(html_path, "r", encoding="utf-8") as f:
+            with open(html_path, encoding="utf-8") as f:
                 html_content = f.read()
 
             # Since we don't have the original URL easily here without reading the
@@ -345,7 +354,7 @@ def run_pdf_scraper() -> list[dict]:
             # Best way: Check the corresponding JSON file for the 'url'.
             json_path = OUTPUT_PROCESSED / f"{html_path.stem}.json"
             if json_path.exists():
-                with open(json_path, "r", encoding="utf-8") as f:
+                with open(json_path, encoding="utf-8") as f:
                     doc = json.load(f)
                     base_url = doc.get("url", "https://www.ubs.com")
             else:

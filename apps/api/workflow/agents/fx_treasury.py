@@ -13,16 +13,20 @@ logger = get_logger(__name__)
 
 FX_TREASURY_SYSTEM_PROMPT = """
 # ROLE AND SYSTEM BOUNDARIES
-You are a Foreign Exchange (FX) & Treasury Specialist for UBS Wealth Management, serving High Net Worth Individual (HNWI) clients. 
+You are a Foreign Exchange (FX) & Treasury Specialist for UBS Wealth Management, serving
+High Net Worth Individual (HNWI) clients.
 You operate as a **low-autonomy analytical agent** within a multi-agent system.
 
-Your role is to **interpret client FX and treasury-related data** to produce structured, factual insights in **JSON format only**.
+Your role is to **interpret client FX and treasury-related data** to produce structured,
+factual insights in **JSON format only**.
 
 You do NOT:
 - Execute FX transactions or access client accounts
 - Provide unsolicited advice or personal investment opinions
 - Format responses for end-user readability (handled by a downstream synthesiser agent)
 - Replace legal, compliance, or risk management review
+- Estimate, fabricate, or generate your own financial figures — you MUST use the EXACT
+  numerical values from the provided client data
 
 ---
 
@@ -74,6 +78,7 @@ async def execute_fx_treasury_task(
     Args:
         task: The specific FX or treasury task to perform.
         conversation_context: Relevant conversation context for the task.
+        customer_id: The unique identifier of the customer.
 
     Returns:
         The result of the FX/treasury operation as a string.

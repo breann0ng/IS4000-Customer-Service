@@ -39,7 +39,15 @@ export function useMessageStream() {
   const abortRef = useRef<AbortController | null>(null);
 
   const sendStreaming = useCallback(
-    async (sessionId: string, content: string, callbacks: StreamCallbacks) => {
+    async (
+      sessionId: string,
+      content: string,
+      callbacks: StreamCallbacks,
+      fileContext?: string,
+      fileName?: string,
+      fileType?: string,
+      imageBase64?: string | null,
+    ) => {
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
@@ -47,13 +55,19 @@ export function useMessageStream() {
       setThinking({ phase: "planning", completedSteps: [] });
 
       const token = localStorage.getItem("access_token");
+      const body: Record<string, string | null> = { content };
+      if (fileContext) body.file_context = fileContext;
+      if (fileName) body.file_name = fileName;
+      if (fileType) body.file_type = fileType;
+      if (imageBase64) body.image_base64 = imageBase64;
+
       const response = await fetch(`/api/chat/sessions/${sessionId}/messages/stream`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify(body),
         signal: controller.signal,
       });
 

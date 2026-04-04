@@ -5,6 +5,16 @@ export type ClientOptions = {
 };
 
 /**
+ * Body_upload_file_api_chat_upload_post
+ */
+export type BodyUploadFileApiChatUploadPost = {
+    /**
+     * File
+     */
+    file: Blob | File;
+};
+
+/**
  * ChatCompletionResponse
  *
  * The assistant's response after processing a user message.
@@ -33,6 +43,30 @@ export type ChatMessageRequest = {
      * The user's message text
      */
     content: string;
+    /**
+     * File Context
+     *
+     * Extracted text from an uploaded file
+     */
+    file_context?: string | null;
+    /**
+     * File Name
+     *
+     * Original filename of the uploaded file
+     */
+    file_name?: string | null;
+    /**
+     * File Type
+     *
+     * File extension (e.g. pdf, png, docx)
+     */
+    file_type?: string | null;
+    /**
+     * Image Base64
+     *
+     * Base64-encoded image data for display in chat
+     */
+    image_base64?: string | null;
 };
 
 /**
@@ -174,6 +208,34 @@ export type ChatSessionUpdate = {
 };
 
 /**
+ * FileUploadResponse
+ *
+ * Response after a file has been parsed successfully.
+ */
+export type FileUploadResponse = {
+    /**
+     * Filename
+     */
+    filename: string;
+    /**
+     * File Type
+     */
+    file_type: string;
+    /**
+     * Extracted Text
+     */
+    extracted_text: string;
+    /**
+     * Is Image
+     */
+    is_image: boolean;
+    /**
+     * Image Base64
+     */
+    image_base64?: string | null;
+};
+
+/**
  * HTTPValidationError
  */
 export type HttpValidationError = {
@@ -241,6 +303,10 @@ export type UserProfile = {
      * Display Name
      */
     display_name: string;
+    /**
+     * Customer Id
+     */
+    customer_id?: string | null;
     /**
      * Created At
      */
@@ -463,6 +529,31 @@ export type UpdateChatSessionApiChatSessionsSessionIdPatchResponses = {
 
 export type UpdateChatSessionApiChatSessionsSessionIdPatchResponse = UpdateChatSessionApiChatSessionsSessionIdPatchResponses[keyof UpdateChatSessionApiChatSessionsSessionIdPatchResponses];
 
+export type UploadFileApiChatUploadPostData = {
+    body: BodyUploadFileApiChatUploadPost;
+    path?: never;
+    query?: never;
+    url: '/api/chat/upload';
+};
+
+export type UploadFileApiChatUploadPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UploadFileApiChatUploadPostError = UploadFileApiChatUploadPostErrors[keyof UploadFileApiChatUploadPostErrors];
+
+export type UploadFileApiChatUploadPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: FileUploadResponse;
+};
+
+export type UploadFileApiChatUploadPostResponse = UploadFileApiChatUploadPostResponses[keyof UploadFileApiChatUploadPostResponses];
+
 export type SendMessageApiChatSessionsSessionIdMessagesPostData = {
     body: ChatMessageRequest;
     path: {
@@ -520,6 +611,126 @@ export type SendMessageStreamApiChatSessionsSessionIdMessagesStreamPostResponses
      */
     200: unknown;
 };
+
+export type GetMyPerformanceApiCustomersMePerformanceGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/customers/me/performance';
+};
+
+export type GetMyPerformanceApiCustomersMePerformanceGetResponses = {
+    /**
+     * Response Get My Performance Api Customers Me Performance Get
+     *
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type GetMyPerformanceApiCustomersMePerformanceGetResponse = GetMyPerformanceApiCustomersMePerformanceGetResponses[keyof GetMyPerformanceApiCustomersMePerformanceGetResponses];
+
+export type GetMySummaryApiCustomersMeSummaryGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/customers/me/summary';
+};
+
+export type GetMySummaryApiCustomersMeSummaryGetResponses = {
+    /**
+     * Response Get My Summary Api Customers Me Summary Get
+     *
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type GetMySummaryApiCustomersMeSummaryGetResponse = GetMySummaryApiCustomersMeSummaryGetResponses[keyof GetMySummaryApiCustomersMeSummaryGetResponses];
+
+export type GetPerformanceOverviewApiPerformanceOverviewGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/performance/overview';
+};
+
+export type GetPerformanceOverviewApiPerformanceOverviewGetResponses = {
+    /**
+     * Response Get Performance Overview Api Performance Overview Get
+     *
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type GetPerformanceOverviewApiPerformanceOverviewGetResponse = GetPerformanceOverviewApiPerformanceOverviewGetResponses[keyof GetPerformanceOverviewApiPerformanceOverviewGetResponses];
+
+export type GetMonthlyReturnsApiPerformanceMonthlyReturnsGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/performance/monthly-returns';
+};
+
+export type GetMonthlyReturnsApiPerformanceMonthlyReturnsGetResponses = {
+    /**
+     * Response Get Monthly Returns Api Performance Monthly Returns Get
+     *
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type GetMonthlyReturnsApiPerformanceMonthlyReturnsGetResponse = GetMonthlyReturnsApiPerformanceMonthlyReturnsGetResponses[keyof GetMonthlyReturnsApiPerformanceMonthlyReturnsGetResponses];
+
+export type GetBenchmarkComparisonApiPerformanceBenchmarkComparisonGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/performance/benchmark-comparison';
+};
+
+export type GetBenchmarkComparisonApiPerformanceBenchmarkComparisonGetResponses = {
+    /**
+     * Response Get Benchmark Comparison Api Performance Benchmark Comparison Get
+     *
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type GetBenchmarkComparisonApiPerformanceBenchmarkComparisonGetResponse = GetBenchmarkComparisonApiPerformanceBenchmarkComparisonGetResponses[keyof GetBenchmarkComparisonApiPerformanceBenchmarkComparisonGetResponses];
+
+export type GetPerformanceInsightsApiPerformanceInsightsGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/performance/insights';
+};
+
+export type GetPerformanceInsightsApiPerformanceInsightsGetResponses = {
+    /**
+     * Response Get Performance Insights Api Performance Insights Get
+     *
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type GetPerformanceInsightsApiPerformanceInsightsGetResponse = GetPerformanceInsightsApiPerformanceInsightsGetResponses[keyof GetPerformanceInsightsApiPerformanceInsightsGetResponses];
 
 export type HealthCheckApiHealthGetData = {
     body?: never;

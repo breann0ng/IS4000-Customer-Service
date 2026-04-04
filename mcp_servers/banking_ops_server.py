@@ -16,8 +16,9 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 
 from apps.api.config import settings
 from apps.api.customers.data_service import DataService
-from apps.api.customers.sqlite_repository import repository
 from apps.api.customers.registry import DEFAULT_CUSTOMER_ID
+from apps.api.customers.sqlite_repository import repository
+from apps.api.workflow.state import WealthAdvisoryOutput
 from mcp_servers.base import create_mock_mcp_app
 
 TOOL_DEFINITIONS = [
@@ -82,7 +83,7 @@ async def handle_wealth_advisory(params: dict) -> dict:
 
     portfolio = DataService.get_advisory_context(customer_id)
     planning = DataService.get_financial_planning(customer_id)
-    risk = DataService.get_risk_analysis(customer_id)
+    DataService.get_risk_analysis(customer_id)
     bundle = repository.build_customer_bundle(customer_id)
 
     task_lower = task.lower()
@@ -107,9 +108,15 @@ async def handle_wealth_advisory(params: dict) -> dict:
         allocation = portfolio_data.get("allocation", {})
         response_payload = {
             "summary": [
-                f"Portfolio value is {portfolio_data.get('currency', 'USD')} {portfolio_data.get('total_value_usd', 0):,.0f}.",
+                (
+                    f"Portfolio value is {portfolio_data.get('currency', 'USD')} "
+                    f"{portfolio_data.get('total_value_usd', 0):,.0f}."
+                ),
                 f"YTD return is {portfolio_data.get('ytd_return_pct', 0)}%.",
-                f"Primary relationship manager is {profile.get('relationship_manager', 'Not specified')}.",
+                (
+                    f"Primary relationship manager is "
+                    f"{profile.get('relationship_manager', 'Not specified')}."
+                ),
             ],
             "portfolio_assessment": {
                 "total_value_sgd": portfolio_data.get("total_value_sgd", 0),
@@ -123,8 +130,15 @@ async def handle_wealth_advisory(params: dict) -> dict:
                     for label, values in allocation.items()
                 ],
                 "liquidity_summary": {
-                    "cash_sgd": sum(float(a.get("balance_usd") or 0) for a in accounts if "current" in str(a.get("account_type", "")).lower()),
-                    "available_credit_sgd": float(bundle.get("credit", {}).get("lombard_facility", {}).get("available_sgd", 0) or 0),
+                    "cash_sgd": sum(
+                        float(a.get("balance_usd") or 0)
+                        for a in accounts
+                        if "current" in str(a.get("account_type", "")).lower()
+                    ),
+                    "available_credit_sgd": float(
+                        bundle.get("credit", {}).get("lombard_facility", {}).get("available_sgd", 0)
+                        or 0
+                    ),
                 },
             },
             "market_context": [
@@ -134,7 +148,8 @@ async def handle_wealth_advisory(params: dict) -> dict:
                 "This snapshot reflects the same source used by the account performance endpoint.",
             ],
             "advisory_considerations": [
-                "Review the latest allocation and credit summary with your relationship manager if needed.",
+                "Review the latest allocation and credit summary with your relationship manager "
+                "if needed.",
             ],
             "risks_and_caveats": [],
         }
@@ -172,10 +187,13 @@ async def handle_wealth_advisory(params: dict) -> dict:
             return "No live market data retrieved."
         try:
             # Construct a better search query to ensure relevant market context is found
-            search_query = f"Current global market outlook, trends, and macroeconomic and sector news relevant to: {task}"
+            search_query = (
+                "Current global market outlook, trends, and macroeconomic and sector news "
+                f"relevant to: {task}"
+            )
             search = TavilySearchResults(max_results=5)
             results = await asyncio.wait_for(search.ainvoke(search_query), timeout=6.0)
-            
+
             if isinstance(results, list):
                 return "\n\n".join(
                     f"[Source: {r.get('url', 'N/A')}]\n{r.get('content', r.get('text', str(r)))}"
@@ -196,22 +214,26 @@ async def handle_wealth_advisory(params: dict) -> dict:
                 f"[SMART MOCK ADVISORY]\n\n"
                 f"Client: {portfolio.get('customer_name', 'Unknown')}\n"
                 f"AUM: {portfolio.get('total_aum', 'N/A')}\n"
-                f"Performance: {portfolio.get('ytd_performance')} (Attribution: {portfolio.get('performance_attribution')})\n"
+                f"Performance: {portfolio.get('ytd_performance')} "
+                f"(Attribution: {portfolio.get('performance_attribution')})\n"
                 f"Risk Metrics: {portfolio.get('risk_metrics')}\n"
                 f"Strategic Goals: {planning.get('goals')}\n\n"
                 f"Live Market Intelligence (Tavily):\n{tavily_data[:500]}...\n\n"
-                f"Based on your query about '{task[:50]}', our stance remains moderately constructive. "
-                f"Please contact your RM to discuss how this outlook impacts your specific allocation."
+                f"Based on your query about '{task[:50]}', "
+                "our stance remains moderately constructive. "
+                "Please contact your RM to discuss how this outlook impacts "
+                "your specific allocation."
             )
         }
 
-    # 4. Call Gemini for real synthesis
+    # 4. Call Gemini with structured output for guaranteed valid JSON
     llm = ChatGoogleGenerativeAI(
         model=settings.gemini_model,
         google_api_key=settings.gemini_api_key,
         temperature=0.2,
         max_output_tokens=1500,
     )
+    structured_llm = llm.with_structured_output(WealthAdvisoryOutput)
 
     prompt = (
         f"Client Account Summary:\nTotal AUM: {portfolio.get('total_aum')}\n"
@@ -224,25 +246,67 @@ async def handle_wealth_advisory(params: dict) -> dict:
         f"Conversation Context: {context}\n\n"
         f"Internal Research (RAG):\n{retrieved_docs}\n\n"
         f"Live Market Data (Tavily):\n{tavily_data}\n\n"
-        f"Please provide a professional wealth advisory response in JSON format. \n"
-        f"IMPORTANT: Proactively include specific, quantitative market insights (index levels, rate changes) "
-        f"from the Tavily data in your 'market_context' field. Do not be vague or generic. "
-        f"Default all currency reporting to SGD unless the user explicitly requests another currency."
+        "CRITICAL — DATA ACCURACY: You MUST use the EXACT numerical values provided above "
+        "for AUM, YTD return, allocation percentages, and dollar amounts. "
+        "NEVER estimate, round differently, "
+        "or generate your own figures. If the data says Total AUM is SGD 65,000,000, "
+        "report exactly SGD 65,000,000 — do not invent a different number. "
+        "Every financial figure in your response "
+        "must be directly traceable to the Client Account Summary above.\n"
+        "IMPORTANT: Proactively include specific, quantitative market insights "
+        "(index levels, rate changes) "
+        "from the Tavily data in your 'market_context' field. Do not be vague or generic. "
+        "Default all currency reporting to SGD unless the user explicitly requests "
+        "another currency."
     )
 
+    # Build verified financial data from the database for post-LLM override
+    portfolio_data = bundle.get("portfolio", {}) if bundle else {}
+    allocation_raw = portfolio_data.get("allocation", {})
+    verified_total_sgd = float(
+        portfolio_data.get("total_value_sgd") or portfolio_data.get("total_value_usd") or 0
+    )
+    verified_ytd = portfolio_data.get("ytd_return_pct", 0)
+    verified_allocation = [
+        {
+            "asset_class": label,
+            "allocation_pct": values.get("pct", 0),
+            "value_sgd": values.get("value_sgd", values.get("value", 0)),
+        }
+        for label, values in allocation_raw.items()
+    ]
+    verified_accounts = bundle.get("accounts", []) if bundle else []
+    verified_credit = bundle.get("credit", {}) if bundle else {}
+
     try:
-        response = await llm.ainvoke(
+        result = await structured_llm.ainvoke(
             [
                 SystemMessage(content=system_prompt),
                 HumanMessage(content=prompt),
             ]
         )
-        content = response.content
-        if isinstance(content, list):
-            content = " ".join(
-                part.get("text", "") if isinstance(part, dict) else str(part) for part in content
-            )
-        return {"response": str(content)}
+
+        # Overwrite financial figures with verified DB values on the Pydantic model
+        if not isinstance(result, WealthAdvisoryOutput):
+            return {"response": json.dumps(result) if isinstance(result, dict) else str(result)}
+        result.portfolio_assessment.total_value_sgd = verified_total_sgd
+        result.portfolio_assessment.ytd_performance_pct = verified_ytd
+        if verified_allocation:
+            from apps.api.workflow.state import AllocationItem
+
+            result.portfolio_assessment.allocation_breakdown = [
+                AllocationItem(**item) for item in verified_allocation
+            ]
+        result.portfolio_assessment.liquidity_summary.cash_sgd = sum(
+            float(a.get("balance_usd") or 0)
+            for a in verified_accounts
+            if "current" in str(a.get("account_type", "")).lower()
+        )
+        result.portfolio_assessment.liquidity_summary.available_credit_sgd = float(
+            verified_credit.get("lombard_facility", {}).get("available_sgd", 0) or 0
+        )
+
+        return {"response": result.model_dump_json()}
     except Exception as e:
         return {"response": f"Wealth advisory processing failed: {str(e)}", "error": str(e)}
 
@@ -268,8 +332,7 @@ async def handle_lending_credit(params: dict) -> dict:
         (
             goal
             for goal in goals
-            if isinstance(goal, dict)
-            and "lombard" in str(goal.get("goal", "")).lower()
+            if isinstance(goal, dict) and "lombard" in str(goal.get("goal", "")).lower()
         ),
         {},
     )
@@ -283,26 +346,16 @@ async def handle_lending_credit(params: dict) -> dict:
             "relationship manager",
             "contact for",
         ]
-    ) and any(
-        phrase in task_lower
-        for phrase in ["lombard", "facility", "approval", "credit"]
-    )
+    ) and any(phrase in task_lower for phrase in ["lombard", "facility", "approval", "credit"])
 
     is_status_query = any(
         phrase in task_lower
         for phrase in ["status", "pending", "timeline", "eta", "when", "approval"]
-    ) and any(
-        phrase in task_lower
-        for phrase in ["lombard", "facility", "credit"]
-    )
+    ) and any(phrase in task_lower for phrase in ["lombard", "facility", "credit"])
 
     is_docs_query = any(
-        phrase in task_lower
-        for phrase in ["document", "documents", "docs", "required", "pending"]
-    ) and any(
-        phrase in task_lower
-        for phrase in ["lombard", "facility", "approval", "kyc"]
-    )
+        phrase in task_lower for phrase in ["document", "documents", "docs", "required", "pending"]
+    ) and any(phrase in task_lower for phrase in ["lombard", "facility", "approval", "kyc"])
 
     if is_contact_query:
         response_payload = {
@@ -349,12 +402,16 @@ async def handle_lending_credit(params: dict) -> dict:
         return {"response": json.dumps(response_payload)}
 
     # Fetch live mortgage or lending rates/products
-    market_info = await asyncio.to_thread(_fetch_tavily_sync, f"Current mortgage and Lombard lending rates and products for: {task}")
+    market_info = await asyncio.to_thread(
+        _fetch_tavily_sync,
+        f"Current mortgage and Lombard lending rates and products for: {task}",
+    )
 
     return {
         "response": (
             f"Lending Assessment for your inquiry: {task[:120]}\n\n"
-            f"Based on your portfolio valuation of {lending.get('total_aum')} and YTD return of {lending.get('ytd_return')}, "
+            f"Based on your portfolio valuation of {lending.get('total_aum')} "
+            f"and YTD return of {lending.get('ytd_return')}, "
             f"the following credit facilities are currently associated with your account:\n\n"
             f"Current Facilities:\n"
             f"  - Lombard: {lending.get('lombard_facility')}\n"
@@ -363,12 +420,14 @@ async def handle_lending_credit(params: dict) -> dict:
             f"Market Intelligence (Live Search):\n{market_info[:500]}...\n\n"
             f"New Facility Options & Guidelines:\n"
             f"  - Indicative LTV: Based on live market collateral valuation\n"
-            f"  - Indicative Rate: Derived from live benchmark rates (e.g. SARON/LIBOR) as shown above\n"
+            "  - Indicative Rate: Derived from live benchmark rates "
+            "(e.g. SARON/LIBOR) as shown above\n"
             f"  - Arrangement fee: Standard 0.10% (waived for existing premium clients)\n\n"
             f"A detailed credit proposal can be prepared within 48 hours. "
             f"Please confirm if you would like to proceed with a formal application."
         )
     }
+
 
 def _fetch_tavily_sync(task: str) -> str:
     """Synchronous wrapper for tavily search."""
@@ -376,6 +435,7 @@ def _fetch_tavily_sync(task: str) -> str:
         return "No live market data retrieved."
     try:
         from langchain_community.tools.tavily_search import TavilySearchResults
+
         search = TavilySearchResults(max_results=3)
         return str(search.invoke(task))
     except Exception as e:
@@ -393,9 +453,12 @@ async def handle_banking_operation(params: dict) -> dict:
         A dictionary with the response.
     """
     task = params.get("task", "")
-    
+
     # Fetch live information on banking procedures or news if relevant
-    live_ops_info = await _fetch_tavily(f"Banking operations procedures or holiday schedules for: {task}")
+    live_ops_info = await asyncio.to_thread(
+        _fetch_tavily_sync,
+        f"Banking operations procedures or holiday schedules for: {task}",
+    )
 
     return {
         "response": (
@@ -403,7 +466,8 @@ async def handle_banking_operation(params: dict) -> dict:
             f"Operational Context (Live Search):\n{live_ops_info[:300]}...\n\n"
             f"The requested operation has been queued for processing. "
             f"Standard operations are completed within the same business day. "
-            f"Cross-border transactions may require 1-2 additional business days depending on receiving institution."
+            "Cross-border transactions may require 1-2 additional business days "
+            "depending on receiving institution."
         )
     }
 

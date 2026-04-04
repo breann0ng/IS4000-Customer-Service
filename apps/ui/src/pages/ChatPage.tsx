@@ -8,6 +8,7 @@ import {
   updateChatSessionApiChatSessionsSessionIdPatch,
 } from "@/api/generated";
 import { useMessageStream } from "@/hooks/useMessageStream";
+import { useFileUpload } from "@/hooks/useFileUpload";
 import { Sidebar } from "@/components/Sidebar";
 import { ChatWindow } from "@/components/ChatWindow";
 import { PerformancePage } from "@/pages/PerformancePage";
@@ -30,8 +31,10 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
   const [sidebarWidth, setSidebarWidth] = useState(260);
   const [currentView, setCurrentView] = useState<"chat" | "performance">("chat");
   const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
+  const pendingFileDataRef = useRef<{ fileContext?: string; fileName?: string; imageBase64?: string | null; fileType?: string } | undefined>(undefined);
   const performanceSessionIdRef = useRef<string | null>(null);
   const { thinking, sendStreaming, resetThinking } = useMessageStream();
+  const { attachment, uploadFile, clearAttachment } = useFileUpload();
   const [showArchived, setShowArchived] = useState(false);
   const showArchivedRef = useRef(showArchived);
   showArchivedRef.current = showArchived;
@@ -174,27 +177,43 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
   useEffect(() => {
     if (pendingQuestion && activeSessionId && !isSending) {
       const question = pendingQuestion;
+      const fileData = pendingFileDataRef.current;
       setPendingQuestion(null);
-      void handleSendMessage(question);
+      pendingFileDataRef.current = undefined;
+      void handleSendMessage(question, fileData);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingQuestion, activeSessionId, isSending]);
 
-  const handleSendMessage = useCallback(async (content: string) => {
+  const handleSendMessage = useCallback(async (
+    content: string,
+    fileData?: { fileContext?: string; fileName?: string; imageBase64?: string | null; fileType?: string },
+  ) => {
     if (isSending) return;
-    
+
     if (!activeSessionId) {
       setPendingQuestion(content);
+      pendingFileDataRef.current = fileData;
       void handleNewSession();
       return;
     }
+
+    const fileName = fileData?.fileName;
+    const fileContext = fileData?.fileContext;
+    const isImage = fileData?.imageBase64 != null;
 
     const userMessage: ChatMessageResponse = {
       message_id: crypto.randomUUID(),
       session_id: activeSessionId,
       role: "user",
       content,
-      context: null,
+      context: fileName
+        ? {
+            attached_file: fileName,
+            file_type: fileData?.fileType ?? null,
+            ...(isImage ? { image_base64: fileData.imageBase64 } : {}),
+          }
+        : null,
       created_at: new Date().toISOString(),
     };
 
@@ -229,7 +248,7 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
         setIsSending(false);
         resetThinking();
       },
-    });
+    }, fileContext, fileName, fileData?.fileType, fileData?.imageBase64);
   }, [activeSessionId, isSending, loadSessions, handleNewSession, sendStreaming, resetThinking]);
 
   return (
@@ -262,9 +281,12 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
           thinking={thinking}
           sidebarOpen={sidebarOpen}
           user={user}
+          attachment={attachment}
           onLogout={onLogout}
           onSendMessage={handleSendMessage}
           onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
+          onFileSelect={uploadFile}
+          onClearAttachment={clearAttachment}
         />
       ) : (
         <PerformancePage

@@ -1,8 +1,8 @@
 """Pydantic schemas for chat session and message API contracts."""
 
 import uuid
-from typing import Any
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -11,6 +11,28 @@ class ChatMessageRequest(BaseModel):
     """A user message sent to the chatbot for processing."""
 
     content: str = Field(..., min_length=1, max_length=10000, description="The user's message text")
+    file_context: str | None = Field(
+        default=None, max_length=50000, description="Extracted text from an uploaded file"
+    )
+    file_name: str | None = Field(
+        default=None, max_length=500, description="Original filename of the uploaded file"
+    )
+    file_type: str | None = Field(
+        default=None, max_length=10, description="File extension (e.g. pdf, png, docx)"
+    )
+    image_base64: str | None = Field(
+        default=None, description="Base64-encoded image data for display in chat"
+    )
+
+
+class FileUploadResponse(BaseModel):
+    """Response after a file has been parsed successfully."""
+
+    filename: str
+    file_type: str
+    extracted_text: str
+    is_image: bool
+    image_base64: str | None = None
 
 
 class ChatMessageResponse(BaseModel):

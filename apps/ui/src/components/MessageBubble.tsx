@@ -8,6 +8,16 @@ interface MessageBubbleProps {
   onSuggestionClick?: (suggestion: string) => void;
 }
 
+const IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "gif", "webp"]);
+
+function getFileLabel(fileType: string) {
+  if (IMAGE_EXTENSIONS.has(fileType)) return "IMG";
+  if (fileType === "pdf") return "PDF";
+  if (fileType === "docx") return "DOC";
+  if (fileType === "xlsx" || fileType === "xls") return "XLS";
+  return "FILE";
+}
+
 export function MessageBubble({ message, onSuggestionClick }: MessageBubbleProps) {
   const isUser = message.role === "user";
 
@@ -15,6 +25,13 @@ export function MessageBubble({ message, onSuggestionClick }: MessageBubbleProps
   const metadata = message.metadata as any;
   const metrics = metadata?.metrics as MetricItem[] | undefined;
   const suggestions = metadata?.suggestions as string[] | undefined;
+
+  // Check if the user message has an attached file
+  const ctx = isUser ? (message.context as any) : null;
+  const attachedFile = ctx?.attached_file as string | undefined;
+  const fileType = ctx?.file_type as string | undefined;
+  const imageBase64 = ctx?.image_base64 as string | undefined;
+  const isImage = fileType ? IMAGE_EXTENSIONS.has(fileType) : false;
 
   return (
     <div className={`${styles.row} ${isUser ? styles.userRow : styles.assistantRow}`}>
@@ -34,6 +51,25 @@ export function MessageBubble({ message, onSuggestionClick }: MessageBubbleProps
       </div>
       <div className={styles.content}>
         <span className={styles.roleName}>{isUser ? "You" : "Assistant"}</span>
+        {attachedFile && (
+          <div className={styles.attachmentBlock}>
+            {isImage && imageBase64 ? (
+              <div className={styles.imagePreview}>
+                <img
+                  src={`data:image/${fileType === "jpg" ? "jpeg" : fileType};base64,${imageBase64}`}
+                  alt={attachedFile}
+                  className={styles.previewImg}
+                />
+                <span className={styles.imageFileName}>{attachedFile}</span>
+              </div>
+            ) : (
+              <div className={styles.fileCard}>
+                <span className={styles.fileLabel}>{getFileLabel(fileType ?? "")}</span>
+                <span className={styles.fileName}>{attachedFile}</span>
+              </div>
+            )}
+          </div>
+        )}
         <div className={styles.text}>
           {isUser ? (
             message.content

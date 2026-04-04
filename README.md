@@ -134,7 +134,15 @@ uv sync
 cd apps/ui && pnpm install
 ```
 
-### 2. Configure environment
+### 2. Install Git hooks
+
+```bash
+uv run lefthook install
+```
+
+This sets up pre-commit hooks that automatically run formatting, linting, and type-checking on every commit.
+
+### 3. Configure environment
 
 ```bash
 cp .env.example .env
@@ -142,7 +150,7 @@ cp .env.example .env
 
 Edit `.env` and set your `GEMINI_API_KEY`. The project uses `gemini-3.1-pro-preview` by default.
 
-### 3. Ingest RAG Documents
+### 4. Ingest RAG Documents
 
 Ensure Postgres and Redis are running (`docker compose up -d postgres redis`), then:
 
@@ -150,7 +158,7 @@ Ensure Postgres and Redis are running (`docker compose up -d postgres redis`), t
 poe rag-ingestion
 ```
 
-### 4. Run Everything (Docker)
+### 5. Run Everything (Docker)
 
 ```bash
 poe docker-up
@@ -160,7 +168,7 @@ poe docker-up
 - Backend API: http://localhost:8000
 - Scalar API Docs: http://localhost:8000/docs
 
-### 5. Customer Data Access Mode (MCP-fronted SQLite)
+### 6. Customer Data Access Mode (MCP-fronted SQLite)
 
 Customer context is now accessed via the customer-data MCP server by default:
 
@@ -184,6 +192,10 @@ uv run poe dev-ui
 | `poe dev-api`             | Start the FastAPI backend with hot reload                         |
 | `poe dev-ui`              | Start the React frontend dev server                               |
 | `poe generate-api-client` | Export OpenAPI schema and regenerate TypeScript client            |
+| `poe format`              | Format all Python code with Ruff                                  |
+| `poe lint`                | Lint all Python code with Ruff                                    |
+| `poe lint-fix`            | Lint and auto-fix all Python code with Ruff                       |
+| `poe typecheck`           | Type-check Python code with ty                                    |
 | `poe check`               | Format, lint, type-check Python code, and check for OpenAPI drift |
 | `poe mock-mcp`            | Start all 5 mock MCP servers (:9001, :9002, :9003, :9004, :9005)   |
 | `poe rag-server`          | Start the RAG MCP server querying pgvector on port 9004           |

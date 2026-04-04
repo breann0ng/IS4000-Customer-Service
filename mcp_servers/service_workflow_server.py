@@ -82,28 +82,34 @@ async def handle_client_services(params: dict) -> dict:
     planning = DataService.get_financial_planning(customer_id)
     compliance = DataService.get_compliance_context(customer_id)
     client_profile, _ = DataService.get_banking_context(customer_id)
-    
+
     pref_name = "Client"
     if summary and "profile" in summary:
-        pref_name = (summary["profile"] or {}).get("preferred_name", (summary["profile"] or {}).get("full_name", "Client"))
+        pref_name = (summary["profile"] or {}).get(
+            "preferred_name", (summary["profile"] or {}).get("full_name", "Client")
+        )
 
     goals = planning.get("goals", []) if isinstance(planning, dict) else []
     kyc_goal = next(
         (
             goal
             for goal in goals
-            if isinstance(goal, dict)
-            and "kyc" in str(goal.get("goal", "")).lower()
+            if isinstance(goal, dict) and "kyc" in str(goal.get("goal", "")).lower()
         ),
         {},
     )
 
     is_contact_query = any(
         phrase in task_lower
-        for phrase in ["point of contact", "primary contact", "who is", "relationship manager", "contact"]
+        for phrase in [
+            "point of contact",
+            "primary contact",
+            "who is",
+            "relationship manager",
+            "contact",
+        ]
     ) and any(
-        phrase in task_lower
-        for phrase in ["kyc", "onboarding", "service", "approval", "document"]
+        phrase in task_lower for phrase in ["kyc", "onboarding", "service", "approval", "document"]
     )
 
     if is_contact_query:
@@ -111,7 +117,9 @@ async def handle_client_services(params: dict) -> dict:
             "request_type": "client_services_primary_contact",
             "primary_point_of_contact": client_profile.get("relationship_manager")
             or "Your UBS Relationship Manager",
-            "current_status": kyc_goal.get("status") or compliance.get("kyc_status") or "Status not available",
+            "current_status": kyc_goal.get("status")
+            or compliance.get("kyc_status")
+            or "Status not available",
             "next_steps": [
                 "Use secure message channel to contact your Relationship Manager.",
                 "If urgent, request escalation to the client services operations desk.",
@@ -140,12 +148,8 @@ async def handle_client_services(params: dict) -> dict:
         return {"response": json.dumps(response_payload)}
 
     is_status_query = any(
-        phrase in task_lower
-        for phrase in ["status", "pending", "eta", "timeline", "when"]
-    ) and any(
-        phrase in task_lower
-        for phrase in ["service", "request", "onboarding", "kyc"]
-    )
+        phrase in task_lower for phrase in ["status", "pending", "eta", "timeline", "when"]
+    ) and any(phrase in task_lower for phrase in ["service", "request", "onboarding", "kyc"])
     if is_status_query:
         response_payload = {
             "request_type": "client_service_status",
@@ -163,7 +167,7 @@ async def handle_client_services(params: dict) -> dict:
             "response": (
                 f"I've retrieved your current portfolio performance, {pref_name}.\n\n"
                 f"Your Year-to-Date (YTD) return is currently **{ytd}%**.\n\n"
-                f"This align with your stated goals: {planning.get('goals')[:1]}...\n\n"
+                f"This align with your stated goals: {(planning.get('goals') or [])[:1]}...\n\n"
                 f"Would you like a deeper breakdown from our Wealth Advisory team?"
             )
         }
@@ -172,7 +176,8 @@ async def handle_client_services(params: dict) -> dict:
     if any(greet in task_lower for greet in ["greeting", "welcome", "hello", "hi"]):
         return {
             "response": (
-                f"Good day, {pref_name}. It is a pleasure to assist you. As your premium wealth management "
+                f"Good day, {pref_name}. It is a pleasure to assist you. "
+                "As your premium wealth management "
                 "assistant, I am dedicated to providing you with seamless access to our global "
                 "capabilities.\n\n"
                 "I can assist you with a wide range of services today, including:\n\n"
@@ -194,12 +199,12 @@ async def handle_client_services(params: dict) -> dict:
     policy_note = ""
     if retrieved and retrieved != "No relevant policy documents found.":
         policy_note = "\n\nRelevant internal policies have been reviewed for this request."
-    
+
     return {
         "response": (
             f"Service Request Registered: {reference_number}\n\n"
             f"Request: {task[:120]}\n\n"
-            f"Client Goals Context: {planning.get('goals')[:2]}...\n\n"
+            f"Client Goals Context: {(planning.get('goals') or [])[:2]}...\n\n"
             f"Market/Service Context:\n{market_info[:300]}...\n\n"
             f"Status: IN PROGRESS\n"
             f"Estimated completion: 2-3 business days\n\n"
@@ -251,7 +256,7 @@ async def handle_fx_treasury(params: dict) -> dict:
             ],
         }
         return {"response": json.dumps(response_payload)}
-    
+
     # Fetch live FX rates and treasury info using Tavily
     market_data = await _fetch_tavily(f"Current FX rates and treasury insights for: {task}")
 
@@ -268,7 +273,8 @@ async def handle_fx_treasury(params: dict) -> dict:
             f"  - Forward contracts: Available for 1M to 24M tenors\n"
             f"  - Vanilla options: Premium quoted on request\n"
             f"  - Zero-cost collars: Structured to client specifications\n\n"
-            f"Contact your FX advisor for a tailored hedging proposal based on these live market rates."
+            "Contact your FX advisor for a tailored hedging proposal "
+            "based on these live market rates."
         )
     }
 

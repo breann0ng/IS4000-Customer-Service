@@ -7,14 +7,13 @@ Orchestrates the chunking of all processed documents in output/processed/.
 Saves all resulting chunks to output/chunks/all_chunks.jsonl.
 """
 
-import json
-import logging
-import sys
-from pathlib import Path
-from collections import defaultdict
+import json  # noqa: E402
+import logging  # noqa: E402
+from collections import defaultdict  # noqa: E402
+from pathlib import Path  # noqa: E402
 
-import jsonlines
-from processors.chunker import chunk_document
+import jsonlines  # noqa: E402
+from processors.chunker import chunk_document  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,
@@ -28,8 +27,8 @@ ALL_CHUNKS_FILE = CHUNKS_DIR / "all_chunks.jsonl"
 
 
 def run_chunker() -> dict[str, int]:
-    """
-    Process all files in output/processed/ and save chunks to all_chunks.jsonl.
+    """Process all files in output/processed/ and save chunks to all_chunks.jsonl.
+
     Returns a dictionary of counts per document type.
     """
     if not PROCESSED_DIR.exists():
@@ -50,7 +49,7 @@ def run_chunker() -> dict[str, int]:
 
     for fpath in processed_files:
         try:
-            with open(fpath, "r", encoding="utf-8") as f:
+            with open(fpath, encoding="utf-8") as f:
                 doc = json.load(f)
 
             # Use filename prefix or metadata to determine doc_type if possible

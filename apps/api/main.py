@@ -13,8 +13,8 @@ from apps.api.chat.routes import router as chat_router
 from apps.api.config import settings
 from apps.api.database.connection import engine
 from apps.api.database.models import Base
-from apps.api.performance.routes import router as performance_router
 from apps.api.logging_config import get_logger, setup_logging
+from apps.api.performance.routes import router as performance_router
 
 setup_logging()
 logger = get_logger(__name__)
@@ -88,7 +88,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from apps.api.customers.routes import router as customer_router
+from apps.api.customers.routes import router as customer_router  # noqa: E402
 
 app.include_router(auth_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")

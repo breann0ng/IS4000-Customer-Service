@@ -10,21 +10,30 @@ These pages describe UBS's products, service tiers, and investment offerings —
 the "what do you offer?" knowledge that the chatbot needs.
 """
 
-import sys
-import json
-import logging
-from pathlib import Path
-from urllib.parse import urljoin, urlparse
+import json  # noqa: E402
+import logging  # noqa: E402
+import sys  # noqa: E402
+from pathlib import Path  # noqa: E402
+from urllib.parse import urljoin, urlparse  # noqa: E402
 
-import requests
-from bs4 import BeautifulSoup
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+import requests  # noqa: E402
+from bs4 import BeautifulSoup  # noqa: E402
+from tenacity import (  # noqa: E402
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from utils.robots_checker import is_allowed, get_crawl_delay, USER_AGENT
-from utils.rate_limiter import polite_wait
-from processors.html_cleaner import clean_html
+from processors.html_cleaner import clean_html  # noqa: E402
+from utils.rate_limiter import polite_wait  # noqa: E402  # ty: ignore[unresolved-import]
+from utils.robots_checker import (  # noqa: E402  # ty: ignore[unresolved-import]
+    USER_AGENT,
+    get_crawl_delay,
+    is_allowed,
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -126,7 +135,7 @@ def scrape_page(url: str, doc_type: str = "product_info") -> dict | None:
     if processed_path.exists():
         logger.info(f"SKIP (already done): {url}")
         with open(processed_path) as f:
-            d = json.load(f)
+            return json.load(f)
 
     if not is_allowed(url):
         logger.warning(f"SKIP (robots.txt disallows): {url}")
@@ -177,9 +186,9 @@ def run_services_scraper(max_pages: int = 200) -> list[dict]:
             raw_path = OUTPUT_RAW / f"{_url_to_filename(url)}.html"
             if raw_path.exists():
                 new_links = [
-                    l
-                    for l in _discover_product_links(raw_path.read_text(encoding="utf-8"), url)
-                    if l not in visited
+                    link
+                    for link in _discover_product_links(raw_path.read_text(encoding="utf-8"), url)
+                    if link not in visited
                 ]
                 logger.info(f"  Discovered {len(new_links)} new links")
                 queue.extend(new_links)

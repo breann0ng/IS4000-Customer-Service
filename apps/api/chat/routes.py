@@ -5,13 +5,14 @@ import uuid
 from collections.abc import AsyncGenerator
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from fastapi.responses import StreamingResponse
 from langchain_core.messages import HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from apps.api.auth.routes import get_current_user
+from apps.api.chat.file_parser import parse_file, validate_upload
 from apps.api.chat.models import (
     ChatCompletionResponse,
     ChatMessageRequest,
@@ -20,6 +21,7 @@ from apps.api.chat.models import (
     ChatSessionResponse,
     ChatSessionSummary,
     ChatSessionUpdate,
+    FileUploadResponse,
 )
 from apps.api.chat.service import (
     create_session,
@@ -30,9 +32,9 @@ from apps.api.chat.service import (
     update_session,
 )
 from apps.api.config import settings
+from apps.api.customers.registry import DEFAULT_CUSTOMER_ID
 from apps.api.database.connection import get_database_session
 from apps.api.database.models import User
-from apps.api.customers.registry import DEFAULT_CUSTOMER_ID
 from apps.api.logging_config import get_logger
 from apps.api.memory.mem0_client import memory_manager
 from apps.api.security.input_guard import check_prompt_injection, sanitize_input
@@ -210,6 +212,52 @@ async def delete_chat_session(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
 
+@router.post("/upload", response_model=FileUploadResponse)
+async def upload_file(
+    file: UploadFile,
+    current_user: User = Depends(get_current_user),
+) -> FileUploadResponse:
+    """Upload and parse a file for use in chat messages.
+
+    Supports PDF, DOCX, Excel (xlsx/xls), and image files (png, jpg, jpeg, gif, webp).
+    Returns extracted text content that can be sent with a chat message.
+
+    Args:
+        file: The uploaded file.
+        current_user: The authenticated user.
+
+    Returns:
+        The parsed file content and metadata.
+    """
+    is_valid, error_msg = await validate_upload(file)
+    if not is_valid:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
+
+    result = await parse_file(file)
+    return FileUploadResponse(**result)
+
+
+def _build_augmented_message(content: str, file_context: str | None, file_name: str | None) -> str:
+    """Prepend file context to the user message if a file was attached."""
+    if not file_context:
+        return content
+    label = f"[Attached file: {file_name}]" if file_name else "[Attached file]"
+    return f"{label}\n\n{file_context}\n\n---\n\nUser question: {content}"
+
+
+def _build_user_message_context(request: ChatMessageRequest) -> dict | None:
+    """Build context dict for a user message with optional file attachment metadata."""
+    if not request.file_name:
+        return None
+    ctx: dict = {
+        "attached_file": request.file_name,
+        "file_type": request.file_type,
+    }
+    if request.image_base64:
+        ctx["image_base64"] = request.image_base64
+    return ctx
+
+
 async def _generate_and_update_title(
     database_session: AsyncSession,
     session_id: uuid.UUID,
@@ -224,9 +272,15 @@ async def _generate_and_update_title(
             return
 
         # Only rename if generic or a temporary greeting title
-        generic_markers = ["New Chat", "Account Performance Q&A", "Initial Consultation", "Greeting", "UBS Enquiry"]
+        generic_markers = [
+            "New Chat",
+            "Account Performance Q&A",
+            "Initial Consultation",
+            "Greeting",
+            "UBS Enquiry",
+        ]
         is_generic = any(marker in session.title for marker in generic_markers)
-        
+
         if not is_generic:
             return
 
@@ -242,29 +296,34 @@ async def _generate_and_update_title(
             )
             prompt = (
                 "You are a professional UBS Wealth Management assistant. "
-                "Generate a highly professional, 2-4 word title for this conversation based on the user's enquiry. "
-                "Examples: 'Portfolio Risk Assessment', 'Market Insights', 'Lending Solutions', 'FX Strategy'. "
+                "Generate a highly professional, 2-4 word title for this conversation "
+                "based on the user's enquiry. "
+                "Examples: 'Portfolio Risk Assessment', 'Market Insights', "
+                "'Lending Solutions', 'FX Strategy'. "
                 "If the message is just a greeting, use 'Initial Consultation'. "
                 "Produce only the title, no quotes or punctuation.\n\n"
                 f"User enquiry: {user_message}"
             )
             title_response = await llm.ainvoke([HumanMessage(content=prompt)])
-            
+
             content_val = title_response.content
             if isinstance(content_val, list):
                 content_val = " ".join(
-                    [part.get("text", "") if isinstance(part, dict) else str(part) for part in content_val]
+                    [
+                        part.get("text", "") if isinstance(part, dict) else str(part)
+                        for part in content_val
+                    ]
                 )
-            
-            new_theme = str(content_val).strip().replace('"', '')
+
+            new_theme = str(content_val).strip().replace('"', "")
 
         sg_tz = timezone(timedelta(hours=8))
         # Format: 29 Mar 2026, 05:51 PM
-        current_time_sg = datetime.now(sg_tz).strftime('%d %b %Y, %I:%M %p')
+        current_time_sg = datetime.now(sg_tz).strftime("%d %b %Y, %I:%M %p")
         full_title = f"{new_theme} - {current_time_sg}"
 
         logger.info("updating_session_title", session_id=str(session_id), title=full_title)
-        
+
         updated_session = await update_session(
             database_session,
             session_id,
@@ -272,7 +331,9 @@ async def _generate_and_update_title(
             title=full_title,
         )
         if updated_session:
-            logger.info("session_title_updated_successfully", session_id=str(session_id), title=full_title)
+            logger.info(
+                "session_title_updated_successfully", session_id=str(session_id), title=full_title
+            )
     except Exception as e:
         logger.exception("failed_to_generate_title", error=str(e))
 
@@ -306,8 +367,15 @@ async def send_message(
     if session is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
-    should_attempt_rename = len(session.messages) < 5 or any(m in session.title for m in ["New Chat", "Initial Consultation", "Greeting", "UBS Enquiry"])
-    await save_message(database_session, session_id, "user", request.content)
+    should_attempt_rename = len(session.messages) < 5 or any(
+        m in session.title for m in ["New Chat", "Initial Consultation", "Greeting", "UBS Enquiry"]
+    )
+
+    # Build user message context with file metadata for display
+    user_msg_context = _build_user_message_context(request)
+    await save_message(
+        database_session, session_id, "user", request.content, context=user_msg_context
+    )
 
     if check_prompt_injection(request.content):
         raise HTTPException(
@@ -316,6 +384,9 @@ async def send_message(
         )
 
     sanitized_content = sanitize_input(request.content)
+    augmented_message = _build_augmented_message(
+        sanitized_content, request.file_context, request.file_name
+    )
 
     conversation_history = [
         {"role": message.role, "content": message.content} for message in session.messages
@@ -328,12 +399,15 @@ async def send_message(
     )
 
     workflow_result = await run_workflow(
-        user_message=sanitized_content,
+        user_message=augmented_message,
+        escalation_text=sanitized_content,
         conversation_history=conversation_history,
         memory_context=memory_context,
         session_id=str(session_id),
         user_id=str(current_user.user_id),
-        customer_id=str(current_user.customer_id) if current_user.customer_id else DEFAULT_CUSTOMER_ID,
+        customer_id=str(current_user.customer_id)
+        if current_user.customer_id
+        else DEFAULT_CUSTOMER_ID,
     )
 
     response_text = str(workflow_result["response"])
@@ -343,8 +417,8 @@ async def send_message(
         "suggestions": workflow_result.get("suggestions", []),
     }
 
-    trace_dict = workflow_result.get("trace") or {}
-    full_context = trace_dict or {}
+    trace_val = workflow_result.get("trace")
+    full_context: dict = trace_val if isinstance(trace_val, dict) else {}
     full_context["metadata"] = metadata
 
     assistant_message = await save_message(
@@ -364,7 +438,9 @@ async def send_message(
     )
 
     if should_attempt_rename:
-        await _generate_and_update_title(database_session, session_id, current_user.user_id, sanitized_content)
+        await _generate_and_update_title(
+            database_session, session_id, current_user.user_id, sanitized_content
+        )
 
     return ChatCompletionResponse(
         message=ChatMessageResponse(
@@ -376,7 +452,7 @@ async def send_message(
             context=assistant_message.context,
             created_at=assistant_message.created_at,
         ),
-        agent_trace=trace_dict,
+        agent_trace=full_context,
     )
 
 
@@ -408,8 +484,14 @@ async def send_message_stream(
     if session is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
-    should_attempt_rename = len(session.messages) < 5 or any(m in session.title for m in ["New Chat", "Initial Consultation", "Greeting", "UBS Enquiry"])
-    await save_message(database_session, session_id, "user", request.content)
+    should_attempt_rename = len(session.messages) < 5 or any(
+        m in session.title for m in ["New Chat", "Initial Consultation", "Greeting", "UBS Enquiry"]
+    )
+
+    user_msg_context = _build_user_message_context(request)
+    await save_message(
+        database_session, session_id, "user", request.content, context=user_msg_context
+    )
 
     if check_prompt_injection(request.content):
         raise HTTPException(
@@ -418,6 +500,9 @@ async def send_message_stream(
         )
 
     sanitized_content = sanitize_input(request.content)
+    augmented_message = _build_augmented_message(
+        sanitized_content, request.file_context, request.file_name
+    )
 
     conversation_history = [
         {"role": message.role, "content": message.content} for message in session.messages
@@ -430,12 +515,15 @@ async def send_message_stream(
     )
 
     initial_state = WorkflowState(
-        user_message=sanitized_content,
+        user_message=augmented_message,
+        escalation_text=sanitized_content,
         conversation_history=conversation_history,
         memory_context=memory_context,
         session_id=str(session_id),
         user_id=str(current_user.user_id),
-        customer_id=str(current_user.customer_id) if current_user.customer_id else DEFAULT_CUSTOMER_ID,
+        customer_id=str(current_user.customer_id)
+        if current_user.customer_id
+        else DEFAULT_CUSTOMER_ID,
     )
 
     async def event_generator() -> AsyncGenerator[str, None]:
@@ -534,7 +622,9 @@ async def send_message_stream(
         )
 
         if should_attempt_rename:
-            await _generate_and_update_title(database_session, session_id, current_user.user_id, sanitized_content)
+            await _generate_and_update_title(
+                database_session, session_id, current_user.user_id, sanitized_content
+            )
 
         yield _sse(
             "done",

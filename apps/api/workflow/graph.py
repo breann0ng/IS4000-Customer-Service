@@ -97,6 +97,9 @@ borrowing capacity, account balances. Leave empty for operational queries.
 
 - **Keep responses short.** If the question is simple, the answer must be brief.
 - **Bold** all key figures (AUM, YTD, amounts, percentages, dates).
+- **Currency & Locale:** Default to **SGD** for all monetary values and **Singapore** as the
+  jurisdiction context unless the client's query or agent data specifies otherwise. Always
+  format SGD amounts with the `SGD` prefix (e.g. SGD 1,250,000 — never just $1,250,000).
 - **Follow-up suggestions:** Generate 3–5 questions the client might naturally ask next.
   - Write from the client's perspective: "What is my YTD return?" not "Would you like to
     know your YTD return?"

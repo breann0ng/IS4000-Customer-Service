@@ -43,6 +43,7 @@ services:
       - ./mcp_servers:/app/mcp_servers
       - ./apps/api:/app/apps/api
       - ./mocks:/app/mocks
+      - ./data:/app/data
 
   mock-customer-data:
     build:
@@ -74,6 +75,7 @@ services:
       - ./mcp_servers:/app/mcp_servers
       - ./apps/api:/app/apps/api
       - ./mocks:/app/mocks
+      - ./data:/app/data
 
   mock-service-workflow:
     build:
@@ -91,6 +93,7 @@ services:
       - ./mcp_servers:/app/mcp_servers
       - ./apps/api:/app/apps/api
       - ./mocks:/app/mocks
+      - ./data:/app/data
 
   rag-server:
     build:

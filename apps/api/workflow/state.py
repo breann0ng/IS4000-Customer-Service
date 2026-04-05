@@ -98,6 +98,74 @@ class ComplianceTaxOutput(BaseModel):
     notes: str = Field(default="")
 
 
+class CollateralRequirement(BaseModel):
+    """A single collateral requirement with haircut percentage."""
+
+    asset_type: str = Field(description="Type of collateral asset")
+    haircut_percentage: float = Field(description="Haircut percentage applied to this asset type")
+
+
+class LtvRange(BaseModel):
+    """Loan-to-value range."""
+
+    minimum: float = Field(default=0.0, description="Minimum LTV ratio")
+    maximum: float = Field(default=0.0, description="Maximum LTV ratio")
+
+
+class ClientPortfolioSummary(BaseModel):
+    """Summary of client portfolio for lending assessment."""
+
+    total_value: float = Field(default=0.0, description="Total portfolio value")
+    liquid_assets: float = Field(default=0.0, description="Liquid assets value")
+    illiquid_assets: float = Field(default=0.0, description="Illiquid assets value")
+
+
+class LendingCreditOutput(BaseModel):
+    """Structured output for the lending-and-credit LLM call."""
+
+    facility_type: str = Field(description="Type of lending facility")
+    client_portfolio_summary: ClientPortfolioSummary = Field(default_factory=ClientPortfolioSummary)
+    borrowing_capacity_estimate: float = Field(
+        default=0.0, description="Estimated borrowing capacity"
+    )
+    ltv_range: LtvRange = Field(default_factory=LtvRange)
+    collateral_requirements: list[CollateralRequirement] = Field(default_factory=list)
+    key_constraints: list[str] = Field(default_factory=list)
+    risk_flags: list[str] = Field(default_factory=list)
+    requires_escalation: bool = Field(default=False)
+    notes: str = Field(default="")
+
+
+class ClientServicesOutput(BaseModel):
+    """Structured output for the client-services LLM call."""
+
+    request_type: str = Field(
+        description="e.g. Onboarding, Documentation, Appointment, Loan Support"
+    )
+    status: str = Field(description="e.g. Pending, In Progress, Completed, Requires Escalation")
+    required_documents: list[str] = Field(default_factory=list)
+    next_steps: list[str] = Field(default_factory=list)
+    assigned_team_or_person: str = Field(default="")
+    escalation_required: bool = Field(default=False)
+    estimated_timeline: str = Field(default="")
+    notes: str = Field(default="")
+
+
+class FxTreasuryOutput(BaseModel):
+    """Structured output for the FX-and-treasury LLM call."""
+
+    recommendations: list[str] = Field(
+        default_factory=list, description="Key actionable points or strategies"
+    )
+    risk_analysis: list[str] = Field(default_factory=list, description="Key market/hedging risks")
+    execution_advice: list[str] = Field(
+        default_factory=list, description="Suggested timing or staging"
+    )
+    market_insights: list[str] = Field(
+        default_factory=list, description="Relevant FX market trends"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Workflow state models
 # ---------------------------------------------------------------------------

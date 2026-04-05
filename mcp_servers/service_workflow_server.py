@@ -3,10 +3,13 @@ import json
 import random
 
 from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 from apps.api.config import settings
 from apps.api.customers.data_service import DataService
 from apps.api.customers.registry import DEFAULT_CUSTOMER_ID
+from apps.api.workflow.state import ClientServicesOutput, FxTreasuryOutput
 from mcp_servers.base import create_mock_mcp_app
 
 TOOL_DEFINITIONS = [
@@ -194,33 +197,72 @@ async def handle_client_services(params: dict) -> dict:
     # Fetch live information if the task seems to require general knowledge/market data
     market_info = await _fetch_tavily(task)
 
-    reference_number = f"CS-{random.randint(100000, 999999)}"
     retrieved = params.get("retrieved_documents", "")
-    policy_note = ""
-    if retrieved and retrieved != "No relevant policy documents found.":
-        policy_note = "\n\nRelevant internal policies have been reviewed for this request."
+    system_prompt = params.get("system_prompt", "")
+    context = params.get("context", "")
 
-    return {
-        "response": (
-            f"Service Request Registered: {reference_number}\n\n"
-            f"Request: {task[:120]}\n\n"
-            f"Client Goals Context: {(planning.get('goals') or [])[:2]}...\n\n"
-            f"Market/Service Context:\n{market_info[:300]}...\n\n"
-            f"Status: IN PROGRESS\n"
-            f"Estimated completion: 2-3 business days\n\n"
-            f"Next steps:\n"
-            f"  1. Your relationship manager has been notified\n"
-            f"  2. Required documentation (if any) will be communicated via secure channel\n"
-            f"  3. You will receive status updates at each milestone\n\n"
-            f"For onboarding requests, please have the following ready:\n"
-            f"  - Valid passport or national ID\n"
-            f"  - Proof of address (dated within 3 months)\n"
-            f"  - Source of wealth declaration\n\n"
-            f"For urgent matters, contact your relationship manager directly or "
-            f"call our priority service line."
-            f"{policy_note}"
+    if settings.is_llm_mock_mode:
+        reference_number = f"CS-{random.randint(100000, 999999)}"
+        policy_note = ""
+        if retrieved and retrieved != "No relevant policy documents found.":
+            policy_note = "\n\nRelevant internal policies have been reviewed for this request."
+
+        return {
+            "response": (
+                f"Service Request Registered: {reference_number}\n\n"
+                f"Request: {task[:120]}\n\n"
+                f"Client Goals Context: {(planning.get('goals') or [])[:2]}...\n\n"
+                f"Market/Service Context:\n{market_info[:300]}...\n\n"
+                f"Status: IN PROGRESS\n"
+                f"Estimated completion: 2-3 business days\n\n"
+                f"Next steps:\n"
+                f"  1. Your relationship manager has been notified\n"
+                f"  2. Required documentation (if any) will be communicated via secure channel\n"
+                f"  3. You will receive status updates at each milestone\n\n"
+                f"For onboarding requests, please have the following ready:\n"
+                f"  - Valid passport or national ID\n"
+                f"  - Proof of address (dated within 3 months)\n"
+                f"  - Source of wealth declaration\n\n"
+                f"For urgent matters, contact your relationship manager directly or "
+                f"call our priority service line."
+                f"{policy_note}"
+            )
+        }
+
+    llm = ChatGoogleGenerativeAI(
+        model=settings.gemini_model,
+        google_api_key=settings.gemini_api_key,
+        temperature=0.2,
+        max_output_tokens=1500,
+    )
+    structured_llm = llm.with_structured_output(ClientServicesOutput)
+
+    prompt = (
+        f"Client: {pref_name}\n"
+        f"KYC Status: {compliance.get('kyc_status', 'Unknown')}\n"
+        f"KYC Last Reviewed: {compliance.get('kyc_last_reviewed', 'Unknown')}\n"
+        f"Financial Goals: {planning.get('goals')}\n"
+        f"Relationship Manager: {client_profile.get('relationship_manager', 'Not specified')}\n\n"
+        f"Client Request: {task}\n\n"
+        f"Conversation Context: {context}\n\n"
+        f"Internal Policy Documents (RAG):\n{retrieved}\n\n"
+        f"Market/Service Context:\n{market_info}\n\n"
+        "CRITICAL — DATA ACCURACY: You MUST use the EXACT data provided above. "
+        "NEVER fabricate or estimate figures."
+    )
+
+    try:
+        result = await structured_llm.ainvoke(
+            [
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=prompt),
+            ]
         )
-    }
+        if isinstance(result, ClientServicesOutput):
+            return {"response": result.model_dump_json()}
+        return {"response": json.dumps(result) if isinstance(result, dict) else str(result)}
+    except Exception as e:
+        return {"response": f"Client services processing failed: {str(e)}", "error": str(e)}
 
 
 async def handle_fx_treasury(params: dict) -> dict:
@@ -260,23 +302,56 @@ async def handle_fx_treasury(params: dict) -> dict:
     # Fetch live FX rates and treasury info using Tavily
     market_data = await _fetch_tavily(f"Current FX rates and treasury insights for: {task}")
 
-    return {
-        "response": (
-            f"FX & Treasury Report (Live Search)\n\n"
-            f"Market Intelligence:\n{market_data[:500]}...\n\n"
-            f"Regarding: {task[:120]}\n\n"
-            f"Execution Guidelines:\n"
-            f"  - Transactions up to USD 500,000: Automatic best execution\n"
-            f"  - USD 500,000 - 2,000,000: Preferential desk pricing available\n"
-            f"  - Above USD 2,000,000: Staged execution recommended\n\n"
-            f"Hedging Options:\n"
-            f"  - Forward contracts: Available for 1M to 24M tenors\n"
-            f"  - Vanilla options: Premium quoted on request\n"
-            f"  - Zero-cost collars: Structured to client specifications\n\n"
-            "Contact your FX advisor for a tailored hedging proposal "
-            "based on these live market rates."
+    context = params.get("context", "")
+    system_prompt = params.get("system_prompt", "")
+
+    if settings.is_llm_mock_mode:
+        return {
+            "response": (
+                f"FX & Treasury Report (Live Search)\n\n"
+                f"Market Intelligence:\n{market_data[:500]}...\n\n"
+                f"Regarding: {task[:120]}\n\n"
+                f"Execution Guidelines:\n"
+                f"  - Transactions up to USD 500,000: Automatic best execution\n"
+                f"  - USD 500,000 - 2,000,000: Preferential desk pricing available\n"
+                f"  - Above USD 2,000,000: Staged execution recommended\n\n"
+                f"Hedging Options:\n"
+                f"  - Forward contracts: Available for 1M to 24M tenors\n"
+                f"  - Vanilla options: Premium quoted on request\n"
+                f"  - Zero-cost collars: Structured to client specifications\n\n"
+                "Contact your FX advisor for a tailored hedging proposal "
+                "based on these live market rates."
+            )
+        }
+
+    llm = ChatGoogleGenerativeAI(
+        model=settings.gemini_model,
+        google_api_key=settings.gemini_api_key,
+        temperature=0.2,
+        max_output_tokens=1500,
+    )
+    structured_llm = llm.with_structured_output(FxTreasuryOutput)
+
+    prompt = (
+        f"Client Request: {task}\n\n"
+        f"Conversation Context: {context}\n\n"
+        f"Live FX & Market Data (Tavily):\n{market_data}\n\n"
+        "CRITICAL — DATA ACCURACY: You MUST use the EXACT numerical values from the "
+        "provided data. NEVER fabricate or estimate financial figures."
+    )
+
+    try:
+        result = await structured_llm.ainvoke(
+            [
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=prompt),
+            ]
         )
-    }
+        if isinstance(result, FxTreasuryOutput):
+            return {"response": result.model_dump_json()}
+        return {"response": json.dumps(result) if isinstance(result, dict) else str(result)}
+    except Exception as e:
+        return {"response": f"FX treasury processing failed: {str(e)}", "error": str(e)}
 
 
 def handle_service_workflow(params: dict) -> dict:

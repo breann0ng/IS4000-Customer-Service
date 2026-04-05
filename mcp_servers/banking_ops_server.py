@@ -18,7 +18,7 @@ from apps.api.config import settings
 from apps.api.customers.data_service import DataService
 from apps.api.customers.registry import DEFAULT_CUSTOMER_ID
 from apps.api.customers.sqlite_repository import repository
-from apps.api.workflow.state import WealthAdvisoryOutput
+from apps.api.workflow.state import LendingCreditOutput, WealthAdvisoryOutput
 from mcp_servers.base import create_mock_mcp_app
 
 TOOL_DEFINITIONS = [
@@ -407,26 +407,65 @@ async def handle_lending_credit(params: dict) -> dict:
         f"Current mortgage and Lombard lending rates and products for: {task}",
     )
 
-    return {
-        "response": (
-            f"Lending Assessment for your inquiry: {task[:120]}\n\n"
-            f"Based on your portfolio valuation of {lending.get('total_aum')} "
-            f"and YTD return of {lending.get('ytd_return')}, "
-            f"the following credit facilities are currently associated with your account:\n\n"
-            f"Current Facilities:\n"
-            f"  - Lombard: {lending.get('lombard_facility')}\n"
-            f"  - Mortgage: {lending.get('mortgage')}\n\n"
-            f"Financial Goals (Relevant to Lending): {planning.get('goals')}\n\n"
-            f"Market Intelligence (Live Search):\n{market_info[:500]}...\n\n"
-            f"New Facility Options & Guidelines:\n"
-            f"  - Indicative LTV: Based on live market collateral valuation\n"
-            "  - Indicative Rate: Derived from live benchmark rates "
-            "(e.g. SARON/LIBOR) as shown above\n"
-            f"  - Arrangement fee: Standard 0.10% (waived for existing premium clients)\n\n"
-            f"A detailed credit proposal can be prepared within 48 hours. "
-            f"Please confirm if you would like to proceed with a formal application."
+    context = params.get("context", "")
+    system_prompt = params.get("system_prompt", "")
+
+    if settings.is_llm_mock_mode:
+        return {
+            "response": (
+                f"Lending Assessment for your inquiry: {task[:120]}\n\n"
+                f"Based on your portfolio valuation of {lending.get('total_aum')} "
+                f"and YTD return of {lending.get('ytd_return')}, "
+                f"the following credit facilities are currently associated with your account:\n\n"
+                f"Current Facilities:\n"
+                f"  - Lombard: {lending.get('lombard_facility')}\n"
+                f"  - Mortgage: {lending.get('mortgage')}\n\n"
+                f"Financial Goals (Relevant to Lending): {planning.get('goals')}\n\n"
+                f"Market Intelligence (Live Search):\n{market_info[:500]}...\n\n"
+                f"New Facility Options & Guidelines:\n"
+                f"  - Indicative LTV: Based on live market collateral valuation\n"
+                "  - Indicative Rate: Derived from live benchmark rates "
+                "(e.g. SARON/LIBOR) as shown above\n"
+                f"  - Arrangement fee: Standard 0.10% (waived for existing premium clients)\n\n"
+                f"A detailed credit proposal can be prepared within 48 hours. "
+                f"Please confirm if you would like to proceed with a formal application."
+            )
+        }
+
+    llm = ChatGoogleGenerativeAI(
+        model=settings.gemini_model,
+        google_api_key=settings.gemini_api_key,
+        temperature=0.2,
+        max_output_tokens=1500,
+    )
+    structured_llm = llm.with_structured_output(LendingCreditOutput)
+
+    prompt = (
+        f"Client Portfolio Valuation: {lending.get('total_aum')}\n"
+        f"YTD Return: {lending.get('ytd_return')}\n"
+        f"Lombard Facility: {lending.get('lombard_facility')}\n"
+        f"Mortgage: {lending.get('mortgage')}\n"
+        f"Financial Goals: {planning.get('goals')}\n\n"
+        f"Client Question: {task}\n\n"
+        f"Conversation Context: {context}\n\n"
+        f"Live Market Data:\n{market_info}\n\n"
+        "CRITICAL — DATA ACCURACY: You MUST use the EXACT numerical values provided above "
+        "for portfolio values, facility limits, drawn amounts, and all financial figures. "
+        "NEVER estimate, round differently, or generate your own figures."
+    )
+
+    try:
+        result = await structured_llm.ainvoke(
+            [
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=prompt),
+            ]
         )
-    }
+        if isinstance(result, LendingCreditOutput):
+            return {"response": result.model_dump_json()}
+        return {"response": json.dumps(result) if isinstance(result, dict) else str(result)}
+    except Exception as e:
+        return {"response": f"Lending credit processing failed: {str(e)}", "error": str(e)}
 
 
 def _fetch_tavily_sync(task: str) -> str:

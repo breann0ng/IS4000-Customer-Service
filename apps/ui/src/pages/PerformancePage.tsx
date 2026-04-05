@@ -618,9 +618,11 @@ function PortfolioChart({
                   {formatCurrency(p.v)}
                 </text>
               )}
-              <text x={p.x} y={H - padBottom + 16} textAnchor="middle" className={styles.axisLabel}>
-                {d.month}
-              </text>
+              {(data.length <= 12 || i % Math.ceil(data.length / 10) === 0) && (
+                <text x={p.x} y={H - padBottom + 16} textAnchor="middle" className={styles.axisLabel}>
+                  {d.month}
+                </text>
+              )}
             </g>
           );
         })}
@@ -761,9 +763,11 @@ function ReturnsChart({
                   {d.value > 0 ? "+" : ""}{d.value}%
                 </text>
               )}
-              <text x={x + barW / 2} y={H - padBottom + 16} textAnchor="middle" className={styles.axisLabel}>
-                {d.month}
-              </text>
+              {(data.length <= 12 || i % Math.ceil(data.length / 10) === 0) && (
+                <text x={x + barW / 2} y={H - padBottom + 16} textAnchor="middle" className={styles.axisLabel}>
+                  {d.month}
+                </text>
+              )}
             </g>
           );
         })}

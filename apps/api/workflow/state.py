@@ -210,26 +210,28 @@ class SynthesizerOutput(BaseModel):
 
     response: str = Field(
         description=(
-            "The synthesized client-facing response in Markdown or concise prose, dynamically"
-            " shaped by query complexity. "
-            "For simple single-question asks, a short direct answer is allowed without section"
-            " headers. "
-            "For multi-part/advisory asks, use relevant ### sections only (e.g., Summary, Next"
-            " Steps, Important Notes). "
-            "Add specialist sections (### Service Status, ### Credit & Lending Summary, etc.)"
-            " only when relevant. "
-            "Never include empty/placeholder sections. "
-            "Bold key figures (AUM, YTD, amounts, dates) wherever they appear."
+            "Client-facing response. For simple one-question asks (a balance, a rate, a status): "
+            "answer in 1-3 sentences with no section headers and no padding. "
+            "For multi-part or advisory queries: use ### headers only where real content exists. "
+            "Never include empty, generic, or placeholder sections. "
+            "Bold all key figures."
         )
     )
-    confidence: str = Field(description="Confidence level in the response: high, medium, or low")
+    confidence: str = Field(description="Confidence level: high, medium, or low")
     metrics: list[MetricItem] = Field(
         default_factory=list,
-        description="Key metrics extracted from specialist analysis",
+        description=(
+            "Key financial metrics from specialist analysis (AUM, YTD, balances). "
+            "Leave empty for non-financial queries."
+        ),
     )
     follow_up_suggestions: list[str] = Field(
         default_factory=list,
-        description="Suggested follow-up questions the client might ask",
+        description=(
+            "3-5 follow-up questions written from the client's perspective "
+            "(e.g. 'What is my YTD return?' not 'Would you like to see your YTD return?'). "
+            "Must be specific to the current query topic — do not mix domains."
+        ),
     )
     requires_human_escalation: bool = Field(
         default=False,

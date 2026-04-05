@@ -4,7 +4,6 @@ import {
   PaperPlaneIcon,
   HamburgerMenuIcon,
   BarChartIcon,
-  FileTextIcon,
   CardStackIcon,
   QuestionMarkCircledIcon,
   ExitIcon,
@@ -173,10 +172,6 @@ export function ChatWindow({
             <button className={styles.promptCard} onClick={() => handlePromptClick("Summarize my recent portfolio performance")}>
               <p>Summarize my recent portfolio performance</p>
               <div className={styles.promptIcon}><BarChartIcon width={16} height={16} style={{color: "var(--color-accent)"}}/></div>
-            </button>
-            <button className={styles.promptCard} onClick={() => handlePromptClick("What is the status of my loan application?")}>
-              <p>What is the status of my loan application?</p>
-              <div className={styles.promptIcon}><FileTextIcon width={16} height={16} style={{color: "var(--color-accent)"}}/></div>
             </button>
             <button className={styles.promptCard} onClick={() => handlePromptClick("Can you replace my damaged credit card?")}>
               <p>Can you replace my damaged credit card?</p>

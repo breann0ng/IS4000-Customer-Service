@@ -78,9 +78,6 @@ export function LoginPage({ onLogin, theme }: LoginPageProps) {
           {isSubmitting ? "Signing in..." : "Continue"}
         </button>
 
-        <p className={styles.hint}>
-          Demo: jsmith / password123
-        </p>
       </form>
     </div>
   );

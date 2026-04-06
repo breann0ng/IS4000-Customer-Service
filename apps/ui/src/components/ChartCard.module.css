@@ -60,21 +60,10 @@
   flex-shrink: 0;
 }
 
-/* ─── Slice / Bar / Dot hover animations ─────────────────── */
-.slice {
-  transition: opacity 0.15s ease;
-}
-.slice:hover { opacity: 0.85; }
-
-.bar {
-  transition: opacity 0.15s ease;
-}
-.bar:hover { opacity: 0.8; }
-
-.dot {
-  transition: r 0.15s ease;
-}
-.dot:hover { r: 5px; }
+/* ─── Slice / Bar / Dot base styles ─────────────────────── */
+.slice {}
+.bar {}
+.dot {}
 
 /* ─── Donut centre text ──────────────────────────────────── */
 .donutLabel {

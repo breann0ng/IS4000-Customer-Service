@@ -9,6 +9,7 @@ import {
 } from "@/api/generated";
 import { useMessageStream } from "@/hooks/useMessageStream";
 import { useFileUpload } from "@/hooks/useFileUpload";
+import type { ThinkingState } from "@/hooks/useMessageStream";
 import { Sidebar } from "@/components/Sidebar";
 import { ChatWindow } from "@/components/ChatWindow";
 import { PerformancePage } from "@/pages/PerformancePage";
@@ -24,20 +25,33 @@ interface ChatPageProps {
 export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
   const [sessions, setSessions] = useState<ChatSessionSummary[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
+  const [messagesBySessionId, setMessagesBySessionId] = useState<Record<string, ChatMessageResponse[]>>({});
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
-  const [isSending, setIsSending] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState(260);
   const [currentView, setCurrentView] = useState<"chat" | "performance">("chat");
   const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
   const pendingFileDataRef = useRef<{ fileContext?: string; fileName?: string; imageBase64?: string | null; fileType?: string } | undefined>(undefined);
   const performanceSessionIdRef = useRef<string | null>(null);
-  const { thinking, sendStreaming, resetThinking } = useMessageStream();
+  const {
+    thinkingBySessionId,
+    sendingBySessionId,
+    sendStreaming,
+    resetSessionState,
+  } = useMessageStream();
   const { attachment, uploadFile, clearAttachment } = useFileUpload();
   const [showArchived, setShowArchived] = useState(false);
   const showArchivedRef = useRef(showArchived);
   showArchivedRef.current = showArchived;
+
+  const emptyThinking: ThinkingState = {
+    phase: "idle",
+    completedSteps: [],
+  };
+
+  const activeMessages = activeSessionId ? (messagesBySessionId[activeSessionId] ?? []) : [];
+  const activeThinking = activeSessionId ? thinkingBySessionId[activeSessionId] ?? emptyThinking : emptyThinking;
+  const activeIsSending = activeSessionId ? Boolean(sendingBySessionId[activeSessionId]) : false;
 
   const loadSessions = useCallback(async () => {
     try {
@@ -64,21 +78,29 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
         throwOnError: true,
         path: { session_id: sessionId },
       });
-      setMessages(session.messages ?? []);
+      setMessagesBySessionId((prev) => ({
+        ...prev,
+        [sessionId]: session.messages ?? [],
+      }));
     } catch {
-      setMessages([]);
+      setMessagesBySessionId((prev) => ({
+        ...prev,
+        [sessionId]: [],
+      }));
     }
   }, []);
 
   const handleNewSession = useCallback(async () => {
-    setActiveSessionId(null);
-    setMessages([]);
     try {
       const { data: session } = await createChatSessionApiChatSessionsPost({
         throwOnError: true,
         body: { title: "New Chat" },
       });
       setActiveSessionId(session.session_id);
+      setMessagesBySessionId((prev) => ({
+        ...prev,
+        [session.session_id]: [],
+      }));
       await loadSessions();
     } catch {
       /* session creation failed silently */
@@ -93,13 +115,18 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
       });
       if (activeSessionId === sessionId) {
         setActiveSessionId(null);
-        setMessages([]);
       }
+      setMessagesBySessionId((prev) => {
+        const next = { ...prev };
+        delete next[sessionId];
+        return next;
+      });
+      resetSessionState(sessionId);
       await loadSessions();
     } catch {
       /* session deletion failed silently */
     }
-  }, [activeSessionId, loadSessions]);
+  }, [activeSessionId, loadSessions, resetSessionState]);
 
   const handleRenameSession = useCallback(async (sessionId: string, title: string) => {
     try {
@@ -123,13 +150,13 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
       });
       if (activeSessionId === sessionId) {
         setActiveSessionId(null);
-        setMessages([]);
       }
+      resetSessionState(sessionId);
       await loadSessions();
     } catch {
       /* archive failed silently */
     }
-  }, [activeSessionId, loadSessions]);
+  }, [activeSessionId, loadSessions, resetSessionState]);
 
   const handleUnarchiveSession = useCallback(async (sessionId: string) => {
     try {
@@ -165,7 +192,10 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
       });
       performanceSessionIdRef.current = session.session_id;
       setActiveSessionId(session.session_id);
-      setMessages([]);
+      setMessagesBySessionId((prev) => ({
+        ...prev,
+        [session.session_id]: [],
+      }));
       await loadSessions();
       setPendingQuestion(question);
     } catch {
@@ -175,7 +205,7 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
 
   // Send pending question once we have an active session
   useEffect(() => {
-    if (pendingQuestion && activeSessionId && !isSending) {
+    if (pendingQuestion && activeSessionId && !activeIsSending) {
       const question = pendingQuestion;
       const fileData = pendingFileDataRef.current;
       setPendingQuestion(null);
@@ -183,15 +213,16 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
       void handleSendMessage(question, fileData);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingQuestion, activeSessionId, isSending]);
+  }, [pendingQuestion, activeSessionId, activeIsSending]);
 
   const handleSendMessage = useCallback(async (
     content: string,
     fileData?: { fileContext?: string; fileName?: string; imageBase64?: string | null; fileType?: string },
   ) => {
-    if (isSending) return;
+    const targetSessionId = activeSessionId;
+    if (targetSessionId && sendingBySessionId[targetSessionId]) return;
 
-    if (!activeSessionId) {
+    if (!targetSessionId) {
       setPendingQuestion(content);
       pendingFileDataRef.current = fileData;
       void handleNewSession();
@@ -204,7 +235,7 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
 
     const userMessage: ChatMessageResponse = {
       message_id: crypto.randomUUID(),
-      session_id: activeSessionId,
+      session_id: targetSessionId,
       role: "user",
       content,
       context: fileName
@@ -217,39 +248,46 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
       created_at: new Date().toISOString(),
     };
 
-    setMessages((previous) => [...previous, userMessage]);
-    setIsSending(true);
+    setMessagesBySessionId((previous) => ({
+      ...previous,
+      [targetSessionId]: [...(previous[targetSessionId] ?? []), userMessage],
+    }));
 
-    await sendStreaming(activeSessionId, content, {
+    await sendStreaming(targetSessionId, content, {
       onDone: (message) => {
-        setMessages((previous) => [...previous, {
-          message_id: message.message_id,
-          session_id: message.session_id,
-          role: message.role,
-          content: message.content,
-          metadata: message.metadata,
-          context: message.context,
-          created_at: message.created_at,
-        }]);
-        setIsSending(false);
-        resetThinking();
+        setMessagesBySessionId((previous) => ({
+          ...previous,
+          [message.session_id]: [
+            ...(previous[message.session_id] ?? []),
+            {
+              message_id: message.message_id,
+              session_id: message.session_id,
+              role: message.role,
+              content: message.content,
+              metadata: message.metadata,
+              context: message.context,
+              created_at: message.created_at,
+            },
+          ],
+        }));
         void loadSessions();
       },
       onError: () => {
         const errorMessage: ChatMessageResponse = {
           message_id: crypto.randomUUID(),
-          session_id: activeSessionId,
+          session_id: targetSessionId,
           role: "assistant",
           content: "Sorry, something went wrong. Please try again.",
           context: null,
           created_at: new Date().toISOString(),
         };
-        setMessages((previous) => [...previous, errorMessage]);
-        setIsSending(false);
-        resetThinking();
+        setMessagesBySessionId((previous) => ({
+          ...previous,
+          [targetSessionId]: [...(previous[targetSessionId] ?? []), errorMessage],
+        }));
       },
     }, fileContext, fileName, fileData?.fileType, fileData?.imageBase64);
-  }, [activeSessionId, isSending, loadSessions, handleNewSession, sendStreaming, resetThinking]);
+  }, [activeSessionId, sendingBySessionId, loadSessions, handleNewSession, sendStreaming]);
 
   return (
     <div className={styles.layout}>
@@ -262,7 +300,7 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
         theme={theme}
         currentView={currentView}
         onSelectSession={(id) => { setCurrentView("chat"); handleSelectSession(id); }}
-        onNewSession={() => { setCurrentView("chat"); handleNewSession(); }}
+        onNewSession={() => { setCurrentView("chat"); setActiveSessionId(null); void handleNewSession(); }}
         onDeleteSession={handleDeleteSession}
         onRenameSession={handleRenameSession}
         onArchiveSession={handleArchiveSession}
@@ -276,9 +314,9 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
       />
       {currentView === "chat" ? (
         <ChatWindow
-          messages={messages}
-          isSending={isSending}
-          thinking={thinking}
+          messages={activeMessages}
+          isSending={activeIsSending}
+          thinking={activeThinking}
           sidebarOpen={sidebarOpen}
           user={user}
           attachment={attachment}

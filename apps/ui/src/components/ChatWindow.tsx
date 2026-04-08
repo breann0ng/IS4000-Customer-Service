@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import {
   PaperPlaneIcon,
@@ -42,6 +42,51 @@ function getFileIcon(fileType: string) {
   return "FILE";
 }
 
+function buildThinkingFromMessages(messages: ChatMessageResponse[]): ThinkingState | null {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (!message) continue;
+    if (message.role !== "assistant") continue;
+
+    const trace = message.context as Record<string, unknown> | null | undefined;
+    if (!trace) continue;
+
+    const plan = trace.plan as Record<string, unknown> | undefined;
+    const agentOutputs = Array.isArray(trace.agent_outputs) ? trace.agent_outputs : [];
+
+    if (!plan && agentOutputs.length === 0) continue;
+
+    return {
+      phase: "done",
+      reasoning: typeof plan?.reasoning === "string" ? plan.reasoning : undefined,
+      steps: Array.isArray(plan?.steps)
+        ? plan.steps.map((step) => ({
+            agent: String((step as Record<string, unknown>).agent ?? ""),
+            task: String((step as Record<string, unknown>).task ?? ""),
+          }))
+        : undefined,
+      completedSteps: agentOutputs.map((output, outputIndex) => ({
+        agent: String((output as Record<string, unknown>).agent ?? ""),
+        result: String((output as Record<string, unknown>).result ?? ""),
+        stepIndex: Number((output as Record<string, unknown>).step_index ?? outputIndex),
+      })),
+    };
+  }
+
+  return null;
+}
+
+function getThinkingInsertIndex(messages: ChatMessageResponse[], isSending: boolean, thinking: ThinkingState | null) {
+  if (!thinking) return -1;
+  if (isSending) return messages.length;
+
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (messages[index]?.role === "assistant") return index;
+  }
+
+  return messages.length;
+}
+
 export function ChatWindow({
   messages,
   isSending,
@@ -59,10 +104,13 @@ export function ChatWindow({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const persistedThinking = thinking.phase === "idle" ? buildThinkingFromMessages(messages) : null;
+  const visibleThinking = thinking.phase !== "idle" ? thinking : persistedThinking;
+  const thinkingInsertIndex = getThinkingInsertIndex(messages, isSending, visibleThinking);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, isSending, thinking.phase, thinking.completedSteps.length]);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -186,14 +234,20 @@ export function ChatWindow({
       ) : (
         <div className={styles.messageArea}>
           <div className={styles.messageScroll}>
-          {messages.map((message) => (
-            <MessageBubble 
-              key={message.message_id} 
-              message={message} 
-              onSuggestionClick={onSendMessage}
-            />
+          {messages.map((message, index) => (
+            <Fragment key={message.message_id}>
+              {index === thinkingInsertIndex && visibleThinking && (
+                <ThinkingIndicator thinking={visibleThinking} />
+              )}
+              <MessageBubble
+                message={message}
+                onSuggestionClick={onSendMessage}
+              />
+            </Fragment>
           ))}
-          {isSending && <ThinkingIndicator thinking={thinking} />}
+          {thinkingInsertIndex === messages.length && visibleThinking && (
+            <ThinkingIndicator thinking={visibleThinking} />
+          )}
           <div ref={messagesEndRef} />
           </div>
         </div>

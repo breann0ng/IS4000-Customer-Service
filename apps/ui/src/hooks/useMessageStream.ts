@@ -31,12 +31,15 @@ interface StreamCallbacks {
   onError: () => void;
 }
 
+const EMPTY_THINKING_STATE: ThinkingState = {
+  phase: "idle",
+  completedSteps: [],
+};
+
 export function useMessageStream() {
-  const [thinking, setThinking] = useState<ThinkingState>({
-    phase: "idle",
-    completedSteps: [],
-  });
-  const abortRef = useRef<AbortController | null>(null);
+  const [thinkingBySessionId, setThinkingBySessionId] = useState<Record<string, ThinkingState>>({});
+  const [sendingBySessionId, setSendingBySessionId] = useState<Record<string, boolean>>({});
+  const abortRefs = useRef(new Map<string, AbortController>());
 
   const sendStreaming = useCallback(
     async (
@@ -48,11 +51,15 @@ export function useMessageStream() {
       fileType?: string,
       imageBase64?: string | null,
     ) => {
-      abortRef.current?.abort();
+      abortRefs.current.get(sessionId)?.abort();
       const controller = new AbortController();
-      abortRef.current = controller;
+      abortRefs.current.set(sessionId, controller);
 
-      setThinking({ phase: "planning", completedSteps: [] });
+      setSendingBySessionId((prev) => ({ ...prev, [sessionId]: true }));
+      setThinkingBySessionId((prev) => ({
+        ...prev,
+        [sessionId]: { phase: "planning", completedSteps: [] },
+      }));
 
       const token = localStorage.getItem("access_token");
       const body: Record<string, string | null> = { content };
@@ -72,7 +79,8 @@ export function useMessageStream() {
       });
 
       if (!response.ok || !response.body) {
-        setThinking({ phase: "idle", completedSteps: [] });
+        setSendingBySessionId((prev) => ({ ...prev, [sessionId]: false }));
+        setThinkingBySessionId((prev) => ({ ...prev, [sessionId]: EMPTY_THINKING_STATE }));
         callbacks.onError();
         return;
       }
@@ -96,65 +104,100 @@ export function useMessageStream() {
               eventType = line.slice(7).trim();
             } else if (line.startsWith("data: ") && eventType) {
               const data = JSON.parse(line.slice(6));
-              handleEvent(eventType, data, setThinking, callbacks);
+              handleEvent(eventType, data, sessionId, setThinkingBySessionId, callbacks);
               eventType = "";
             }
           }
         }
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
-          setThinking({ phase: "idle", completedSteps: [] });
+          setSendingBySessionId((prev) => ({ ...prev, [sessionId]: false }));
+          setThinkingBySessionId((prev) => ({ ...prev, [sessionId]: EMPTY_THINKING_STATE }));
           callbacks.onError();
+        }
+      } finally {
+        if (abortRefs.current.get(sessionId) === controller) {
+          abortRefs.current.delete(sessionId);
         }
       }
     },
     [],
   );
 
-  const resetThinking = useCallback(() => {
-    setThinking({ phase: "idle", completedSteps: [] });
+  const resetSessionState = useCallback((sessionId: string) => {
+    abortRefs.current.get(sessionId)?.abort();
+    abortRefs.current.delete(sessionId);
+    setSendingBySessionId((prev) => ({ ...prev, [sessionId]: false }));
+    setThinkingBySessionId((prev) => ({ ...prev, [sessionId]: EMPTY_THINKING_STATE }));
   }, []);
 
-  return { thinking, sendStreaming, resetThinking };
+  return {
+    thinkingBySessionId,
+    sendingBySessionId,
+    sendStreaming,
+    resetSessionState,
+  };
 }
 
 function handleEvent(
   eventType: string,
   data: Record<string, unknown>,
-  setThinking: React.Dispatch<React.SetStateAction<ThinkingState>>,
+  sessionId: string,
+  setThinkingBySessionId: React.Dispatch<React.SetStateAction<Record<string, ThinkingState>>>,
   callbacks: StreamCallbacks,
 ) {
   switch (eventType) {
     case "planning":
-      setThinking((prev) => ({
+      setThinkingBySessionId((prev) => ({
         ...prev,
-        phase: "planning",
-        reasoning: data.reasoning as string,
-        steps: data.steps as PlanningStep[],
+        [sessionId]: {
+          phase: "planning",
+          reasoning: data.reasoning as string,
+          steps: data.steps as PlanningStep[],
+          completedSteps: [],
+        },
       }));
       break;
 
     case "agent_step":
-      setThinking((prev) => ({
-        ...prev,
-        phase: "executing",
-        completedSteps: [
-          ...prev.completedSteps,
-          {
-            agent: data.agent as string,
-            result: data.result as string,
-            stepIndex: data.step_index as number,
+      setThinkingBySessionId((prev) => {
+        const current = prev[sessionId] ?? EMPTY_THINKING_STATE;
+        return {
+          ...prev,
+          [sessionId]: {
+            ...current,
+            phase: "executing",
+            completedSteps: [
+              ...current.completedSteps,
+              {
+                agent: data.agent as string,
+                result: data.result as string,
+                stepIndex: data.step_index as number,
+              },
+            ],
           },
-        ],
-      }));
+        };
+      });
       break;
 
     case "synthesizing":
-      setThinking((prev) => ({ ...prev, phase: "synthesizing" }));
+      setThinkingBySessionId((prev) => {
+        const current = prev[sessionId] ?? EMPTY_THINKING_STATE;
+        return {
+          ...prev,
+          [sessionId]: { ...current, phase: "synthesizing" },
+        };
+      });
       break;
 
     case "done":
-      setThinking({ phase: "done", completedSteps: [] });
+      setThinkingBySessionId((prev) => {
+        const current = prev[sessionId] ?? EMPTY_THINKING_STATE;
+        return {
+          ...prev,
+          [sessionId]: { ...current, phase: "done" },
+        };
+      });
       callbacks.onDone(
         data.message as {
           message_id: string;

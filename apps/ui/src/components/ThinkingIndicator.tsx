@@ -19,7 +19,7 @@ interface ThinkingIndicatorProps {
 export function ThinkingIndicator({ thinking }: ThinkingIndicatorProps) {
   const [expanded, setExpanded] = useState(true);
 
-  if (thinking.phase === "idle" || thinking.phase === "done") return null;
+  if (thinking.phase === "idle") return null;
 
   return (
     <div className={styles.container}>
@@ -31,7 +31,7 @@ export function ThinkingIndicator({ thinking }: ThinkingIndicatorProps) {
       </div>
       <div className={styles.content}>
         <button className={styles.toggle} onClick={() => setExpanded((prev) => !prev)}>
-          <span className={styles.spinner} />
+          <span className={`${styles.spinner} ${thinking.phase === "done" ? styles.spinnerDone : ""}`} />
           <span className={styles.phaseLabel}>{phaseLabel(thinking)}</span>
           {expanded
             ? <ChevronDownIcon width={14} height={14} />
@@ -69,19 +69,17 @@ export function ThinkingIndicator({ thinking }: ThinkingIndicatorProps) {
               );
             })}
 
-            {thinking.completedSteps.map((step, index) => (
-              <div key={`result-${index}`} className={styles.stepResult}>
-                <span className={styles.resultLabel}>{AGENT_LABELS[step.agent] ?? step.agent}:</span>
-                <span className={styles.resultText}>
-                  {step.result.length > 150 ? `${step.result.slice(0, 150)}...` : step.result}
-                </span>
-              </div>
-            ))}
-
             {thinking.phase === "synthesizing" && (
               <div className={styles.step}>
                 <span className={styles.stepSpinner} />
                 <span className={styles.stepText}>Composing final response...</span>
+              </div>
+            )}
+
+            {thinking.phase === "done" && (
+              <div className={styles.step}>
+                <CheckCircledIcon className={styles.stepIconDone} width={13} height={13} />
+                <span className={styles.stepText}>Final response ready</span>
               </div>
             )}
           </div>
@@ -100,6 +98,7 @@ function phaseLabel(thinking: ThinkingState): string {
       return `Working... (${done}/${total} steps)`;
     }
     case "synthesizing": return "Preparing response...";
+    case "done": return "Response ready";
     default: return "Thinking...";
   }
 }

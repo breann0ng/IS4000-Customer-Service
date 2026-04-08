@@ -25,6 +25,8 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.375rem 0.625rem;
+  border: none;
+  background: transparent;
   border-radius: 8px;
   font-size: 0.8125rem;
   font-weight: 500;
@@ -46,6 +48,13 @@
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   flex-shrink: 0;
+}
+
+.spinnerDone {
+  animation: none;
+  border-color: var(--color-accent);
+  background:
+    radial-gradient(circle, var(--color-accent) 0 45%, transparent 50%);
 }
 
 .phaseLabel {
@@ -104,29 +113,11 @@
 
 .stepText {
   color: var(--color-text-secondary);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .stepDone {
-  color: var(--color-text-tertiary);
-}
-
-/* Intermediate results */
-.stepResult {
-  font-size: 0.75rem;
-  padding: 0.375rem 0.5rem;
-  background-color: var(--color-bg-secondary);
-  border-radius: 6px;
-  color: var(--color-text-secondary);
-  line-height: 1.4;
-}
-
-.resultLabel {
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  margin-right: 0.25rem;
-}
-
-.resultText {
   color: var(--color-text-tertiary);
 }
 

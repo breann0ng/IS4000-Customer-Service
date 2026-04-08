@@ -33,6 +33,8 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
   const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
   const pendingFileDataRef = useRef<{ fileContext?: string; fileName?: string; imageBase64?: string | null; fileType?: string } | undefined>(undefined);
   const performanceSessionIdRef = useRef<string | null>(null);
+  const activeSessionIdRef = useRef<string | null>(null);
+  const [readySessionIds, setReadySessionIds] = useState<string[]>([]);
   const {
     thinkingBySessionId,
     sendingBySessionId,
@@ -49,6 +51,7 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
     completedSteps: [],
   };
 
+  activeSessionIdRef.current = activeSessionId;
   const activeMessages = activeSessionId ? (messagesBySessionId[activeSessionId] ?? []) : [];
   const activeThinking = activeSessionId ? thinkingBySessionId[activeSessionId] ?? emptyThinking : emptyThinking;
   const activeIsSending = activeSessionId ? Boolean(sendingBySessionId[activeSessionId]) : false;
@@ -73,6 +76,7 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
 
   const handleSelectSession = useCallback(async (sessionId: string) => {
     setActiveSessionId(sessionId);
+    setReadySessionIds((previous) => previous.filter((id) => id !== sessionId));
     try {
       const { data: session } = await getChatSessionApiChatSessionsSessionIdGet({
         throwOnError: true,
@@ -121,6 +125,7 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
         delete next[sessionId];
         return next;
       });
+      setReadySessionIds((previous) => previous.filter((id) => id !== sessionId));
       resetSessionState(sessionId);
       await loadSessions();
     } catch {
@@ -151,6 +156,7 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
       if (activeSessionId === sessionId) {
         setActiveSessionId(null);
       }
+      setReadySessionIds((previous) => previous.filter((id) => id !== sessionId));
       resetSessionState(sessionId);
       await loadSessions();
     } catch {
@@ -270,6 +276,12 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
             },
           ],
         }));
+        setReadySessionIds((previous) => {
+          if (activeSessionIdRef.current === message.session_id) {
+            return previous.filter((id) => id !== message.session_id);
+          }
+          return previous.includes(message.session_id) ? previous : [...previous, message.session_id];
+        });
         void loadSessions();
       },
       onError: () => {
@@ -285,6 +297,7 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
           ...previous,
           [targetSessionId]: [...(previous[targetSessionId] ?? []), errorMessage],
         }));
+        setReadySessionIds((previous) => previous.filter((id) => id !== targetSessionId));
       },
     }, fileContext, fileName, fileData?.fileType, fileData?.imageBase64);
   }, [activeSessionId, sendingBySessionId, loadSessions, handleNewSession, sendStreaming]);
@@ -294,6 +307,7 @@ export function ChatPage({ user, onLogout, theme }: ChatPageProps) {
       <Sidebar
         sessions={sessions}
         activeSessionId={activeSessionId}
+        readySessionIds={readySessionIds}
         isLoading={isLoadingSessions}
         isOpen={sidebarOpen}
         showArchived={showArchived}

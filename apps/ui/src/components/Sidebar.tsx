@@ -20,6 +20,7 @@ import styles from "./Sidebar.module.css";
 interface SidebarProps {
   sessions: ChatSessionSummary[];
   activeSessionId: string | null;
+  readySessionIds: string[];
   isLoading: boolean;
   isOpen: boolean;
   showArchived: boolean;
@@ -42,6 +43,7 @@ interface SidebarProps {
 export function Sidebar({
   sessions,
   activeSessionId,
+  readySessionIds,
   isLoading,
   isOpen,
   showArchived,
@@ -149,6 +151,10 @@ export function Sidebar({
                   key={session.session_id}
                   className={`${styles.sessionItem} ${
                     activeSessionId === session.session_id ? styles.active : ""
+                  } ${
+                    activeSessionId !== session.session_id && readySessionIds.includes(session.session_id)
+                      ? styles.ready
+                      : ""
                   }`}
                   onClick={() => onSelectSession(session.session_id)}
                 >
@@ -221,7 +227,7 @@ export function Sidebar({
                 </div>
               ))}
 
-              {showArchived && sessions.some((s) => s.is_archived) && (
+                      {showArchived && sessions.some((s) => s.is_archived) && (
                 <>
                   <div className={styles.sectionLabel}>Archived</div>
                   {sessions.filter((s) => s.is_archived).map((session) => (
@@ -229,6 +235,10 @@ export function Sidebar({
                       key={session.session_id}
                       className={`${styles.sessionItem} ${styles.archived} ${
                         activeSessionId === session.session_id ? styles.active : ""
+                      } ${
+                        activeSessionId !== session.session_id && readySessionIds.includes(session.session_id)
+                          ? styles.ready
+                          : ""
                       }`}
                       onClick={() => onSelectSession(session.session_id)}
                     >

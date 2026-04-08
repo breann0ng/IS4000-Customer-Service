@@ -104,7 +104,14 @@ export function useMessageStream() {
               eventType = line.slice(7).trim();
             } else if (line.startsWith("data: ") && eventType) {
               const data = JSON.parse(line.slice(6));
-              handleEvent(eventType, data, sessionId, setThinkingBySessionId, callbacks);
+              handleEvent(
+                eventType,
+                data,
+                sessionId,
+                setThinkingBySessionId,
+                setSendingBySessionId,
+                callbacks,
+              );
               eventType = "";
             }
           }
@@ -144,6 +151,7 @@ function handleEvent(
   data: Record<string, unknown>,
   sessionId: string,
   setThinkingBySessionId: React.Dispatch<React.SetStateAction<Record<string, ThinkingState>>>,
+  setSendingBySessionId: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
   callbacks: StreamCallbacks,
 ) {
   switch (eventType) {
@@ -198,6 +206,7 @@ function handleEvent(
           [sessionId]: { ...current, phase: "done" },
         };
       });
+      setSendingBySessionId((prev) => ({ ...prev, [sessionId]: false }));
       callbacks.onDone(
         data.message as {
           message_id: string;

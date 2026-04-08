@@ -23,6 +23,7 @@ from apps.api.chat.models import (
     ChatSessionUpdate,
     FileUploadResponse,
 )
+from apps.api.chat.rm_intake import maybe_handle_rm_intake
 from apps.api.chat.service import (
     create_session,
     delete_session,
@@ -393,33 +394,43 @@ async def send_message(
     ]
     conversation_history.append({"role": "user", "content": sanitized_content})
 
-    memory_context = await memory_manager.retrieve_memory(
-        user_id=str(current_user.user_id),
-        query=sanitized_content,
-    )
-
-    workflow_result = await run_workflow(
-        user_message=augmented_message,
-        escalation_text=sanitized_content,
+    rm_intake_result = await maybe_handle_rm_intake(
+        session_messages=session.messages,
+        current_user_message=sanitized_content,
         conversation_history=conversation_history,
-        memory_context=memory_context,
-        session_id=str(session_id),
-        user_id=str(current_user.user_id),
-        customer_id=str(current_user.customer_id)
-        if current_user.customer_id
-        else DEFAULT_CUSTOMER_ID,
     )
 
-    response_text = str(workflow_result["response"])
-    # Package structured data for UI rendering
-    metadata = {
-        "metrics": workflow_result.get("metrics", []),
-        "suggestions": workflow_result.get("suggestions", []),
-    }
+    if rm_intake_result is not None:
+        response_text = rm_intake_result.response
+        metadata = dict(rm_intake_result.metadata)
+        full_context = dict(rm_intake_result.context)
+    else:
+        memory_context = await memory_manager.retrieve_memory(
+            user_id=str(current_user.user_id),
+            query=sanitized_content,
+        )
 
-    trace_val = workflow_result.get("trace")
-    full_context: dict = trace_val if isinstance(trace_val, dict) else {}
-    full_context["metadata"] = metadata
+        workflow_result = await run_workflow(
+            user_message=augmented_message,
+            escalation_text=sanitized_content,
+            conversation_history=conversation_history,
+            memory_context=memory_context,
+            session_id=str(session_id),
+            user_id=str(current_user.user_id),
+            customer_id=str(current_user.customer_id)
+            if current_user.customer_id
+            else DEFAULT_CUSTOMER_ID,
+        )
+
+        response_text = str(workflow_result["response"])
+        metadata = {
+            "metrics": workflow_result.get("metrics", []),
+            "suggestions": workflow_result.get("suggestions", []),
+        }
+
+        trace_val = workflow_result.get("trace")
+        full_context = trace_val if isinstance(trace_val, dict) else {}
+        full_context["metadata"] = metadata
 
     assistant_message = await save_message(
         database_session,
@@ -509,97 +520,112 @@ async def send_message_stream(
     ]
     conversation_history.append({"role": "user", "content": sanitized_content})
 
-    memory_context = await memory_manager.retrieve_memory(
-        user_id=str(current_user.user_id),
-        query=sanitized_content,
+    rm_intake_result = await maybe_handle_rm_intake(
+        session_messages=session.messages,
+        current_user_message=sanitized_content,
+        conversation_history=conversation_history,
     )
 
-    initial_state = WorkflowState(
-        user_message=augmented_message,
-        escalation_text=sanitized_content,
-        conversation_history=conversation_history,
-        memory_context=memory_context,
-        session_id=str(session_id),
-        user_id=str(current_user.user_id),
-        customer_id=str(current_user.customer_id)
-        if current_user.customer_id
-        else DEFAULT_CUSTOMER_ID,
-    )
+    initial_state: WorkflowState | None = None
+    if rm_intake_result is None:
+        memory_context = await memory_manager.retrieve_memory(
+            user_id=str(current_user.user_id),
+            query=sanitized_content,
+        )
+
+        initial_state = WorkflowState(
+            user_message=augmented_message,
+            escalation_text=sanitized_content,
+            conversation_history=conversation_history,
+            memory_context=memory_context,
+            session_id=str(session_id),
+            user_id=str(current_user.user_id),
+            customer_id=str(current_user.customer_id)
+            if current_user.customer_id
+            else DEFAULT_CUSTOMER_ID,
+        )
 
     async def event_generator() -> AsyncGenerator[str, None]:
         """Yield SSE events as the workflow graph executes each node."""
         final_response = ""
         trace_data: dict | None = None
 
-        try:
-            async for event in workflow_graph.astream(initial_state, stream_mode="updates"):
-                for node_name, node_output in event.items():
-                    if node_name == "planner" and node_output.get("plan"):
-                        plan = node_output["plan"]
-                        steps = [{"agent": step.agent, "task": step.task} for step in plan.steps]
-                        yield _sse(
-                            "planning",
-                            {
-                                "reasoning": plan.reasoning,
-                                "steps": steps,
-                                "requires_agent": plan.requires_agent,
-                            },
-                        )
-
-                    elif node_name == "executor" and node_output.get("agent_outputs"):
-                        outputs = node_output["agent_outputs"]
-                        if outputs:
-                            latest = outputs[-1]
-                            step_index = node_output.get("current_step_index", len(outputs))
+        if rm_intake_result is not None:
+            trace_data = dict(rm_intake_result.context)
+            final_response = rm_intake_result.response
+            yield _sse("synthesizing", {"status": "preparing RM handoff"})
+        else:
+            try:
+                if initial_state is None:
+                    raise RuntimeError("Workflow state was not initialized for streaming chat")
+                async for event in workflow_graph.astream(initial_state, stream_mode="updates"):
+                    for node_name, node_output in event.items():
+                        if node_name == "planner" and node_output.get("plan"):
+                            plan = node_output["plan"]
+                            steps = [
+                                {"agent": step.agent, "task": step.task} for step in plan.steps
+                            ]
                             yield _sse(
-                                "agent_step",
+                                "planning",
                                 {
-                                    "agent": latest["agent"],
-                                    "result": latest["result"],
-                                    "step_index": step_index,
+                                    "reasoning": plan.reasoning,
+                                    "steps": steps,
+                                    "requires_agent": plan.requires_agent,
                                 },
                             )
 
-                    elif node_name == "synthesizer" and node_output.get("final_response"):
-                        final_response = node_output["final_response"]
-                        # Store structural metadata from sanitizer output
-                        trace_data = trace_data or {}
-                        trace_data["metadata"] = {
-                            "metrics": node_output.get("final_metrics", []),
-                            "suggestions": node_output.get("final_suggestions", []),
-                        }
-                        yield _sse("synthesizing", {"status": "generating final response"})
+                        elif node_name == "executor" and node_output.get("agent_outputs"):
+                            outputs = node_output["agent_outputs"]
+                            if outputs:
+                                latest = outputs[-1]
+                                step_index = node_output.get("current_step_index", len(outputs))
+                                yield _sse(
+                                    "agent_step",
+                                    {
+                                        "agent": latest["agent"],
+                                        "result": latest["result"],
+                                        "step_index": step_index,
+                                    },
+                                )
 
-                    elif node_name == "escalation" and node_output.get("final_response"):
-                        final_response = node_output["final_response"]
-                        yield _sse(
-                            "escalation",
-                            {
-                                "status": "escalated_to_rm",
-                                "response": final_response,
-                            },
-                        )
-
-                    elif node_name == "direct_response" and node_output.get("final_response"):
-                        final_response = node_output["final_response"]
-                        yield _sse("synthesizing", {"status": "generating final response"})
-
-                    # Build trace from latest state
-                    if isinstance(node_output, dict):
-                        if node_output.get("plan"):
-                            plan_obj = node_output["plan"]
+                        elif node_name == "synthesizer" and node_output.get("final_response"):
+                            final_response = node_output["final_response"]
                             trace_data = trace_data or {}
-                            trace_data["plan"] = plan_obj.model_dump()
-                        if node_output.get("agent_outputs"):
-                            trace_data = trace_data or {}
-                            trace_data["agent_outputs"] = node_output["agent_outputs"]
+                            trace_data["metadata"] = {
+                                "metrics": node_output.get("final_metrics", []),
+                                "suggestions": node_output.get("final_suggestions", []),
+                            }
+                            yield _sse("synthesizing", {"status": "generating final response"})
 
-        except Exception:
-            logger.exception("stream_workflow_failed", session_id=str(session_id))
-            final_response = (
-                "I apologize, but I encountered an error while processing your request. "
-                "Please try again or contact your relationship manager."
-            )
+                        elif node_name == "escalation" and node_output.get("final_response"):
+                            final_response = node_output["final_response"]
+                            yield _sse(
+                                "escalation",
+                                {
+                                    "status": "escalated_to_rm",
+                                    "response": final_response,
+                                },
+                            )
+
+                        elif node_name == "direct_response" and node_output.get("final_response"):
+                            final_response = node_output["final_response"]
+                            yield _sse("synthesizing", {"status": "generating final response"})
+
+                        if isinstance(node_output, dict):
+                            if node_output.get("plan"):
+                                plan_obj = node_output["plan"]
+                                trace_data = trace_data or {}
+                                trace_data["plan"] = plan_obj.model_dump()
+                            if node_output.get("agent_outputs"):
+                                trace_data = trace_data or {}
+                                trace_data["agent_outputs"] = node_output["agent_outputs"]
+
+            except Exception:
+                logger.exception("stream_workflow_failed", session_id=str(session_id))
+                final_response = (
+                    "I apologize, but I encountered an error while processing your request. "
+                    "Please try again or contact your relationship manager."
+                )
 
         if not final_response:
             final_response = "I'm sorry, I couldn't generate a response."

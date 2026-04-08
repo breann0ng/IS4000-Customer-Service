@@ -46,6 +46,11 @@ _ESCALATION_PATTERNS = [
         r"sue|lawsuit|legal\s+action",
         r"close\s+(all\s+)?(my\s+)?account",
         r"regulatory\s+(complaint|report|authority)",
+        # RM review / meeting escalation
+        r"(schedule|book|arrange|set\s+up)\s+.*\b(review|meeting|call|catch\s*up|discussion)\b.*\b(rm|relationship\s+manager)\b",
+        r"(schedule|book|arrange|set\s+up)\s+.*\b(with|for)\s+(my\s+)?(rm|relationship\s+manager)\b",
+        r"\b(review|meeting|call|catch\s*up|discussion)\b.*\b(my\s+)?(rm|relationship\s+manager)\b",
+        r"\b(speak|talk|meet)\s+to\s+(my\s+)?(rm|relationship\s+manager)\b",
     ]
 ]
 

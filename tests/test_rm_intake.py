@@ -4,6 +4,10 @@ from types import SimpleNamespace
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, patch
 
+from apps.api.chat.followups import (
+    RM_FOLLOW_UP_PROMPT,
+    build_rm_follow_up_context,
+)
 from apps.api.chat.rm_intake import (
     RMIntakeAnswers,
     RMIntakeExtraction,
@@ -77,6 +81,37 @@ class RMIntakeTests(IsolatedAsyncioTestCase):
                 self.fail(f"Expected RM intake flow to start for: {message}")
             self.assertIn("When would you like your RM to contact you?", result.response)
             self.assertEqual(result.context["rm_intake"]["status"], "collecting")
+
+    async def test_affirmative_reply_to_follow_up_starts_intake(self) -> None:
+        """A yes reply to the RM follow-up should start the intake flow."""
+        session_messages = [
+            SimpleNamespace(
+                role="assistant",
+                content=(
+                    "You can reach your Relationship Manager via the secure message channel.\n\n"
+                    f"{RM_FOLLOW_UP_PROMPT}"
+                ),
+                context={
+                    "metadata": {"suggestions": [RM_FOLLOW_UP_PROMPT]},
+                    "rm_follow_up": build_rm_follow_up_context("How do I contact my RM?"),
+                },
+            )
+        ]
+
+        result = await maybe_handle_rm_intake(
+            session_messages=session_messages,
+            current_user_message="Yes please",
+            conversation_history=[
+                {"role": "assistant", "content": session_messages[0].content},
+                {"role": "user", "content": "Yes please"},
+            ],
+        )
+
+        self.assertIsNotNone(result)
+        if result is None:
+            self.fail("Expected RM intake flow to start after affirmative reply")
+        self.assertIn("When would you like your RM to contact you?", result.response)
+        self.assertEqual(result.context["rm_intake"]["trigger_message"], "How do I contact my RM?")
 
     async def test_partial_reply_keeps_collecting_missing_answers(self) -> None:
         """A partial intake reply should only ask for the remaining details."""

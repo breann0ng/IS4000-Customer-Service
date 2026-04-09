@@ -13,6 +13,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from apps.api.auth.routes import get_current_user
 from apps.api.chat.file_parser import parse_file, validate_upload
+from apps.api.chat.followups import (
+    RM_FOLLOW_UP_CONTEXT_KEY,
+    RM_FOLLOW_UP_PROMPT,
+    apply_rm_follow_up,
+    build_rm_follow_up_context,
+)
 from apps.api.chat.models import (
     ChatCompletionResponse,
     ChatMessageRequest,
@@ -428,9 +434,20 @@ async def send_message(
             "suggestions": workflow_result.get("suggestions", []),
         }
 
+        rm_follow_up_pending = False
+        response_text, follow_up_suggestions = apply_rm_follow_up(
+            sanitized_content,
+            response_text,
+            metadata.get("suggestions", []),
+        )
+        metadata["suggestions"] = follow_up_suggestions
+        rm_follow_up_pending = RM_FOLLOW_UP_PROMPT in response_text
+
         trace_val = workflow_result.get("trace")
         full_context = trace_val if isinstance(trace_val, dict) else {}
         full_context["metadata"] = metadata
+        if rm_follow_up_pending:
+            full_context[RM_FOLLOW_UP_CONTEXT_KEY] = build_rm_follow_up_context(sanitized_content)
 
     assistant_message = await save_message(
         database_session,
@@ -629,6 +646,19 @@ async def send_message_stream(
 
         if not final_response:
             final_response = "I'm sorry, I couldn't generate a response."
+
+        if rm_intake_result is None:
+            final_response, follow_up_suggestions = apply_rm_follow_up(
+                sanitized_content,
+                final_response,
+                trace_data.get("metadata", {}).get("suggestions", []) if trace_data else [],
+            )
+            trace_data = trace_data or {}
+            metadata = trace_data.get("metadata", {})
+            metadata["suggestions"] = follow_up_suggestions
+            trace_data["metadata"] = metadata
+            if RM_FOLLOW_UP_PROMPT in final_response:
+                trace_data[RM_FOLLOW_UP_CONTEXT_KEY] = build_rm_follow_up_context(sanitized_content)
 
         # Persist the assistant message
         assistant_message = await save_message(

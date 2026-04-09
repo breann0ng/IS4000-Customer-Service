@@ -13,6 +13,10 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from pydantic import BaseModel, Field
 
+from apps.api.chat.followups import (
+    get_pending_rm_follow_up,
+    is_affirmative_rm_follow_up_response,
+)
 from apps.api.config import settings
 from apps.api.logging_config import get_logger
 from apps.api.workflow.escalation import check_escalation
@@ -120,10 +124,17 @@ async def maybe_handle_rm_intake(
 ) -> RMIntakeTurnResult | None:
     """Intercept escalation turns and run the RM intake flow when needed."""
     active_state = get_active_rm_intake(session_messages)
-    if active_state is None and not check_escalation(current_user_message):
-        return None
-
     if active_state is None:
+        pending_follow_up = get_pending_rm_follow_up(session_messages)
+        if pending_follow_up and is_affirmative_rm_follow_up_response(current_user_message):
+            trigger_message = (
+                pending_follow_up.get("trigger_message") or current_user_message
+            ).strip()
+            return _start_rm_intake(trigger_message)
+
+        if not check_escalation(current_user_message):
+            return None
+
         return _start_rm_intake(current_user_message)
 
     return await _continue_rm_intake(
